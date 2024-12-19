@@ -1,0 +1,9 @@
+# Build directories and files
+target/
+
+# OS and IDE directories and files
+.DS_store
+.vscode/
+.idea/
+*.iml
+__debug_bin

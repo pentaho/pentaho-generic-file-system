@@ -1,0 +1,20 @@
+name: pentaho-generic-file-system release workflow
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        description: "The version to be released"
+        type: string
+      dry_run:
+        type: boolean
+        default: true
+        description: "Dry run. No real changes should occur."
+
+jobs:
+  release:
+    uses: pentaho/actions-common/.github/workflows/release.yml@stable
+    with:
+      release_version: ${{ inputs.release_version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
