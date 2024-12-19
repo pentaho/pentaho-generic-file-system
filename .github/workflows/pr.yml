@@ -1,0 +1,11 @@
+name: pentaho-generic-file-system pull request workflow
+on: pull_request
+
+jobs:
+  reusable-pr-workflow:
+    uses: pentaho/actions-common/.github/workflows/pr.yml@stable
+    with:
+      slack_channels: ""
+      sonar_project_key: "pentaho-generic-file-system"
+      additional_mvn_directives: "-am -DrunITs -Drelease"
+    secrets: inherit
