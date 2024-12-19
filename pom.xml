@@ -3,6 +3,7 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
@@ -16,6 +17,7 @@
   <properties>
     <mockito-core.version>4.0.0</mockito-core.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
+    <artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
     <platform.version>10.3.0.0-SNAPSHOT</platform.version>
   </properties>
 
@@ -35,4 +37,49 @@
     <module>api</module>
     <module>impl</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>cicd-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>artifactory-maven-plugin</artifactId>
+            <version>${artifactory-maven-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>build-info</id>
+                <goals>
+                  <goal>publish</goal>
+                </goals>
+                <configuration>
+                  <buildInfo>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <buildName>${build.name}</buildName>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <buildNumber>${build.number}</buildNumber>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <buildUrl>${env.JFROG_CLI_BUILD_URL}</buildUrl>
+                  </buildInfo>
+                  <publisher>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <contextUrl>${env.ARTIFACTORY_BASE_URL}/</contextUrl>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <username>${env.NEXUS_DEPLOY_USER}</username>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <password>${env.NEXUS_DEPLOY_PASSWORD}</password>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <repoKey>${env.PRIVATE_RELEASE_REPO}</repoKey>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <snapshotRepoKey>${env.PRIVATE_SNAPSHOT_REPO}</snapshotRepoKey>
+                  </publisher>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

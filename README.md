@@ -1,4 +1,4 @@
-# pentaho-generic-file-system
+# Pentaho Generic File System
 
 ## Description
 
