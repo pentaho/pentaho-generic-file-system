@@ -22,4 +22,5 @@ jobs:
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: ${{ inputs.modules_to_build }}
+      run_release_candidate: true
     secrets: inherit
