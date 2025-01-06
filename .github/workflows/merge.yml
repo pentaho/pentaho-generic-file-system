@@ -18,7 +18,7 @@ jobs:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
       version: "10.3.1.0"
-      base_version: "10.3.0.0-196"
+      base_version: "[10.3,10.4)"
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: ${{ inputs.modules_to_build }}
