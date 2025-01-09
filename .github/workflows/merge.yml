@@ -17,10 +17,10 @@ jobs:
   reusable-merge-workflow:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
-      version: "10.3.1.0"
-      base_version: "[10.3,10.4)"
+      base_version: "10.2.0.1-255"
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: ${{ inputs.modules_to_build }}
       run_release_candidate: true
+      add_github_run_number: false
     secrets: inherit
