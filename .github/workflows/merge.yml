@@ -15,7 +15,7 @@ on:
 
 jobs:
   reusable-merge-workflow:
-    uses: pentaho/actions-common/.github/workflows/merge.yml@stable
+    uses: pentaho/actions-common/.github/workflows/merge.yml@semver
     with:
       base_version: "10.2.0.1-255"
       slack_channels: ""
@@ -23,4 +23,5 @@ jobs:
       modules_to_build: ${{ inputs.modules_to_build }}
       run_release_candidate: true
       add_github_run_number: false
+      use_semver_release_candidate: true
     secrets: inherit
