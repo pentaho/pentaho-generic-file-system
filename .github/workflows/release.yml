@@ -2,19 +2,36 @@ name: pentaho-generic-file-system release workflow
 on:
   workflow_dispatch:
     inputs:
-      release_version:
-        required: true
-        description: "The version to be released"
-        type: string
       dry_run:
         type: boolean
         default: true
         description: "Dry run. No real changes should occur."
 
 jobs:
-  release:
-    uses: pentaho/actions-common/.github/workflows/release.yml@stable
+  reusable-merge-workflow:
+    uses: pentaho/actions-common/.github/workflows/merge.yml@semver
     with:
-      release_version: ${{ inputs.release_version }}
+      base_version: "10.2.0.1-255"
+      slack_channels: ""
+      sonar_project_key: "pentaho-generic-file-system"
+      modules_to_build: ${{ inputs.modules_to_build }}
+      run_release_candidate: true
+      run_snapshot: false
+      add_github_run_number: false
+      use_semver_release_candidate: false
+    secrets: inherit
+
+  release:
+    needs: [reusable-merge-workflow]
+    uses: pentaho/actions-common/.github/workflows/release.yml@semver
+    with:
+      release_version: ${{ needs.reusable-merge-workflow.outputs.current-version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
+
+  update-version:
+    needs: [release]
+    uses: ./.github/workflows/update-version.yml
+    with:
       dry_run: ${{ inputs.dry_run }}
     secrets: inherit

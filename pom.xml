@@ -20,6 +20,7 @@
     <mockito-core.version>4.0.0</mockito-core.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
     <artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
+    <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -38,6 +39,19 @@
     <module>api</module>
     <module>impl</module>
   </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>${versions-maven-plugin.version}</version>
+        <configuration>
+          <generateBackupPoms>false</generateBackupPoms>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
