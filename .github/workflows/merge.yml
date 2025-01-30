@@ -2,7 +2,7 @@ name: pentaho-generic-file-system merge workflow
 on:
   push:
     branches: # Specify branches so that it doesn't get executed when a tag is pushed
-      - "*"
+      - master
     paths-ignore:
       - .github/**
 
@@ -17,10 +17,11 @@ jobs:
   reusable-merge-workflow:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
-      version: "10.3.1.0"
-      base_version: "[10.3,10.4)"
+      base_version: "10.2.0.1-255"
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: ${{ inputs.modules_to_build }}
       run_release_candidate: true
+      add_github_run_number: false
+      use_semver_release_candidate: true
     secrets: inherit
