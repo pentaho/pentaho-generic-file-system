@@ -72,12 +72,21 @@ class IGenericFileServiceTest {
       throw new UnsupportedOperationException();
     }
 
-    @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
+    @NonNull
+    @Override
+    public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
       throw new UnsupportedOperationException();
     }
 
+    @NonNull
     @Override
     public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public List<IGenericFile> getDeletedFiles() {
       throw new UnsupportedOperationException();
     }
   }

@@ -14,6 +14,7 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * The {@code IGenericFile} interface contains basic information about a generic file.
@@ -107,6 +108,26 @@ public interface IGenericFile extends IProviderable {
   boolean isCanEdit();
 
   /**
+   * Gets the original location of the generic file before it was deleted.
+   * <p>
+   * Each `IGenericFile` in the list corresponds to a folder in the path hierarchy
+   * from the root to the original parent folder of the deleted file.
+   * <p>
+   * Note: Some folders in the original location may not exist anymore.
+   */
+  List<IGenericFile> getOriginalLocation();
+
+  /**
+   * Gets the deleted date of the generic file.
+   */
+  Date getDeletedDate();
+
+  /**
+   * Gets the user that deleted the generic file.
+   */
+  String getDeletedBy();
+
+  /**
    * Gets whether the generic file can be deleted.
    */
   boolean isCanDelete();
@@ -136,4 +157,9 @@ public interface IGenericFile extends IProviderable {
    * @see #getTitle()
    */
   String getDescription();
+
+  /**
+   * Gets the owner of the generic file.
+   */
+  String getOwner();
 }

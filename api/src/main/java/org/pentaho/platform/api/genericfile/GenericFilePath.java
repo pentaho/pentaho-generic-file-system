@@ -91,6 +91,18 @@ public class GenericFilePath {
   }
 
   /**
+   * Gets the path last segment.
+   * <p>
+   * The last segment is that which identifies the path's file or folder name.
+   *
+   * @return The last segment.
+   */
+  @NonNull
+  public String getLastSegment() {
+    return segments.get( segments.size() - 1 );
+  }
+
+  /**
    * Gets a value that indicates if the path has a scheme.
    * <p>
    * For more information, see {@link #getFirstSegment()}.
