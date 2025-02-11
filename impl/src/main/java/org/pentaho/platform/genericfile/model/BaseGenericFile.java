@@ -17,6 +17,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 
 import java.util.Date;
+import java.util.List;
 
 public class BaseGenericFile implements IGenericFile {
   private String provider;
@@ -26,9 +27,13 @@ public class BaseGenericFile implements IGenericFile {
   private String type;
   private Date modifiedDate;
   private boolean canEdit;
+  private Date deletedDate;
+  private String deletedBy;
   private boolean canDelete;
+  private List<IGenericFile> originalLocation;
   private String title;
   private String description;
+  private String owner;
 
   @NonNull
   @Override
@@ -95,6 +100,33 @@ public class BaseGenericFile implements IGenericFile {
   }
 
   @Override
+  public List<IGenericFile> getOriginalLocation() {
+    return originalLocation;
+  }
+
+  public void setOriginalLocation( List<IGenericFile> originalLocation ) {
+    this.originalLocation = originalLocation;
+  }
+
+  @Override
+  public Date getDeletedDate() {
+    return deletedDate;
+  }
+
+  public void setDeletedDate( Date deletedDate ) {
+    this.deletedDate = deletedDate;
+  }
+
+  @Override
+  public String getDeletedBy() {
+    return deletedBy;
+  }
+
+  public void setDeletedBy( String deletedBy ) {
+    this.deletedBy = deletedBy;
+  }
+
+  @Override
   public boolean isCanDelete() {
     return canDelete;
   }
@@ -119,5 +151,14 @@ public class BaseGenericFile implements IGenericFile {
 
   public void setDescription( String description ) {
     this.description = description;
+  }
+
+  @Override
+  public String getOwner() {
+    return owner;
+  }
+
+  public void setOwner( String owner ) {
+    this.owner = owner;
   }
 }
