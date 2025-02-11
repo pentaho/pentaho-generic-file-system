@@ -25,6 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
@@ -48,10 +49,12 @@ import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
@@ -70,7 +73,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
-  public static final String TYPE = "repository";
+  public static final String TYPE = "pur";
 
   @NonNull
   private final IUnifiedRepository unifiedRepository;
@@ -85,6 +88,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   private final DateAdapter repositoryWsDateAdapter;
 
   // TODO: Actually fix the base FileService class to do this and eliminate this class when available on the platform.
+
   /**
    * Custom {@code FileService} class that ensures that the contained repository web service uses the specified unified
    * repository instance. The methods {@code getRepositoryFileInputStream} and {@code getRepositoryFileOutputStream}
@@ -344,20 +348,32 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Nullable
-  private Date getModifiedDateFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+  private Date getDate( String date ) {
     try {
-      if ( !StringUtil.isEmpty( nativeFile.getLastModifiedDate() ) ) {
-        return repositoryWsDateAdapter.unmarshal( nativeFile.getLastModifiedDate() );
-      }
-
-      if ( !StringUtil.isEmpty( nativeFile.getCreatedDate() ) ) {
-        return repositoryWsDateAdapter.unmarshal( nativeFile.getCreatedDate() );
+      if ( !StringUtil.isEmpty( date ) ) {
+        return repositoryWsDateAdapter.unmarshal( date );
       }
     } catch ( Exception e ) {
       // noop
     }
 
     return null;
+  }
+
+  @Nullable
+  private Date getModifiedDateFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+    Date lastModified = getDate( nativeFile.getLastModifiedDate() );
+    if ( lastModified != null ) {
+      return lastModified;
+    }
+
+    return getDate( nativeFile.getCreatedDate() );
+  }
+
+  private String getOwnerFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+    RepositoryFileAcl acl = unifiedRepository.getAcl( nativeFile.getId() );
+
+    return acl.getOwner().getName();
   }
 
   @NonNull
@@ -440,5 +456,65 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     return repositoryFilePermissions;
+  }
+
+  @NonNull
+  @Override
+  public List<IGenericFile> getDeletedFiles() throws OperationFailedException {
+    return fileService.doGetDeletedFiles().stream()
+      .map( fileDto -> {
+        GenericFilePath parentPath = null;
+
+        try {
+          parentPath = GenericFilePath.parseRequired( fileDto.getPath() ).getParent();
+        } catch ( InvalidPathException e ) {
+          // noop
+        }
+
+        RepositoryObject repositoryObject =
+          convertFromNativeFileDto( fileDto, parentPath != null ? parentPath.toString() : null );
+
+        repositoryObject.setOwner( getOwnerFromNativeFileDto( fileDto ) );
+        repositoryObject.setOriginalLocation( getLocation( fileDto.getOriginalParentFolderPath() ) );
+        repositoryObject.setDeletedBy( fileDto.getCreatorId() );
+        repositoryObject.setDeletedDate( getDate( fileDto.getDeletedDate() ) );
+
+        return repositoryObject;
+      } )
+      .collect( Collectors.toList() );
+  }
+
+  private List<IGenericFile> getLocation( String path ) {
+    GenericFilePath locationPath = null;
+
+    try {
+      locationPath = GenericFilePath.parseRequired( path );
+    } catch ( InvalidPathException e ) {
+      // noop
+    }
+
+    List<IGenericFile> location = new ArrayList<>();
+
+    while ( locationPath != null ) {
+      IGenericFile folder;
+
+      try {
+        folder = getFile( locationPath );
+      } catch ( OperationFailedException e ) {
+        // Location folder not found, most likely because it was deleted.
+        GenericFilePath parentPath = locationPath.getParent();
+        String name = locationPath.getSegments().get( locationPath.getSegments().size() - 1 );
+
+        folder = createRepositoryObject( name, locationPath.toString(), null, true,
+          parentPath != null ? parentPath.toString() : null );
+      }
+
+      location.add( folder );
+      locationPath = locationPath.getParent();
+    }
+
+    Collections.reverse( location );
+
+    return location;
   }
 }

@@ -205,4 +205,34 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );
   }
+
+  @Override
+  @NonNull
+  public List<IGenericFile> getDeletedFiles() throws OperationFailedException {
+    List<IGenericFile> deletedFiles = new ArrayList<>();
+
+    boolean oneProviderSucceeded = false;
+    OperationFailedException firstProviderException = null;
+
+    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+      try {
+        deletedFiles.addAll( fileProvider.getDeletedFiles() );
+        oneProviderSucceeded = true;
+      } catch ( OperationFailedException e ) {
+        if ( firstProviderException == null ) {
+          firstProviderException = e;
+        }
+
+        // Continue, collecting providers that work. But still log failed ones, JIC.
+        e.printStackTrace();
+      }
+    }
+
+    if ( firstProviderException != null && !oneProviderSucceeded ) {
+      // All providers failed. Opting to throw the error of the first failed one to the caller.
+      throw firstProviderException;
+    }
+
+    return deletedFiles;
+  }
 }
