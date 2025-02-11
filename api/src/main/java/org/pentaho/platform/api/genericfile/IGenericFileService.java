@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -275,4 +276,14 @@ public interface IGenericFileService {
    */
   @NonNull
   IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets a list of deleted files which are still available in the trash folder.
+   *
+   * @return The list of deleted files.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  List<IGenericFile> getDeletedFiles() throws OperationFailedException;
 }

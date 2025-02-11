@@ -305,12 +305,4 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     cachedTrees.put( cacheOptions, tree );
   }
   // endregion
-
-  @Override
-  public abstract IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
-    throws OperationFailedException;
-
-  @NonNull
-  @Override
-  public abstract IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

@@ -311,4 +311,62 @@ public class DefaultGenericFileServiceTest {
     verify( useCase.provider1Mock, never() ).getFile( any() );
   }
   // endregion
+
+  // region getDeletedFiles()
+  private static class GetDeletedFilesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final IGenericFile file1Mock;
+    public final IGenericFile file2Mock;
+    public final IGenericFile file3Mock;
+    public final IGenericFile file4Mock;
+
+    public GetDeletedFilesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+      file1Mock = mock( IGenericFile.class );
+      file2Mock = mock( IGenericFile.class );
+      doReturn( List.of( file1Mock, file2Mock ) ).when( provider1Mock ).getDeletedFiles();
+
+      file3Mock = mock( IGenericFile.class );
+      file4Mock = mock( IGenericFile.class );
+      doReturn( List.of( file3Mock, file4Mock ) ).when( provider2Mock ).getDeletedFiles();
+    }
+  }
+
+  @Test
+  public void testGetDeletedFilesWithMultipleProvidersAggregatesAllProvidersDeletedFiles()
+    throws InvalidGenericFileProviderException, OperationFailedException {
+
+    GetDeletedFilesMultipleProviderUseCase useCase = new GetDeletedFilesMultipleProviderUseCase();
+
+    List<IGenericFile> rootTrees = useCase.service.getDeletedFiles();
+
+    // ---
+
+    assertNotNull( rootTrees );
+    assertEquals( 4, rootTrees.size() );
+    assertSame( useCase.file1Mock, rootTrees.get( 0 ) );
+    assertSame( useCase.file2Mock, rootTrees.get( 1 ) );
+    assertSame( useCase.file3Mock, rootTrees.get( 2 ) );
+    assertSame( useCase.file4Mock, rootTrees.get( 3 ) );
+  }
+
+
+  @Test
+  public void testGetDeletedFilesWithMultipleProvidersIgnoresFailedProviders()
+    throws InvalidGenericFileProviderException, OperationFailedException {
+
+    GetDeletedFilesMultipleProviderUseCase useCase = new GetDeletedFilesMultipleProviderUseCase();
+
+    doThrow( mock( OperationFailedException.class ) )
+      .when( useCase.provider1Mock )
+      .getDeletedFiles();
+
+    List<IGenericFile> rootTrees = useCase.service.getDeletedFiles();
+
+    // ---
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( useCase.file3Mock, rootTrees.get( 0 ) );
+    assertSame( useCase.file4Mock, rootTrees.get( 1 ) );
+  }
+  // endregion
 }

@@ -23,6 +23,8 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
+import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.genericfile.messages.Messages;
@@ -88,6 +90,8 @@ public class RepositoryFileProviderTest {
     public final RepositoryFileDto testFile1;
     @NonNull
     public final RepositoryFileDto testFolder2;
+    @NonNull
+    public final RepositoryFileDto testDeletedFile3;
 
     public NativeDtoRepositoryScenario() {
       rootFolder = createNativeFileDto( ROOT_PATH, "", true );
@@ -112,6 +116,8 @@ public class RepositoryFileProviderTest {
       ) );
 
       rootTree.setChildren( Arrays.asList( homeTree, publicTree ) );
+
+      testDeletedFile3 = createSampleTestDeletedFile3();
     }
 
     @NonNull
@@ -119,8 +125,8 @@ public class RepositoryFileProviderTest {
       RepositoryFileDto testFile1 = createNativeFileDto( "/public/testFile1", "testFile1", false );
       testFile1.setHidden( true );
 
-      String ellapsedMilliseconds = "100";
-      testFile1.setLastModifiedDate( ellapsedMilliseconds );
+      String elapsedMilliseconds = "100";
+      testFile1.setLastModifiedDate( elapsedMilliseconds );
 
       testFile1.setId( "Test File 1 Id" );
       testFile1.setTitle( "Test File 1 title" );
@@ -133,14 +139,33 @@ public class RepositoryFileProviderTest {
     private static RepositoryFileDto createSampleTestFolder2() {
       RepositoryFileDto testFolder2 = createNativeFileDto( "/public/testFolder2", "testFolder2", true );
 
-      String ellapsedMilliseconds = "200";
-      testFolder2.setLastModifiedDate( ellapsedMilliseconds );
+      String elapsedMilliseconds = "200";
+      testFolder2.setLastModifiedDate( elapsedMilliseconds );
 
       testFolder2.setId( "Test Folder 2 Id" );
       testFolder2.setTitle( "Test Folder 2 title" );
       testFolder2.setDescription( "Test Folder 2 description" );
 
       return testFolder2;
+    }
+
+    @NonNull
+    private static RepositoryFileDto createSampleTestDeletedFile3() {
+      RepositoryFileDto testDeletedFile3 = createNativeFileDto( "/home/userA/.trash/pho:1234/deletedFile3", "deletedFile3", false );
+      testDeletedFile3.setOriginalParentFolderPath( "/public" );
+      testDeletedFile3.setCreatorId( "userB" );
+
+      String elapsedMilliseconds = "300";
+      testDeletedFile3.setLastModifiedDate( elapsedMilliseconds );
+
+      String deletedMilliseconds = "400";
+      testDeletedFile3.setDeletedDate( deletedMilliseconds );
+
+      testDeletedFile3.setId( "Test Deleted File 3 Id" );
+      testDeletedFile3.setTitle( "Test Deleted File 3 title" );
+      testDeletedFile3.setDescription( "Test Deleted File 3 description" );
+
+      return testDeletedFile3;
     }
   }
 
@@ -291,6 +316,22 @@ public class RepositoryFileProviderTest {
       IGenericFolder folder = (IGenericFolder) file;
       assertTrue( folder.isCanAddChildren() );
     }
+  }
+
+  @NonNull
+  private RepositoryFileAcl createMockFileOwner( String owner ) {
+    RepositoryFileAcl acl = mock( RepositoryFileAcl.class );
+
+    RepositoryFileSid ownerSid = mock( RepositoryFileSid.class );
+    doReturn( owner )
+      .when( ownerSid )
+      .getName();
+
+    doReturn( ownerSid )
+      .when( acl )
+      .getOwner();
+
+    return acl;
   }
   // endregion
 
@@ -588,6 +629,45 @@ public class RepositoryFileProviderTest {
     assertEquals( new Date( 200 ), file.getModifiedDate() );
 
     assertRegularCapabilities( file );
+  }
+  // endregion
+
+  // region getDeletedFiles
+  @Test
+  public void getDeletedFilesTestDeletedFile3HasExpectedProperties() {
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( Collections.singletonList( scenario.testDeletedFile3 ) )
+      .when( fileServiceMock )
+      .doGetDeletedFiles();
+
+    String expectedOwner = "userA";
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( createMockFileOwner( expectedOwner ) )
+      .when( repositoryMock )
+      .getAcl( scenario.testDeletedFile3.getId() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    List<IGenericFile> deletedFiles = repositoryProvider.getDeletedFiles();
+
+    assertNotNull( deletedFiles );
+    assertEquals( 1, deletedFiles.size() );
+
+    IGenericFile deletedFile = deletedFiles.get( 0 );
+    assertEquals( scenario.testDeletedFile3.getPath(), deletedFile.getPath() );
+    assertEquals( scenario.testDeletedFile3.getCreatorId(), deletedFile.getDeletedBy() );
+    assertEquals( expectedOwner, deletedFile.getOwner() );
+
+    Date expectedDeletedDate = new Date( Integer.parseInt( scenario.testDeletedFile3.getDeletedDate() ) );
+    assertEquals( expectedDeletedDate, deletedFile.getDeletedDate() );
+
+    List<IGenericFile> originalLocations = deletedFile.getOriginalLocation();
+    assertEquals( 2, originalLocations.size() );
+
+    assertEquals( ROOT_PATH, originalLocations.get( 0 ).getPath() );
+    assertEquals( "/public", originalLocations.get( 1 ).getPath() );
   }
   // endregion
 }
