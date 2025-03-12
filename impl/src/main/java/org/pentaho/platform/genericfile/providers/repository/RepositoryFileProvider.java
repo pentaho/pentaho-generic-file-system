@@ -61,6 +61,7 @@ import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPa
 
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
   public static final String ROOT_PATH = "/";
+  public static final String FOLDER_NAME_TRASH = ".trash";
 
   // Ignore Sonar rule regarding field name convention. There's no way to mark the field as final due to lazy
   // initialization. Correctly using the name convention for constants.
@@ -490,6 +491,34 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         return repositoryObject;
       } )
       .collect( Collectors.toList() );
+  }
+
+  @Override
+  public void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException {
+    String fileId = getTrashFileId( path );
+
+    try {
+      fileService.doDeleteFilesPermanent( fileId );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException {
+    List<String> segments = path.getSegments();
+
+    for ( int i = 0; i < segments.size(); i++ ) {
+      if ( FOLDER_NAME_TRASH.equals( segments.get( i ) ) && i + 1 < segments.size() ) {
+        String segment = segments.get( i + 1 );
+        int colonIndex = segment.indexOf( ':' );
+
+        if ( colonIndex != -1 ) {
+          return segment.substring( colonIndex + 1 );
+        }
+      }
+    }
+
+    throw new InvalidPathException( "File ID not found in the path." );
   }
 
   private String getParentPath( RepositoryFileDto fileDto ) {

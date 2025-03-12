@@ -199,4 +199,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   default List<IGenericFile> getDeletedFiles() throws OperationFailedException {
     return Collections.emptyList();
   }
+
+  /**
+   * Permanently deletes a file given its path.
+   *
+   * @param path The path of the file to be permanently deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

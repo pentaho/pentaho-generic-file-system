@@ -89,6 +89,11 @@ class IGenericFileServiceTest {
     public List<IGenericFile> getDeletedFiles() {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void deleteFilesPermanently( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

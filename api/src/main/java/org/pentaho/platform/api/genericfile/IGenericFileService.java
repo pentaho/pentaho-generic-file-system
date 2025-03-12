@@ -289,4 +289,13 @@ public interface IGenericFileService {
    */
   @NonNull
   List<IGenericFile> getDeletedFiles() throws OperationFailedException;
+
+  /**
+   * Permanently deletes files given their paths.
+   *
+   * @param paths The list of file paths to be permanently deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void deleteFilesPermanently( @NonNull List<GenericFilePath> paths ) throws OperationFailedException;
 }
