@@ -151,7 +151,8 @@ public class RepositoryFileProviderTest {
 
     @NonNull
     private static RepositoryFileDto createSampleTestDeletedFile3() {
-      RepositoryFileDto testDeletedFile3 = createNativeFileDto( "/home/userA/.trash/pho:1234/deletedFile3", "deletedFile3", false );
+      RepositoryFileDto testDeletedFile3 =
+        createNativeFileDto( "/home/userA/.trash/pho:1234/deletedFile3", "deletedFile3", false );
       testDeletedFile3.setOriginalParentFolderPath( "/public" );
       testDeletedFile3.setCreatorId( "userB" );
 

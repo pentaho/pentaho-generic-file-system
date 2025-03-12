@@ -248,10 +248,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-
     Objects.requireNonNull( path );
 
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = null;
+
     if ( owns( path ) ) {
       repositoryFile = unifiedRepository.getFile( path.toString() );
     }

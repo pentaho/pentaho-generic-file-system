@@ -71,9 +71,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param options The operation options.
    * @return The file tree.
-   * @throws NotFoundException If the specified base file does not exist, is not a folder, or the current user is not
-   *                           allowed to read it.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not
+   *                                  allowed to read it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getTree(GetTreeOptions)
    */
@@ -89,7 +90,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param options The operation options.
    * @return A list of the real root trees provided by this provider.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getRootTrees(GetTreeOptions)
    */
@@ -99,7 +100,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Clears the cache of trees, for the current user session.
    *
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see #getTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
@@ -111,7 +112,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -152,10 +153,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Checks whether a generic file exists and the current user has the specified permissions on it.
    *
-   * @param path The string representation of the path of the generic folder to create.
+   * @param path        The string representation of the path of the generic folder to create.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
