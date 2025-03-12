@@ -1121,8 +1121,8 @@ public class BaseGenericFileProviderTest {
 
     assertNotNull( pvfsTree.getChildren() );
     doReturn( List.of(
-      pvfsTree.getChildren().get( 0),
-      pvfsTree.getChildren().get( 1),
+      pvfsTree.getChildren().get( 0 ),
+      pvfsTree.getChildren().get( 1 ),
       repoTree
     ) )
       .when( provider )
@@ -1183,8 +1183,8 @@ public class BaseGenericFileProviderTest {
 
     assertNotNull( pvfsTree.getChildren() );
     doReturn( List.of(
-      pvfsTree.getChildren().get( 0),
-      pvfsTree.getChildren().get( 1),
+      pvfsTree.getChildren().get( 0 ),
+      pvfsTree.getChildren().get( 1 ),
       repoTree
     ) )
       .when( provider )

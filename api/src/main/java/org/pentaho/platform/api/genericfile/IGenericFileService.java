@@ -24,11 +24,8 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 
 /**
  * The {@code IGenericFileService} interface contains operations to access and modify generic files.
@@ -41,10 +38,10 @@ public interface IGenericFileService {
   /**
    * Clears the cache of file trees, for all generic file providers, for the current user session.
    *
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see #getTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
-   * @throws AccessControlException If the current user cannot perform this operation.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void clearTreeCache() throws OperationFailedException;
 
@@ -79,9 +76,10 @@ public interface IGenericFileService {
    *
    * @param options The operation options.
    * @return A file tree.
-   * @throws NotFoundException If the specified base file does not exist, is not a folder, or the current user is not
-   *                           allowed to read it.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not
+   *                                  allowed to read it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
@@ -101,7 +99,7 @@ public interface IGenericFileService {
    *
    * @param options The operation options. The {@link GetTreeOptions#getBasePath() base path option} is ignored.
    * @return A list of the real root trees.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
@@ -112,7 +110,7 @@ public interface IGenericFileService {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -121,13 +119,14 @@ public interface IGenericFileService {
    * Checks whether a generic file exists and is a folder, given its path's string representation.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #doesFolderExist(GenericFilePath)} with the result.
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #doesFolderExist(GenericFilePath)} with the
+   * result.
    *
    * @param path The string representation of the path of the generic file.
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   default boolean doesFolderExist( @NonNull String path ) throws OperationFailedException {
@@ -147,9 +146,11 @@ public interface IGenericFileService {
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws InvalidPathException      If the folder path is not valid.
-   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using this service (e.g. connections, buckets);
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
    *                                   if the path or its longest existing prefix does not reference a folder;
-   *                                   if the path does not exist and the current user is not allowed to create folders on
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   folders on
    *                                   the folder denoted by its longest existing prefix.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
@@ -163,7 +164,8 @@ public interface IGenericFileService {
    * creating it if necessary, and allowed.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #createFolder(GenericFilePath)} with the result.
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #createFolder(GenericFilePath)} with the
+   * result.
    * <p>
    * When the operation is successful, the folder tree session cache for the generic file provider owning the folder is
    * automatically cleared.
@@ -192,10 +194,10 @@ public interface IGenericFileService {
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #hasAccess(GenericFilePath, EnumSet)} with the
    * result.
    *
-   * @param path The string representation of the path of the generic file.
+   * @param path        The string representation of the path of the generic file.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   default boolean hasAccess( @NonNull String path, @NonNull EnumSet<GenericFilePermission> permissions )
@@ -205,10 +207,11 @@ public interface IGenericFileService {
 
   /**
    * Checks whether a generic file exists and the current user has the specified permissions on it.
-   * @param path The path of the generic file.
+   *
+   * @param path        The path of the generic file.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )

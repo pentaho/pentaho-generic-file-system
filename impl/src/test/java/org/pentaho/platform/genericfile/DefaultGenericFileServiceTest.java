@@ -232,11 +232,11 @@ public class DefaultGenericFileServiceTest {
     public GetRootTreesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
       tree1Mock = mock( IGenericFileTree.class );
       tree2Mock = mock( IGenericFileTree.class );
-      doReturn( List.of( tree1Mock, tree2Mock) ).when( provider1Mock ).getRootTrees( any( GetTreeOptions.class ) );
+      doReturn( List.of( tree1Mock, tree2Mock ) ).when( provider1Mock ).getRootTrees( any( GetTreeOptions.class ) );
 
       tree3Mock = mock( IGenericFileTree.class );
       tree4Mock = mock( IGenericFileTree.class );
-      doReturn( List.of( tree3Mock, tree4Mock) ).when( provider2Mock ).getRootTrees( any( GetTreeOptions.class ) );
+      doReturn( List.of( tree3Mock, tree4Mock ) ).when( provider2Mock ).getRootTrees( any( GetTreeOptions.class ) );
 
       optionsMock = mock( GetTreeOptions.class );
     }
@@ -298,7 +298,6 @@ public class DefaultGenericFileServiceTest {
 
   @Test
   public void testGetFile() throws Exception {
-
     GetFileMultipleProviderUseCase useCase = new GetFileMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
@@ -319,7 +318,8 @@ public class DefaultGenericFileServiceTest {
     public final IGenericFile file3Mock;
     public final IGenericFile file4Mock;
 
-    public GetDeletedFilesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+    public GetDeletedFilesMultipleProviderUseCase()
+      throws OperationFailedException, InvalidGenericFileProviderException {
       file1Mock = mock( IGenericFile.class );
       file2Mock = mock( IGenericFile.class );
       doReturn( List.of( file1Mock, file2Mock ) ).when( provider1Mock ).getDeletedFiles();
@@ -347,7 +347,6 @@ public class DefaultGenericFileServiceTest {
     assertSame( useCase.file3Mock, rootTrees.get( 2 ) );
     assertSame( useCase.file4Mock, rootTrees.get( 3 ) );
   }
-
 
   @Test
   public void testGetDeletedFilesWithMultipleProvidersIgnoresFailedProviders()
