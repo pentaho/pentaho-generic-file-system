@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
+import org.pentaho.platform.api.genericfile.exception.BatchDeleteOperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -34,6 +36,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -366,6 +369,78 @@ public class DefaultGenericFileServiceTest {
     assertEquals( 2, rootTrees.size() );
     assertSame( useCase.file3Mock, rootTrees.get( 0 ) );
     assertSame( useCase.file4Mock, rootTrees.get( 1 ) );
+  }
+  // endregion
+
+  // region deleteFilePermanently
+  private static class DeleteFilesPermanentlyMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public DeleteFilesPermanentlyMultipleProviderUseCase()
+      throws OperationFailedException, InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  public void testDeleteFilesPermanentlySuccess() throws Exception {
+    DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
+
+    useCase.service.deleteFilesPermanently( Arrays.asList( useCase.path1, useCase.path2 ) );
+
+    verify( useCase.provider1Mock ).deleteFilePermanently( useCase.path1 );
+    verify( useCase.provider2Mock ).deleteFilePermanently( useCase.path2 );
+  }
+
+  @Test
+  public void testDeleteFilePermanentlyPathNotFound() throws Exception {
+    DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    BatchDeleteOperationFailedException exception = assertThrows( BatchDeleteOperationFailedException.class,
+      () -> useCase.service.deleteFilesPermanently( Collections.singletonList( useCase.path1 ) ) );
+
+    Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
+
+    assertEquals( "Error(s) occurred during deletion.", exception.getMessage() );
+    assertNotNull( failedFiles );
+    assertFalse( failedFiles.isEmpty() );
+    assertEquals( 1, failedFiles.size() );
+    assertTrue( failedFiles.containsKey( useCase.path1 ) );
+    assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
+    verify( useCase.provider1Mock, never() ).deleteFilePermanently( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  public void testDeleteFilesPermanentlyException() throws Exception {
+    DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Deletion failed." ) ).when( useCase.provider1Mock )
+      .deleteFilePermanently( useCase.path1 );
+
+    BatchDeleteOperationFailedException exception = assertThrows( BatchDeleteOperationFailedException.class, () ->
+      useCase.service.deleteFilesPermanently( Arrays.asList( useCase.path1, useCase.path2 ) )
+    );
+
+    Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
+
+    assertEquals( "Error(s) occurred during deletion.", exception.getMessage() );
+    assertNotNull( failedFiles );
+    assertFalse( failedFiles.isEmpty() );
+    assertEquals( 1, failedFiles.size() );
+    assertTrue( failedFiles.containsKey( useCase.path1 ) );
+    assertEquals( "Deletion failed.", failedFiles.get( useCase.path1 ).getMessage() );
+    verify( useCase.provider1Mock ).deleteFilePermanently( useCase.path1 );
+    verify( useCase.provider2Mock ).deleteFilePermanently( useCase.path2 );
   }
   // endregion
 }

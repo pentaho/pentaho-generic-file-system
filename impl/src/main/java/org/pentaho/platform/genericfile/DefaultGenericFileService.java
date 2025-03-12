@@ -20,6 +20,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.BatchDeleteOperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
@@ -234,5 +235,29 @@ public class DefaultGenericFileService implements IGenericFileService {
     }
 
     return deletedFiles;
+  }
+
+  @Override
+  public void deleteFilesPermanently( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+    BatchDeleteOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        getOwnerFileProvider( path )
+          .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
+          .deleteFilePermanently( path );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException =
+            new BatchDeleteOperationFailedException( "Error(s) occurred during deletion." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
   }
 }
