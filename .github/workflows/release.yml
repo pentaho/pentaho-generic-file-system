@@ -14,7 +14,7 @@ jobs:
       base_version: "10.2.0.1-255"
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
-      modules_to_build: ${{ inputs.modules_to_build }}
+      modules_to_build: "."
       run_release_candidate: true
       run_snapshot: false
       add_github_run_number: false
