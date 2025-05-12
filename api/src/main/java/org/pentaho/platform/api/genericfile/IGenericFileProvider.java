@@ -217,4 +217,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Restores a file given its path.
+   *
+   * @param path The path of the file to be restored.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

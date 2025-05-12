@@ -109,6 +109,16 @@ class IGenericFileServiceTest {
     public void deleteFile(@NonNull GenericFilePath path) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void restoreFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void restoreFile(@NonNull GenericFilePath path) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

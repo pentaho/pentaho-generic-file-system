@@ -294,4 +294,33 @@ public class DefaultGenericFileService implements IGenericFileService {
       .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
       .deleteFile( path );
   }
+
+  @Override
+  public void restoreFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+    BatchOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        restoreFile( path );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException =
+            new BatchOperationFailedException( "Error(s) occurred while attempting to restore." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
+  }
+
+  @Override
+  public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    getOwnerFileProvider( path )
+      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
+      .restoreFile( path );
+  }
 }

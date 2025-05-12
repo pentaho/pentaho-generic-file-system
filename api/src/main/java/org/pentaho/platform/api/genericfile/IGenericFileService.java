@@ -332,4 +332,26 @@ public interface IGenericFileService {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Restores files, given their paths.
+   *
+   * @param paths The list of file paths to be restored. These paths must correspond to files that are in the trash/deleted.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws BatchOperationFailedException If the batch operation fails for some reason.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  void restoreFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException;
+
+  /**
+   * Restores a file, given its path.
+   *
+   * @param path The file path to be restored. This path must correspond to a file that is in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file that 
+   *                                  are in the trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }
