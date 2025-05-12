@@ -208,4 +208,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Deletes a file by sending it to the trash, given its path.
+   *
+   * @param path The path of the file to be deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }
