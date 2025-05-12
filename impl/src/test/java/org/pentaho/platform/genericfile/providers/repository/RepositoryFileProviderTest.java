@@ -705,11 +705,11 @@ public class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    InvalidPathException exception = assertThrows( InvalidPathException.class, () ->
+    NotFoundException exception = assertThrows( NotFoundException.class, () ->
       repositoryProvider.deleteFilePermanently( path )
     );
 
-    assertEquals( "File ID not found in the path.", exception.getMessage() );
+    assertEquals( "The path does not correspond to a deleted file.", exception.getMessage() );
     verify( fileServiceMock, never() ).doDeleteFilesPermanent( anyString() );
   }
 
@@ -738,35 +738,35 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTrashFileIdInvalidPathWithoutColon() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/.trash/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer" );
+    testGetTrashFileIdInvalidPath( "/home/admin/.trash/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", InvalidPathException.class );
   }
 
   @Test
   public void testGetTrashFileIdInvalidPathNoTrash() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer" );
+    testGetTrashFileIdInvalidPath( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", NotFoundException.class );
   }
 
   @Test
   public void testGetTrashFileIdInvalidPathNoTrashNoId() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/PAZReport.xanalyzer" );
+    testGetTrashFileIdInvalidPath( "/home/admin/PAZReport.xanalyzer", NotFoundException.class );
   }
 
   @Test
   public void testGetFileIdInvalidPathNoIdNoTrashFile() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/.trash/" );
+    testGetTrashFileIdInvalidPath( "/home/admin/.trash/", NotFoundException.class );
   }
 
   @Test
   public void testGetTrashFileIdInvalidPathRoot() throws Exception {
-    testGetTrashFileIdInvalidPath( "/" );
+    testGetTrashFileIdInvalidPath( "/", NotFoundException.class );
   }
 
   @Test
   public void testGetTrashFileIdInvalidPathNoTrashNoColon() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer" );
+    testGetTrashFileIdInvalidPath( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", NotFoundException.class );
   }
 
-  private void testGetTrashFileIdInvalidPath( String pathString ) throws Exception {
+  private <T extends Throwable> void testGetTrashFileIdInvalidPath( String pathString, Class<T> exceptionClass ) throws Exception {
     GenericFilePath path = GenericFilePath.parse( pathString );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -774,9 +774,13 @@ public class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    InvalidPathException exception =
-      assertThrows( InvalidPathException.class, () -> repositoryProvider.getTrashFileId( path ) );
-    Assertions.assertEquals( "File ID not found in the path.", exception.getMessage() );
+    T exception = assertThrows( exceptionClass, () -> repositoryProvider.getTrashFileId( path ) );
+
+    if ( exception instanceof NotFoundException ) {
+      assertEquals( "The path does not correspond to a deleted file.", exception.getMessage() );
+    } else if ( exception instanceof InvalidPathException ) {
+      assertEquals( "File ID not found in the path.", exception.getMessage() );
+    }
   }
 
   private void testGetTrashFileIdValidPath( String pathString, String id ) throws Exception {
@@ -788,7 +792,68 @@ public class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     String fileId = repositoryProvider.getTrashFileId( path );
-    Assertions.assertEquals( id, fileId );
+    assertEquals( id, fileId );
+  }
+  // endregion
+
+  // region deleteFile
+  @Test
+  public void testDeleteFileSuccess() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
+      + "/PAZReport.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).doDeleteFiles( any() );
+    doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    repositoryProvider.deleteFile( path );
+
+    verify( fileServiceMock, times( 1 ) ).doDeleteFiles( fileId );
+  }
+
+  @Test
+  public void testDeleteFileOperationFailed() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
+      + "/PAZReport.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).doDeleteFiles( any() );
+    doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    doThrow( new OperationFailedException() ).when( fileServiceMock ).doDeleteFiles( any() );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path ) );
+
+    verify( fileServiceMock ).doDeleteFiles( fileId );
+  }
+
+  @Test
+  public void testDeleteFileNotFound() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( null ).when( fileServiceMock ).doGetProperties( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path ) );
+
+    verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
+}
+
+  @NonNull
+  private static RepositoryFileDto createSampleFile( String id ) {
+    RepositoryFileDto file = createNativeFileDto( "/public/fileToDelete", "fileToDelete", false );
+    file.setHidden( false );
+    file.setId( id );
+    
+    return file;
   }
   // endregion
 }

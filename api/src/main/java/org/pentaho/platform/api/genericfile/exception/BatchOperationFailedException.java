@@ -6,10 +6,10 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BatchDeleteOperationFailedException extends OperationFailedException {
+public class BatchOperationFailedException extends OperationFailedException {
   private final transient Map<GenericFilePath, Exception> failedFiles;
 
-  public BatchDeleteOperationFailedException( String message ) {
+  public BatchOperationFailedException( String message ) {
     super( message );
     this.failedFiles = new HashMap<>();
   }

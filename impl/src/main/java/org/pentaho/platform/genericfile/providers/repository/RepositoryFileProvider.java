@@ -504,11 +504,26 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
-  protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException {
+  @Override
+  public void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    try {
+      fileService.doDeleteFiles( getFileId( path ) );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {
+    return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) ).getId();
+  }
+
+  protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {
+    boolean isTrash = false;
     List<String> segments = path.getSegments();
 
     for ( int i = 0; i < segments.size(); i++ ) {
       if ( FOLDER_NAME_TRASH.equals( segments.get( i ) ) && i + 1 < segments.size() ) {
+        isTrash = true;
         String segment = segments.get( i + 1 );
         int colonIndex = segment.indexOf( ':' );
 
@@ -518,7 +533,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       }
     }
 
-    throw new InvalidPathException( "File ID not found in the path." );
+    if ( isTrash ) {
+      throw new InvalidPathException( "File ID not found in the path." );
+    }
+
+    throw new NotFoundException( "The path does not correspond to a deleted file." );
   }
 
   private String getParentPath( RepositoryFileDto fileDto ) {

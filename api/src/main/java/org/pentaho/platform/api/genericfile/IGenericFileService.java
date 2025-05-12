@@ -16,6 +16,7 @@ package org.pentaho.platform.api.genericfile;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
@@ -291,11 +292,44 @@ public interface IGenericFileService {
   List<IGenericFile> getDeletedFiles() throws OperationFailedException;
 
   /**
-   * Permanently deletes files given their paths.
+   * Permanently deletes files, given their paths.
    *
-   * @param paths The list of file paths to be permanently deleted.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @param paths The list of file paths to be permanently deleted. These paths must correspond to files that are in the trash/deleted.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws BatchOperationFailedException If the batch operation fails for some reason.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   void deleteFilesPermanently( @NonNull List<GenericFilePath> paths ) throws OperationFailedException;
+
+  /**
+   * Permanently deletes a file, given its path.
+   *
+   * @param path The file path to be permanently deleted. This path must correspond to a file that is in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file that 
+   *                                  are in the trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Deletes files by sending them to the trash, given their paths.
+   *
+   * @param paths The list of file paths to be deleted.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws BatchOperationFailedException If the batch operation fails for some reason.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  void deleteFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException;
+
+  /**
+   * Deletes a file by sending it to the trash, given its path.
+   *
+   * @param path The file path to be deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }
