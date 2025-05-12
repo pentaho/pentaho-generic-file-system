@@ -856,4 +856,56 @@ public class RepositoryFileProviderTest {
     return file;
   }
   // endregion
+
+  // region restoreFile
+  @Test
+  public void testRestoreFileSuccess() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
+      + "/PAZReport.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).doRestoreFiles( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    repositoryProvider.restoreFile( path );
+
+    verify( fileServiceMock, times( 1 ) ).doRestoreFiles( repositoryProvider.getTrashFileId( path ) );
+  }
+
+  @Test
+  public void testRestoreFileInvalidPath() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
+      + "/PAZReport.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).doRestoreFiles( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    NotFoundException exception = assertThrows( NotFoundException.class, () ->
+      repositoryProvider.restoreFile( path )
+    );
+
+    assertEquals( "The path does not correspond to a deleted file.", exception.getMessage() );
+    verify( fileServiceMock, never() ).doRestoreFiles( anyString() );
+  }
+
+  @Test
+  public void testRestoreFileOperationFailed() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
+      + "/PAZReport.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).doRestoreFiles( any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    doThrow( new InternalError() ).when( fileServiceMock ).doRestoreFiles( any() );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.restoreFile( path ) );
+
+    verify( fileServiceMock ).doRestoreFiles( repositoryProvider.getTrashFileId( path ) );
+  }
+  // endregion
 }

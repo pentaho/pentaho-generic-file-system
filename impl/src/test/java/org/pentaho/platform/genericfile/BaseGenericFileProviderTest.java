@@ -90,6 +90,12 @@ public class BaseGenericFileProviderTest {
     public void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
     @NonNull
     @Override
     public Class<T> getFileClass() {

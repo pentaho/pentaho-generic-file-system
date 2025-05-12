@@ -530,4 +530,76 @@ public class DefaultGenericFileServiceTest {
     verify( useCase.provider2Mock ).deleteFile( useCase.path2 );
   }
   // endregion
+
+  // region restoreFile
+  private static class RestoreFilesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public RestoreFilesMultipleProviderUseCase()
+      throws OperationFailedException, InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  public void testRestoreFilesSuccess() throws Exception {
+    RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
+
+    useCase.service.restoreFiles( Arrays.asList( useCase.path1, useCase.path2 ) );
+
+    verify( useCase.provider1Mock ).restoreFile( useCase.path1 );
+    verify( useCase.provider2Mock ).restoreFile( useCase.path2 );
+  }
+
+  @Test
+  public void testRestoreFilePathNotFound() throws Exception {
+    RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
+      () -> useCase.service.restoreFiles( Collections.singletonList( useCase.path1 ) ) );
+
+    Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
+
+    assertEquals( "Error(s) occurred while attempting to restore.", exception.getMessage() );
+    assertNotNull( failedFiles );
+    assertFalse( failedFiles.isEmpty() );
+    assertEquals( 1, failedFiles.size() );
+    assertTrue( failedFiles.containsKey( useCase.path1 ) );
+    assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
+    verify( useCase.provider1Mock, never() ).restoreFile( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  public void testRestoreFilesException() throws Exception {
+    RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Restore failed." ) ).when( useCase.provider1Mock )
+      .restoreFile( useCase.path1 );
+
+    BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class, () ->
+      useCase.service.restoreFiles( Arrays.asList( useCase.path1, useCase.path2 ) )
+    );
+
+    Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
+
+    assertEquals( "Error(s) occurred while attempting to restore.", exception.getMessage() );
+    assertNotNull( failedFiles );
+    assertFalse( failedFiles.isEmpty() );
+    assertEquals( 1, failedFiles.size() );
+    assertTrue( failedFiles.containsKey( useCase.path1 ) );
+    assertEquals( "Restore failed.", failedFiles.get( useCase.path1 ).getMessage() );
+    verify( useCase.provider1Mock ).restoreFile( useCase.path1 );
+    verify( useCase.provider2Mock ).restoreFile( useCase.path2 );
+  }
+  // endregion
 }
