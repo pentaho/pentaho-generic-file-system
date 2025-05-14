@@ -267,12 +267,12 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public void deleteFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+  public void deleteFiles( @NonNull List<GenericFilePath> paths, boolean permanent ) throws OperationFailedException {
     BatchOperationFailedException batchException = null;
 
     for ( GenericFilePath path : paths ) {
       try {
-        deleteFile( path );
+        deleteFile( path, permanent );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
           batchException =
@@ -289,10 +289,10 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
     getOwnerFileProvider( path )
       .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .deleteFile( path );
+      .deleteFile( path, permanent );
   }
 
   @Override

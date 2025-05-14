@@ -294,7 +294,8 @@ public interface IGenericFileService {
   /**
    * Permanently deletes files, given their paths.
    *
-   * @param paths The list of file paths to be permanently deleted. These paths must correspond to files that are in the trash/deleted.
+   * @param paths The list of file paths to be permanently deleted. These paths must correspond to files that are in
+   *              the trash/deleted.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -304,39 +305,72 @@ public interface IGenericFileService {
   /**
    * Permanently deletes a file, given its path.
    *
-   * @param path The file path to be permanently deleted. This path must correspond to a file that is in the trash/deleted.
+   * @param path The file path to be permanently deleted. This path must correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file that 
-   *                                  are in the trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Deletes files by sending them to the trash, given their paths.
+   * Deletes files, given their paths, by sending them to the trash or permanently deleting them, depending on the
+   * value of the {@code permanent} variable.
    *
-   * @param paths The list of file paths to be deleted.
+   * @param paths     The list of file paths to be deleted. These paths must not correspond to files that are in the
+   *                  trash/deleted.
+   * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
-  void deleteFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException;
+  void deleteFiles( @NonNull List<GenericFilePath> paths, boolean permanent ) throws OperationFailedException;
 
   /**
-   * Deletes a file by sending it to the trash, given its path.
+   * Deletes files, given their paths, by sending them to the trash.
    *
-   * @param path The file path to be deleted.
+   * @param paths The list of file paths to be deleted. These paths must not correspond to files that are in the
+   *              trash/deleted.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws BatchOperationFailedException If the batch operation fails for some reason.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  default void deleteFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+    deleteFiles( paths, false );
+  }
+
+  /**
+   * Deletes a file, given its path, by sending it to the trash or permanently deleting it, depending on the value of
+   * the {@code permanent} variable.
+   *
+   * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
+   *                                  access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+  void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException;
+
+  /**
+   * Deletes a file, given its path, by sending it to the trash.
+   *
+   * @param path The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
+   *                                  access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  default void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    deleteFile( path, false );
+  }
 
   /**
    * Restores files, given their paths.
    *
-   * @param paths The list of file paths to be restored. These paths must correspond to files that are in the trash/deleted.
+   * @param paths The list of file paths to be restored. These paths must correspond to files that are in the
+   *              trash/deleted.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -346,11 +380,11 @@ public interface IGenericFileService {
   /**
    * Restores a file, given its path.
    *
-   * @param path The file path to be restored. This path must correspond to a file that is in the trash/deleted.
+   * @param path The file path to be restored. This path must correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file that 
-   *                                  are in the trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;

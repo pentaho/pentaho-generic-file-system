@@ -505,9 +505,17 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
     try {
-      fileService.doDeleteFiles( getFileId( path ) );
+      String fileId = getFileId( path );
+
+      if ( permanent ) {
+        fileService.doDeleteFilesPermanent( fileId );
+      } else {
+        fileService.doDeleteFiles( fileId );
+      }
+    } catch ( FileNotFoundException e ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }

@@ -87,7 +87,7 @@ public class BaseGenericFileProviderTest {
     }
 
     @Override
-    public void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

@@ -13,6 +13,8 @@
 package org.pentaho.platform.genericfile;
 
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
@@ -477,24 +479,26 @@ public class DefaultGenericFileServiceTest {
     }
   }
 
-  @Test
-  public void testDeleteFilesSuccess() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFilesSuccess( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
-    useCase.service.deleteFiles( Arrays.asList( useCase.path1, useCase.path2 ) );
+    useCase.service.deleteFiles( Arrays.asList( useCase.path1, useCase.path2 ), permanent );
 
-    verify( useCase.provider1Mock ).deleteFile( useCase.path1 );
-    verify( useCase.provider2Mock ).deleteFile( useCase.path2 );
+    verify( useCase.provider1Mock ).deleteFile( useCase.path1, permanent );
+    verify( useCase.provider2Mock ).deleteFile( useCase.path2, permanent );
   }
 
-  @Test
-  public void testDeleteFilePathNotFound() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFilePathNotFound( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
-      () -> useCase.service.deleteFiles( Collections.singletonList( useCase.path1 ) ) );
+      () -> useCase.service.deleteFiles( Collections.singletonList( useCase.path1 ), permanent ) );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
 
@@ -504,18 +508,19 @@ public class DefaultGenericFileServiceTest {
     assertEquals( 1, failedFiles.size() );
     assertTrue( failedFiles.containsKey( useCase.path1 ) );
     assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock, never() ).deleteFile( any( GenericFilePath.class ) );
+    verify( useCase.provider1Mock, never() ).deleteFile( any( GenericFilePath.class ), permanent );
   }
 
-  @Test
-  public void testDeleteFilesException() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFilesException( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Deletion failed." ) ).when( useCase.provider1Mock )
-      .deleteFile( useCase.path1 );
+      .deleteFile( useCase.path1, permanent );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class, () ->
-      useCase.service.deleteFiles( Arrays.asList( useCase.path1, useCase.path2 ) )
+      useCase.service.deleteFiles( Arrays.asList( useCase.path1, useCase.path2 ), permanent )
     );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
@@ -526,8 +531,8 @@ public class DefaultGenericFileServiceTest {
     assertEquals( 1, failedFiles.size() );
     assertTrue( failedFiles.containsKey( useCase.path1 ) );
     assertEquals( "Deletion failed.", failedFiles.get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock ).deleteFile( useCase.path1 );
-    verify( useCase.provider2Mock ).deleteFile( useCase.path2 );
+    verify( useCase.provider1Mock ).deleteFile( useCase.path1, permanent );
+    verify( useCase.provider2Mock ).deleteFile( useCase.path2, permanent );
   }
   // endregion
 
