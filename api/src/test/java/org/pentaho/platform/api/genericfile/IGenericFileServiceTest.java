@@ -96,17 +96,17 @@ class IGenericFileServiceTest {
     }
 
     @Override
-    public void deleteFilePermanently(@NonNull GenericFilePath path) throws OperationFailedException {
+    public void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteFiles( @NonNull List<GenericFilePath> paths ) throws OperationFailedException {
+    public void deleteFiles( @NonNull List<GenericFilePath> paths, boolean permanent ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteFile(@NonNull GenericFilePath path) throws OperationFailedException {
+    public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -116,7 +116,7 @@ class IGenericFileServiceTest {
     }
 
     @Override
-    public void restoreFile(@NonNull GenericFilePath path) throws OperationFailedException {
+    public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
   }

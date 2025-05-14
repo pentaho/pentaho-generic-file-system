@@ -201,27 +201,40 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   }
 
   /**
-   * Permanently deletes a file given its path.
+   * Permanently deletes a file, given its path.
    *
-   * @param path The path of the file to be permanently deleted.
+   * @param path The file path to be permanently deleted. This path must correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Deletes a file by sending it to the trash, given its path.
+   * Deletes a file, given its path, by sending it to the trash or permanently deleting it, depending on the value of
+   * the {@code permanent} variable.
    *
-   * @param path The path of the file to be deleted.
+   * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+  void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException;
 
   /**
-   * Restores a file given its path.
+   * Deletes a file, given its path, by sending it to the trash.
    *
-   * @param path The path of the file to be restored.
+   * @param path The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  default void deleteFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    deleteFile( path, false );
+  }
+
+  /**
+   * Restores a file, given its path.
+   *
+   * @param path The file path to be restored. This path must correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */

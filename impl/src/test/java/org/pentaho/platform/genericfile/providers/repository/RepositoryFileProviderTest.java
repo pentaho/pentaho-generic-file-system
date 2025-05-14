@@ -16,6 +16,8 @@ package org.pentaho.platform.genericfile.providers.repository;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
@@ -797,8 +799,9 @@ public class RepositoryFileProviderTest {
   // endregion
 
   // region deleteFile
-  @Test
-  public void testDeleteFileSuccess() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFileSuccess( boolean permanent ) throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
@@ -809,13 +812,14 @@ public class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    repositoryProvider.deleteFile( path );
+    repositoryProvider.deleteFile( path, permanent );
 
     verify( fileServiceMock, times( 1 ) ).doDeleteFiles( fileId );
   }
 
-  @Test
-  public void testDeleteFileOperationFailed() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFileOperationFailed( boolean permanent ) throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
@@ -828,13 +832,14 @@ public class RepositoryFileProviderTest {
 
     doThrow( new OperationFailedException() ).when( fileServiceMock ).doDeleteFiles( any() );
 
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
     verify( fileServiceMock ).doDeleteFiles( fileId );
   }
 
-  @Test
-  public void testDeleteFileNotFound() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  public void testDeleteFileNotFound( boolean permanent ) throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -842,7 +847,7 @@ public class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
     verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
 }
