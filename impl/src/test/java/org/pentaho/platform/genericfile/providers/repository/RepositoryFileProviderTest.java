@@ -15,7 +15,6 @@ package org.pentaho.platform.genericfile.providers.repository;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
@@ -740,12 +739,14 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTrashFileIdInvalidPathWithoutColon() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/.trash/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", InvalidPathException.class );
+    testGetTrashFileIdInvalidPath( "/home/admin/.trash/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
+      InvalidPathException.class );
   }
 
   @Test
   public void testGetTrashFileIdInvalidPathNoTrash() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", NotFoundException.class );
+    testGetTrashFileIdInvalidPath( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
+      NotFoundException.class );
   }
 
   @Test
@@ -765,10 +766,12 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTrashFileIdInvalidPathNoTrashNoColon() throws Exception {
-    testGetTrashFileIdInvalidPath( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer", NotFoundException.class );
+    testGetTrashFileIdInvalidPath( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
+      NotFoundException.class );
   }
 
-  private <T extends Throwable> void testGetTrashFileIdInvalidPath( String pathString, Class<T> exceptionClass ) throws Exception {
+  private <T extends Throwable> void testGetTrashFileIdInvalidPath( String pathString, Class<T> exceptionClass )
+    throws Exception {
     GenericFilePath path = GenericFilePath.parse( pathString );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -850,14 +853,14 @@ public class RepositoryFileProviderTest {
     assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
     verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
-}
+  }
 
   @NonNull
   private static RepositoryFileDto createSampleFile( String id ) {
     RepositoryFileDto file = createNativeFileDto( "/public/fileToDelete", "fileToDelete", false );
     file.setHidden( false );
     file.setId( id );
-    
+
     return file;
   }
   // endregion

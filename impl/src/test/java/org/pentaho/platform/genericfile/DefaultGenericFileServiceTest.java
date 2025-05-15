@@ -420,7 +420,7 @@ public class DefaultGenericFileServiceTest {
     assertEquals( 1, failedFiles.size() );
     assertTrue( failedFiles.containsKey( useCase.path1 ) );
     assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
-    assertEquals( NotFoundException.class, exception.getSuppressed()[0].getClass() );
+    assertEquals( NotFoundException.class, exception.getSuppressed()[ 0 ].getClass() );
     verify( useCase.provider1Mock, never() ).deleteFilePermanently( any( GenericFilePath.class ) );
   }
 
