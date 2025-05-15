@@ -16,6 +16,7 @@ import java.io.InputStream;
 
 // NOTE: Designed after the class
 // {@code org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper}.
+
 /**
  * The {@code IGenericFileContentWrapper} interface contains the necessary information for returning a
  * {@code IGenericFile}'s content.

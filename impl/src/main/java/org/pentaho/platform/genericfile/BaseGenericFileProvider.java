@@ -221,8 +221,8 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   }
 
   /**
-   * Recursively adds children to the given tree up to a given depth. If expandedMaxDepth is less than 1 or the tree root is
-   * not a folder, then nothing is done.
+   * Recursively adds children to the given tree up to a given depth. If expandedMaxDepth is less than 1 or the tree
+   * root is not a folder, then nothing is done.
    *
    * @param tree             The tree to which children will be added.
    * @param options          The get tree options.

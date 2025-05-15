@@ -203,7 +203,7 @@ class GetTreeOptionsTest {
     void testAcceptsNullGenericPathList() throws InvalidPathException {
       GetTreeOptions options = new GetTreeOptions();
 
-      List<GenericFilePath> initialPaths = List.of( GenericFilePath.parseRequired( "/" ));
+      List<GenericFilePath> initialPaths = List.of( GenericFilePath.parseRequired( "/" ) );
       options.setExpandedPaths( initialPaths );
 
       options.setExpandedPaths( null );
@@ -272,7 +272,8 @@ class GetTreeOptionsTest {
   }
 
   /**
-   * Tests the {@link GetTreeOptions#getExpandedMaxDepth()} and {@link GetTreeOptions#setExpandedMaxDepth(Integer)} methods.
+   * Tests the {@link GetTreeOptions#getExpandedMaxDepth()} and {@link GetTreeOptions#setExpandedMaxDepth(Integer)}
+   * methods.
    */
   @Nested
   class ExpandedMaxDepthTests {

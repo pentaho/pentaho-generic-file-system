@@ -62,6 +62,7 @@ public class GetTreeOptions {
 
     /**
      * Returns true if the file type passes the filter
+     *
      * @param isFolder
      * @return
      */
@@ -90,6 +91,7 @@ public class GetTreeOptions {
 
   /**
    * Copy constructor.
+   *
    * @param other The options instance from which to initialize this instance.
    */
   public GetTreeOptions( @NonNull GetTreeOptions other ) {
@@ -297,6 +299,7 @@ public class GetTreeOptions {
    * Gets a value that indicates whether hidden files are included in the result.
    * <p>
    * Defaults to {@code false}.
+   *
    * @return {@code true} to include hidden files; {@code false}, otherwise.
    */
   public boolean isIncludeHidden() {
