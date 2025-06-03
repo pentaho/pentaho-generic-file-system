@@ -607,4 +607,60 @@ public class DefaultGenericFileServiceTest {
     verify( useCase.provider2Mock ).restoreFile( useCase.path2 );
   }
   // endregion
+
+  // region renameFile
+  private static class RenameFilesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public RenameFilesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  public void testRenameFilesSuccess() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    useCase.service.renameFile( useCase.path1, "newName1" );
+    useCase.service.renameFile( useCase.path2, "newName2" );
+
+    verify( useCase.provider1Mock ).renameFile( useCase.path1, "newName1" );
+    verify( useCase.provider2Mock ).renameFile( useCase.path2, "newName2" );
+  }
+
+  @Test
+  public void testRenameFilePathNotFound() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.renameFile( useCase.path1, "newName" ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).renameFile( any( GenericFilePath.class ), any() );
+  }
+
+  @Test
+  public void testRenameFileException() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Rename failed." ) ).when( useCase.provider1Mock )
+      .renameFile( useCase.path1, "newName" );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.renameFile( useCase.path1, "newName" ) );
+
+    assertEquals( "Rename failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).renameFile( useCase.path1, "newName" );
+  }
+  // endregion
 }

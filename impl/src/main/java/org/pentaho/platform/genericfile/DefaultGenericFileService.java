@@ -323,4 +323,11 @@ public class DefaultGenericFileService implements IGenericFileService {
       .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
       .restoreFile( path );
   }
+
+  @Override
+  public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    getOwnerFileProvider( path )
+      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
+      .renameFile( path, newName );
+  }
 }

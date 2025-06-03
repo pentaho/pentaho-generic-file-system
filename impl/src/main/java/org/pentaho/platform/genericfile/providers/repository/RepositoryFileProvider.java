@@ -532,6 +532,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @Override
+  public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    try {
+      if ( !fileService.isValidFileName( newName ) ) {
+        throw new IllegalArgumentException( "Invalid name to rename the file: " + newName );
+      }
+
+      boolean success = fileService.doRename( getFileId( path ), newName );
+
+      if ( !success ) {
+        throw new OperationFailedException( String.format( "Failed to rename file '%s' to '%s'.", path, newName ) );
+      }
+    } catch ( OperationFailedException e ) {
+      throw e;
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
   protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {
     return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) ).getId();
   }

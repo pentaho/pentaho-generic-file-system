@@ -388,4 +388,17 @@ public interface IGenericFileService {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Renames a file, given its path and the new name.
+   *
+   * @param path    The file path to be renamed. This path must not correspond to a file in the trash/deleted.
+   * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
 }

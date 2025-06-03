@@ -119,6 +119,11 @@ class IGenericFileServiceTest {
     public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**
