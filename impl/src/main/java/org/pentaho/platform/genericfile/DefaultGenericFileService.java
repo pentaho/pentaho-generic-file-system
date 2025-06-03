@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class DefaultGenericFileService implements IGenericFileService {
 
@@ -162,49 +161,41 @@ public class DefaultGenericFileService implements IGenericFileService {
     throws OperationFailedException {
 
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
-    return getOwnerFileProvider( basePath )
-      .orElseThrow( () -> new NotFoundException( String.format( "Base path not found '%s'.", basePath ) ) )
-      .getTree( options );
+    return getOwnerFileProvider( basePath ).getTree( options );
   }
 
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
-
-    return fileProvider.isPresent() && fileProvider.get().doesFolderExist( path );
+    return getOwnerFileProvider( path ).doesFolderExist( path );
   }
 
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path )
-      .orElseThrow( NotFoundException::new )
-      .createFolder( path );
+    return getOwnerFileProvider( path ).createFolder( path );
   }
 
   @Override
   @NonNull
   public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFileContentWrapper( path );
+    return getOwnerFileProvider( path ).getFileContentWrapper( path );
   }
 
   @Override
   @NonNull
-  public IGenericFile getFile( @NonNull GenericFilePath path )
-    throws OperationFailedException {
-    return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFile( path );
+  public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFile( path );
   }
 
-  private Optional<IGenericFileProvider<?>> getOwnerFileProvider( @NonNull GenericFilePath path ) {
+  private IGenericFileProvider<?> getOwnerFileProvider( @NonNull GenericFilePath path ) throws NotFoundException {
     return fileProviders.stream()
       .filter( fileProvider -> fileProvider.owns( path ) )
-      .findFirst();
+      .findFirst()
+      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) );
   }
 
   @Override
   public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
     throws OperationFailedException {
-    Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
-
-    return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );
+    return getOwnerFileProvider( path ).hasAccess( path, permissions );
   }
 
   @Override
@@ -261,9 +252,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .deleteFilePermanently( path );
+    getOwnerFileProvider( path ).deleteFilePermanently( path );
   }
 
   @Override
@@ -290,9 +279,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .deleteFile( path, permanent );
+    getOwnerFileProvider( path ).deleteFile( path, permanent );
   }
 
   @Override
@@ -319,15 +306,11 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .restoreFile( path );
+    getOwnerFileProvider( path ).restoreFile( path );
   }
 
   @Override
   public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .renameFile( path, newName );
+    getOwnerFileProvider( path ).renameFile( path, newName );
   }
 }

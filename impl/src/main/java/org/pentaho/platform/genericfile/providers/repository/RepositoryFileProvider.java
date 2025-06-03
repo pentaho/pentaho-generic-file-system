@@ -550,6 +550,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new OperationFailedException( e );
     }
   }
+
   protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {
     return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) ).getId();
   }
