@@ -100,6 +100,17 @@ public class BaseGenericFileProviderTest {
     public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IGenericFile getRootProperties() throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
     @NonNull
     @Override
     public Class<T> getFileClass() {

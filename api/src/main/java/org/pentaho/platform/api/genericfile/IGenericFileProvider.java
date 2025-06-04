@@ -252,4 +252,27 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
+
+  /**
+   * Gets the properties of a file, given its path.
+   *
+   * @param path The file path to get properties for. This path must not correspond to a file in the trash/deleted.
+   * @return The file's properties.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets the properties of the root folder.
+   *
+   * @return The root folder's properties.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFile getRootProperties() throws OperationFailedException;
 }

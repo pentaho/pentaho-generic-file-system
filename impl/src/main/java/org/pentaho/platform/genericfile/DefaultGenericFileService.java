@@ -313,4 +313,25 @@ public class DefaultGenericFileService implements IGenericFileService {
   public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
     getOwnerFileProvider( path ).renameFile( path, newName );
   }
+
+  @Override
+  public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getProperties( path );
+  }
+
+  @Override
+  public List<IGenericFile> getRootProperties() {
+    List<IGenericFile> result = new ArrayList<>();
+
+    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+      try {
+        result.add( fileProvider.getRootProperties() );
+      } catch ( OperationFailedException e ) {
+        // Continue, collecting providers that work. But still log failed ones, JIC.
+        e.printStackTrace();
+      }
+    }
+
+    return result;
+  }
 }

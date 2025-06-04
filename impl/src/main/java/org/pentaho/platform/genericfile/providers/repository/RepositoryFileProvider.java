@@ -348,6 +348,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return repositoryObject;
   }
 
+  private RepositoryObject convertFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+    return convertFromNativeFileDto( nativeFile, getParentPath( nativeFile ) );
+  }
+
   @Nullable
   private Date parseDate( String date ) {
     try {
@@ -482,7 +486,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   public List<IGenericFile> getDeletedFiles() {
     return fileService.doGetDeletedFiles().stream()
       .map( fileDto -> {
-        RepositoryObject repositoryObject = convertFromNativeFileDto( fileDto, getParentPath( fileDto ) );
+        RepositoryObject repositoryObject = convertFromNativeFileDto( fileDto );
 
         repositoryObject.setOriginalLocation( getLocation( fileDto.getOriginalParentFolderPath() ) );
         repositoryObject.setDeletedBy( fileDto.getCreatorId() );
@@ -546,6 +550,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       }
     } catch ( OperationFailedException e ) {
       throw e;
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  @Override
+  public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+    try {
+      return convertFromNativeFileDto( fileService.doGetProperties( getFileId( path ) ) );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  @Override
+  public IGenericFile getRootProperties() throws OperationFailedException {
+    try {
+      return convertFromNativeFileDto( fileService.doGetRootProperties() );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }

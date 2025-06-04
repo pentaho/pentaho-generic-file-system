@@ -124,6 +124,16 @@ class IGenericFileServiceTest {
     public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<IGenericFile> getRootProperties() throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

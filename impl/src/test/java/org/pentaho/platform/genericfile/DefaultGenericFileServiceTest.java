@@ -663,4 +663,115 @@ public class DefaultGenericFileServiceTest {
     verify( useCase.provider1Mock ).renameFile( useCase.path1, "newName" );
   }
   // endregion
+
+  // region getProperties
+  private static class GetPropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public GetPropertiesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  public void testGetPropertiesSuccess() throws Exception {
+    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+
+    IGenericFile mockFile1 = mock( IGenericFile.class );
+    doReturn( mockFile1 ).when( useCase.provider1Mock ).getProperties( useCase.path1 );
+
+    IGenericFile result = useCase.service.getProperties( useCase.path1 );
+
+    assertEquals( mockFile1, result );
+    verify( useCase.provider1Mock ).getProperties( useCase.path1 );
+  }
+
+  @Test
+  public void testGetPropertiesPathNotFound() throws Exception {
+    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.getProperties( useCase.path1 ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).getProperties( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  public void testGetPropertiesException() throws Exception {
+    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Get properties failed." ) ).when( useCase.provider1Mock )
+      .getProperties( useCase.path1 );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.getProperties( useCase.path1 ) );
+
+    assertEquals( "Get properties failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).getProperties( useCase.path1 );
+  }
+  // endregion
+
+  // region getRootProperties
+  private static class GetRootPropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public GetRootPropertiesMultipleProviderUseCase()
+      throws OperationFailedException, InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  public void testGetRootPropertiesSuccess() throws Exception {
+    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
+
+    IGenericFile root1 = mock( IGenericFile.class );
+    IGenericFile root2 = mock( IGenericFile.class );
+    doReturn( root1 ).when( useCase.provider1Mock ).getRootProperties();
+    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
+
+    List<IGenericFile> result = useCase.service.getRootProperties();
+
+    assertTrue( result.contains( root1 ) );
+    assertTrue( result.contains( root2 ) );
+    verify( useCase.provider1Mock ).getRootProperties();
+    verify( useCase.provider2Mock ).getRootProperties();
+  }
+
+  @Test
+  public void testGetRootPropertiesException() throws Exception {
+    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
+
+    IGenericFile root2 = mock( IGenericFile.class );
+    doThrow( new OperationFailedException( "Root properties failed." ) ).when( useCase.provider1Mock )
+      .getRootProperties();
+    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
+
+    List<IGenericFile> result = useCase.service.getRootProperties();
+
+    assertFalse( result.isEmpty() );
+    assertTrue( result.contains( root2 ) );
+    verify( useCase.provider1Mock ).getRootProperties();
+    verify( useCase.provider2Mock ).getRootProperties();
+  }
+  // endregion
 }
