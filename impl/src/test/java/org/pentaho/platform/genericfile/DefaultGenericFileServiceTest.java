@@ -759,4 +759,62 @@ class DefaultGenericFileServiceTest {
     verify( useCase.provider2Mock ).getRootProperties();
   }
   // endregion
+
+  // region downloadFile
+  private static class DownloadFileMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public DownloadFileMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  void testDownloadFileSuccess() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    IGenericFileContentWrapper mockWrapper = mock( IGenericFileContentWrapper.class );
+    doReturn( mockWrapper ).when( useCase.provider1Mock ).downloadFile( useCase.path1 );
+
+    IGenericFileContentWrapper result = useCase.service.downloadFile( useCase.path1 );
+
+    assertEquals( mockWrapper, result );
+    verify( useCase.provider1Mock ).downloadFile( useCase.path1 );
+  }
+
+  @Test
+  void testDownloadFilePathNotFound() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.downloadFile( useCase.path1 ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).downloadFile( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  void testDownloadFileException() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Download failed." ) ).when( useCase.provider1Mock )
+      .downloadFile( useCase.path1 );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.downloadFile( useCase.path1 ) );
+
+    assertEquals( "Download failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).downloadFile( useCase.path1 );
+  }
+  // endregion
 }

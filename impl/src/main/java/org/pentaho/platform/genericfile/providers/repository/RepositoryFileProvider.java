@@ -14,6 +14,7 @@
 package org.pentaho.platform.genericfile.providers.repository;
 
 import com.cronutils.utils.VisibleForTesting;
+import com.google.gwt.thirdparty.guava.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
@@ -25,6 +26,7 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -41,14 +43,23 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFil
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
+import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
+import org.pentaho.platform.plugin.services.importexport.ExportHandler;
+import org.pentaho.platform.plugin.services.importexport.SimpleExportProcessor;
+import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
+import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -225,15 +236,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return convertFromNativeFileTreeDto( nativeTree, parentPathString );
   }
 
+  @NonNull
   @Override
   public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException {
 
-    // NOTE: getFile may return null if the file does not exist or the user cannot read it.
-    // however, fileService.getRepositoryFileInputStream handles that by throwing back FileNotFoundException.
-    @Nullable
-    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile =
-      unifiedRepository.getFile( path.toString() );
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
+
     try {
       RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
 
@@ -249,6 +258,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return convertFromNativeFile( getNativeFile( path ), getParentPath( path ) );
+  }
+
+  protected org.pentaho.platform.api.repository2.unified.RepositoryFile getNativeFile( @NonNull GenericFilePath path )
+    throws OperationFailedException {
     Objects.requireNonNull( path );
 
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = null;
@@ -261,10 +275,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Path not found '%s'.", path ) );
     }
 
-    // The parent path of path.
-    String parentPathString = getParentPath( path );
-
-    return convertFromNativeFile( repositoryFile, parentPathString );
+    return repositoryFile;
   }
 
   /**
@@ -571,6 +582,52 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
+  }
+
+  public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    if ( !SystemUtils.canDownload( path.toString() ) ) {
+      throw new AccessControlException( "User is not authorized to perform this operation." );
+    }
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException();
+    }
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
+
+    try {
+      String fileName = repositoryFile.isFolder() ? repositoryFile.getName() + ".zip" : repositoryFile.getName();
+      FileInputStream inputStream = getDownloadStream( repositoryFile );
+
+      return new DefaultGenericFileContentWrapper( inputStream, fileName, MediaType.ZIP.type() );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  protected BaseExportProcessor getDownloadExportProcessor(
+    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) {
+    BaseExportProcessor exportProcessor = repositoryFile.isFolder()
+      ?
+      new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true )
+      :
+      new SimpleExportProcessor( repositoryFile.getPath(), fileService.getRepository() );
+
+    exportProcessor.addExportHandler( getDownloadExportHandler() );
+
+    return exportProcessor;
+  }
+
+  protected ExportHandler getDownloadExportHandler() {
+    return PentahoSystem.get( DefaultExportHandler.class );
+  }
+
+  protected FileInputStream getDownloadStream(
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws ExportException, IOException {
+    BaseExportProcessor exportProcessor = getDownloadExportProcessor( repositoryFile );
+    File zipFile = exportProcessor.performExport( repositoryFile );
+
+    return new FileInputStream( zipFile );
   }
 
   protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {

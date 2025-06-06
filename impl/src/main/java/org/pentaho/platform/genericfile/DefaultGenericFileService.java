@@ -334,4 +334,9 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     return result;
   }
+
+  @Override
+  public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).downloadFile( path );
+  }
 }

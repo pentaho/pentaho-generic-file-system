@@ -19,8 +19,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
@@ -33,8 +36,10 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.plugin.services.importexport.ExportHandler;
 import org.pentaho.platform.util.RepositoryPathEncoder;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
@@ -1146,6 +1151,171 @@ class RepositoryFileProviderTest {
 
     assertEquals( "root properties failed", exception.getCause().getMessage() );
     verify( fileServiceMock ).doGetRootProperties();
+  }
+  // endregion
+
+  // region downloadFile
+  @Test
+  void testDownloadFileSuccess() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "PAZReport.xanalyzer";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      FileService fileServiceMock = mock( FileService.class );
+      doReturn( true ).when( fileServiceMock ).isPathValid( any() );
+
+      org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile =
+        createNativeFile( pathString, fileName, false );
+
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      doReturn( repositoryMock ).when( fileServiceMock ).getRepository();
+      doReturn( nativeFile ).when( repositoryMock ).getFile( any() );
+
+      RepositoryFileProvider repositoryProvider =
+        Mockito.spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+      ExportHandler exportHandlerMock = mock( ExportHandler.class );
+      doReturn( exportHandlerMock ).when( repositoryProvider ).getDownloadExportHandler();
+
+      IGenericFileContentWrapper result = repositoryProvider.downloadFile( path );
+
+      assertNotNull( result );
+      assertEquals( fileName, result.getFileName() );
+      assertEquals( MediaType.ZIP.type(), result.getMimeType() );
+      assertNotNull( result.getInputStream() );
+    }
+  }
+
+  @Test
+  void testDownloadFolderSuccess() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "report";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class );
+          MockedStatic<PentahoSessionHolder> sessionHolderMock = mockStatic( PentahoSessionHolder.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      IPentahoSession pentahoSessionMock = mock( IPentahoSession.class );
+      doReturn( "sessionName" ).when( pentahoSessionMock ).getName();
+      sessionHolderMock.when( PentahoSessionHolder::getSession ).thenReturn( pentahoSessionMock );
+
+      FileService fileServiceMock = mock( FileService.class );
+      doReturn( true ).when( fileServiceMock ).isPathValid( any() );
+
+      org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile =
+        createNativeFile( pathString, fileName, true );
+
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      doReturn( repositoryMock ).when( fileServiceMock ).getRepository();
+      doReturn( nativeFile ).when( repositoryMock ).getFile( any() );
+
+      RepositoryFileProvider repositoryProvider =
+        Mockito.spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+      ExportHandler exportHandlerMock = mock( ExportHandler.class );
+      doReturn( exportHandlerMock ).when( repositoryProvider ).getDownloadExportHandler();
+
+      IGenericFileContentWrapper result = repositoryProvider.downloadFile( path );
+
+      assertNotNull( result );
+      assertEquals( fileName + ".zip", result.getFileName() );
+      assertEquals( MediaType.ZIP.type(), result.getMimeType() );
+      assertNotNull( result.getInputStream() );
+    }
+  }
+
+  @Test
+  void testDownloadFileNotAllowed() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "PAZReport.xanalyzer";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( false );
+
+      FileService fileServiceMock = mock( FileService.class );
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+      assertThrows( AccessControlException.class, () -> repositoryProvider.downloadFile( path ) );
+    }
+  }
+
+  @Test
+  void testDownloadFileInvalidPath() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "PAZReport.xanalyzer";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      FileService fileServiceMock = mock( FileService.class );
+      doReturn( false ).when( fileServiceMock ).isPathValid( any() );
+
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+      assertThrows( InvalidPathException.class, () -> repositoryProvider.downloadFile( path ) );
+    }
+  }
+
+  @Test
+  void testDownloadFileRepositoryFileNotFound() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "PAZReport.xanalyzer";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      FileService fileServiceMock = mock( FileService.class );
+      doReturn( true ).when( fileServiceMock ).isPathValid( any() );
+
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      doReturn( null ).when( repositoryMock ).getFile( any() );
+      doReturn( repositoryMock ).when( fileServiceMock ).getRepository();
+
+      RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+      assertThrows( NotFoundException.class, () -> repositoryProvider.downloadFile( path ) );
+    }
+  }
+
+  @Test
+  void testDownloadFileExportException() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    String fileName = "PAZReport.xanalyzer";
+    String pathString = "/home/admin/" + fileId + "/" + fileName;
+    GenericFilePath path = GenericFilePath.parse( pathString );
+
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+      systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      FileService fileServiceMock = mock( FileService.class );
+      doReturn( true ).when( fileServiceMock ).isPathValid( any() );
+
+      org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile =
+        createNativeFile( pathString, fileName, false );
+
+      IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+      doReturn( repositoryMock ).when( fileServiceMock ).getRepository();
+      doReturn( nativeFile ).when( repositoryMock ).getFile( any() );
+
+      RepositoryFileProvider repositoryProvider =
+        Mockito.spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+      doThrow( new org.pentaho.platform.api.importexport.ExportException( "export failed" ) ).when( repositoryProvider )
+        .getDownloadStream( any() );
+
+      assertThrows( OperationFailedException.class, () -> repositoryProvider.downloadFile( path ) );
+    }
   }
   // endregion
 }

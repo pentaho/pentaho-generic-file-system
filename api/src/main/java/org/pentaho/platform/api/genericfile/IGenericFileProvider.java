@@ -275,4 +275,18 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   IGenericFile getRootProperties() throws OperationFailedException;
+
+  /**
+   * Downloads a file, given its path. The returned {@link IGenericFileContentWrapper} contains the file's content
+   * and metadata.
+   *
+   * @param path The file path to be downloaded. This path must not correspond to a file in the trash/deleted.
+   * @return The file's content wrapper contains the file's content and metadata.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }
