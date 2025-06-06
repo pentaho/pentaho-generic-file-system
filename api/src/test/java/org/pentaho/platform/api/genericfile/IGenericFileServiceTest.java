@@ -39,10 +39,10 @@ import static org.mockito.Mockito.verify;
  * Tests the default methods of the {@link IGenericFileService} interface.
  */
 class IGenericFileServiceTest {
-
   static class GenericFileServiceForTesting implements IGenericFileService {
     @Override
     public void clearTreeCache() {
+      // this is empty on purpose
     }
 
     @NonNull
@@ -117,6 +117,26 @@ class IGenericFileServiceTest {
 
     @Override
     public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<IGenericFile> getRootProperties() throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
   }
