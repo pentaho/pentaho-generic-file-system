@@ -39,10 +39,10 @@ import static org.mockito.Mockito.verify;
  * Tests the default methods of the {@link IGenericFileService} interface.
  */
 class IGenericFileServiceTest {
-
   static class GenericFileServiceForTesting implements IGenericFileService {
     @Override
     public void clearTreeCache() {
+      // this is empty on purpose
     }
 
     @NonNull

@@ -13,16 +13,19 @@
 
 package org.pentaho.platform.genericfile.providers.repository;
 
+import com.google.gwt.thirdparty.guava.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
@@ -34,18 +37,20 @@ import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
 import org.pentaho.platform.util.RepositoryPathEncoder;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
+import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -55,6 +60,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -64,10 +70,8 @@ import static org.pentaho.platform.genericfile.providers.repository.RepositoryFi
  * Tests for the {@link RepositoryFileProvider} class.
  */
 @SuppressWarnings( "DataFlowIssue" )
-public class RepositoryFileProviderTest {
-
+class RepositoryFileProviderTest {
   static final String ENCODED_ROOT_PATH = RepositoryPathEncoder.encodeRepositoryPath( ROOT_PATH );
-
   static final String ALL_FILTER = "*";
 
   // region Helpers and Sample Structures
@@ -298,7 +302,7 @@ public class RepositoryFileProviderTest {
   static IGenericFolder assertGenericFolder( IGenericFile file ) {
     assertNotNull( file );
     assertTrue( file.isFolder() );
-    assertTrue( file instanceof IGenericFolder );
+    assertInstanceOf( IGenericFolder.class, file );
     return (IGenericFolder) file;
   }
 
@@ -317,10 +321,10 @@ public class RepositoryFileProviderTest {
     return folder;
   }
 
-  @NonNull
   static void assertRegularCapabilities( IGenericFile file ) {
     assertTrue( file.isCanDelete() );
     assertTrue( file.isCanEdit() );
+
     if ( file.isFolder() ) {
       IGenericFolder folder = (IGenericFolder) file;
       assertTrue( folder.isCanAddChildren() );
@@ -345,8 +349,8 @@ public class RepositoryFileProviderTest {
   // endregion
 
   // region getTree
-  @Test( expected = NotFoundException.class )
-  public void testGetTreeThrowsNotFoundExceptionIfBasePathNotOwned() throws OperationFailedException {
+  @Test
+  void testGetTreeThrowsNotFoundExceptionIfBasePathNotOwned() throws OperationFailedException {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
@@ -354,11 +358,11 @@ public class RepositoryFileProviderTest {
     options.setBasePath( "scheme://path" );
     options.setMaxDepth( 1 );
 
-    repositoryProvider.getTree( options );
+    assertThrows( NotFoundException.class, () -> repositoryProvider.getTree( options ) );
   }
 
   @Test
-  public void testGetTreeDelegatesToFileServiceDoGetTree() throws OperationFailedException {
+  void testGetTreeDelegatesToFileServiceDoGetTree() throws OperationFailedException {
 
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
@@ -384,7 +388,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeDefaultsBasePathToRepositoryRoot() throws OperationFailedException {
+  void testGetTreeDefaultsBasePathToRepositoryRoot() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
@@ -406,7 +410,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeRespectsNullChildrenList() throws OperationFailedException {
+  void testGetTreeRespectsNullChildrenList() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     // Check initial structure has null children list for /home.
@@ -431,7 +435,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeRespectsEmptyChildrenList() throws OperationFailedException {
+  void testGetTreeRespectsEmptyChildrenList() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     // Set empty list to children of /home.
@@ -457,7 +461,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeTestFile1HasExpectedProperties() throws OperationFailedException {
+  void testGetTreeTestFile1HasExpectedProperties() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
@@ -488,7 +492,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeTestFolder2HasExpectedProperties() throws OperationFailedException {
+  void testGetTreeTestFolder2HasExpectedProperties() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
@@ -519,7 +523,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetSubTreeRootNodeHasExpectedProperties() throws OperationFailedException {
+  void testGetSubTreeRootNodeHasExpectedProperties() throws OperationFailedException {
 
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
@@ -544,7 +548,7 @@ public class RepositoryFileProviderTest {
 
   // region getRootTrees
   @Test
-  public void testGetRootTreesDelegatesToGetTreeCoreReturnsSingleRootTree() throws OperationFailedException {
+  void testGetRootTreesDelegatesToGetTreeCoreReturnsSingleRootTree() throws OperationFailedException {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
@@ -575,16 +579,17 @@ public class RepositoryFileProviderTest {
   // endregion
 
   // region getFile
-  @Test( expected = NotFoundException.class )
-  public void testGetFileThrowsNotFoundExceptionIfPathNotOwned() throws OperationFailedException {
+  @Test
+  void testGetFileThrowsNotFoundExceptionIfPathNotOwned() {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
-    repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) );
+    assertThrows( NotFoundException.class,
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) ) );
   }
 
-  @Test( expected = NotFoundException.class )
-  public void testGetFileThrowsNotFoundExceptionIfPathNotFound() throws OperationFailedException {
+  @Test
+  void testGetFileThrowsNotFoundExceptionIfPathNotFound() {
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( null )
@@ -594,12 +599,11 @@ public class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
 
-    repositoryProvider.getFile( GenericFilePath.parse( "/path" ) );
+    assertThrows( NotFoundException.class, () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
   }
 
   @Test
-  public void testGetFileRootHasExpectedProperties() throws OperationFailedException {
-
+  void testGetFileRootHasExpectedProperties() throws OperationFailedException {
     org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile = createNativeFile( ROOT_PATH, "", true );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -615,8 +619,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetFileRegularHasExpectedProperties() throws OperationFailedException {
-
+  void testGetFileRegularHasExpectedProperties() throws OperationFailedException {
     org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile =
       createNativeFile( "/public/testFile1", "testFile1", false );
 
@@ -643,7 +646,7 @@ public class RepositoryFileProviderTest {
 
   // region getDeletedFiles
   @Test
-  public void getDeletedFilesTestDeletedFile3HasExpectedProperties() {
+  void getDeletedFilesTestDeletedFile3HasExpectedProperties() {
     NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
@@ -682,7 +685,7 @@ public class RepositoryFileProviderTest {
 
   // region deleteFilePermanently
   @Test
-  public void testDeleteFilePermanentlySuccess() throws Exception {
+  void testDeleteFilePermanentlySuccess() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -697,7 +700,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testDeleteFilePermanentlyInvalidPath() throws Exception {
+  void testDeleteFilePermanentlyInvalidPath() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -715,7 +718,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testDeleteFilePermanentlyOperationFailed() throws Exception {
+  void testDeleteFilePermanentlyOperationFailed() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -732,40 +735,47 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTrashFileIdValidPathWithColon() throws Exception {
+  void testGetTrashFileIdValidPath() throws Exception {
+    testGetTrashFileIdValidPath(
+      "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5483/report/PAZReport.xanalyzer",
+      "8b69da2b-2a10-4a82-89bc-a376e52d5483" );
+  }
+
+  @Test
+  void testGetTrashFileIdValidPathWithColon() throws Exception {
     testGetTrashFileIdValidPath( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
       "8b69da2b-2a10-4a82-89bc-a376e52d5482" );
   }
 
   @Test
-  public void testGetTrashFileIdInvalidPathWithoutColon() throws Exception {
+  void testGetTrashFileIdInvalidPathWithoutColon() throws Exception {
     testGetTrashFileIdInvalidPath( "/home/admin/.trash/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
       InvalidPathException.class );
   }
 
   @Test
-  public void testGetTrashFileIdInvalidPathNoTrash() throws Exception {
+  void testGetTrashFileIdInvalidPathNoTrash() throws Exception {
     testGetTrashFileIdInvalidPath( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
       NotFoundException.class );
   }
 
   @Test
-  public void testGetTrashFileIdInvalidPathNoTrashNoId() throws Exception {
+  void testGetTrashFileIdInvalidPathNoTrashNoId() throws Exception {
     testGetTrashFileIdInvalidPath( "/home/admin/PAZReport.xanalyzer", NotFoundException.class );
   }
 
   @Test
-  public void testGetFileIdInvalidPathNoIdNoTrashFile() throws Exception {
+  void testGetFileIdInvalidPathNoIdNoTrashFile() throws Exception {
     testGetTrashFileIdInvalidPath( "/home/admin/.trash/", NotFoundException.class );
   }
 
   @Test
-  public void testGetTrashFileIdInvalidPathRoot() throws Exception {
+  void testGetTrashFileIdInvalidPathRoot() throws Exception {
     testGetTrashFileIdInvalidPath( "/", NotFoundException.class );
   }
 
   @Test
-  public void testGetTrashFileIdInvalidPathNoTrashNoColon() throws Exception {
+  void testGetTrashFileIdInvalidPathNoTrashNoColon() throws Exception {
     testGetTrashFileIdInvalidPath( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer",
       NotFoundException.class );
   }
@@ -804,45 +814,67 @@ public class RepositoryFileProviderTest {
   // region deleteFile
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFileSuccess( boolean permanent ) throws Exception {
+  void testDeleteFileSuccess( boolean permanent ) throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
-    doNothing().when( fileServiceMock ).doDeleteFiles( any() );
+
+    if ( permanent ) {
+      doNothing().when( fileServiceMock ).doDeleteFilesPermanent( any() );
+    } else {
+      doNothing().when( fileServiceMock ).doDeleteFiles( any() );
+    }
+
     doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     repositoryProvider.deleteFile( path, permanent );
 
-    verify( fileServiceMock, times( 1 ) ).doDeleteFiles( fileId );
+    if ( permanent ) {
+      verify( fileServiceMock, never() ).doDeleteFiles( fileId );
+      verify( fileServiceMock, times( 1 ) ).doDeleteFilesPermanent( fileId );
+    } else {
+      verify( fileServiceMock, times( 1 ) ).doDeleteFiles( fileId );
+      verify( fileServiceMock, never() ).doDeleteFilesPermanent( fileId );
+    }
   }
 
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFileOperationFailed( boolean permanent ) throws Exception {
+  void testDeleteFileOperationFailed( boolean permanent ) throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
-    doNothing().when( fileServiceMock ).doDeleteFiles( any() );
+
+    if ( permanent ) {
+      doThrow( new OperationFailedException() ).when( fileServiceMock ).doDeleteFilesPermanent( any() );
+    } else {
+      doThrow( new OperationFailedException() ).when( fileServiceMock ).doDeleteFiles( any() );
+    }
+
     doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    doThrow( new OperationFailedException() ).when( fileServiceMock ).doDeleteFiles( any() );
-
     assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
-    verify( fileServiceMock ).doDeleteFiles( fileId );
+    if ( permanent ) {
+      verify( fileServiceMock, never() ).doDeleteFiles( fileId );
+      verify( fileServiceMock ).doDeleteFilesPermanent( fileId );
+    } else {
+      verify( fileServiceMock ).doDeleteFiles( fileId );
+      verify( fileServiceMock, never() ).doDeleteFilesPermanent( fileId );
+    }
   }
 
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFileNotFound( boolean permanent ) throws Exception {
+  void testDeleteFileNotFound( boolean permanent ) throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -853,6 +885,7 @@ public class RepositoryFileProviderTest {
     assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
     verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
+    verify( fileServiceMock, never() ).doDeleteFilesPermanent( anyString() );
   }
 
   @NonNull
@@ -867,7 +900,7 @@ public class RepositoryFileProviderTest {
 
   // region restoreFile
   @Test
-  public void testRestoreFileSuccess() throws Exception {
+  void testRestoreFileSuccess() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -882,7 +915,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRestoreFileInvalidPath() throws Exception {
+  void testRestoreFileInvalidPath() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -900,7 +933,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRestoreFileOperationFailed() throws Exception {
+  void testRestoreFileOperationFailed() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/.trash/pho:8b69da2b-2a10-4a82-89bc-a376e52d5482"
       + "/PAZReport.xanalyzer" );
 
@@ -919,7 +952,7 @@ public class RepositoryFileProviderTest {
 
   // region renameFile
   @Test
-  public void testRenameFileSuccess() throws Exception {
+  void testRenameFileSuccess() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "renamed.xanalyzer";
@@ -937,7 +970,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRenameFileErrorThrowsException() throws Exception {
+  void testRenameFileErrorThrowsException() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "renamed.xanalyzer";
@@ -957,7 +990,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRenameFileOperationFailed() throws Exception {
+  void testRenameFileOperationFailed() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "renamed.xanalyzer";
@@ -977,7 +1010,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRenameFileGetFileIdThrows() throws Exception {
+  void testRenameFileGetFileIdThrows() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "renamed.xanalyzer";
@@ -996,7 +1029,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRenameFileNotFound() throws Exception {
+  void testRenameFileNotFound() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
     String newName = "renamed.xanalyzer";
 
@@ -1014,7 +1047,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testRenameFileInvalidName() throws Exception {
+  void testRenameFileInvalidName() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "bad/name";
@@ -1026,7 +1059,7 @@ public class RepositoryFileProviderTest {
 
     OperationFailedException exception =
       assertThrows( OperationFailedException.class, () -> repositoryProvider.renameFile( path, newName ) );
-    assertTrue( exception.getCause() instanceof IllegalArgumentException );
+    assertInstanceOf( IllegalArgumentException.class, exception.getCause() );
     assertEquals( "Invalid name to rename the file: " + newName, exception.getCause().getMessage() );
     verify( fileServiceMock, never() ).doRename( fileId, newName );
   }
@@ -1034,7 +1067,7 @@ public class RepositoryFileProviderTest {
 
   // region getProperties
   @Test
-  public void testGetPropertiesSuccess() throws Exception {
+  void testGetPropertiesSuccess() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     RepositoryFileDto mockFile = createSampleFile( fileId );
@@ -1052,7 +1085,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetPropertiesNotFound() throws Exception {
+  void testGetPropertiesNotFound() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -1068,7 +1101,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetPropertiesException() throws Exception {
+  void testGetPropertiesException() throws Exception {
     GenericFilePath path =
       GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer" );
 
@@ -1087,7 +1120,7 @@ public class RepositoryFileProviderTest {
 
   // region getRootProperties
   @Test
-  public void testGetRootPropertiesSuccess() throws Exception {
+  void testGetRootPropertiesSuccess() throws Exception {
     RepositoryFileDto rootFile = createSampleFile( "fileId" );
     FileService fileServiceMock = mock( FileService.class );
     doReturn( rootFile ).when( fileServiceMock ).doGetRootProperties();
@@ -1102,7 +1135,7 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetRootPropertiesException() {
+  void testGetRootPropertiesException() {
     FileService fileServiceMock = mock( FileService.class );
     doThrow( new RuntimeException( "root properties failed" ) ).when( fileServiceMock ).doGetRootProperties();
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );

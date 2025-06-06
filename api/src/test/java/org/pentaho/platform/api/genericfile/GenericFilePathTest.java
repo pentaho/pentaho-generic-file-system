@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
 import java.util.Arrays;
@@ -26,6 +28,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,6 +44,7 @@ class GenericFilePathTest {
     assertNotNull( path );
 
     GenericFilePath parentPath = path.getParent();
+
     if ( expectedSegments.length == 1 ) {
       assertNull( parentPath );
     } else {
@@ -80,21 +84,11 @@ class GenericFilePathTest {
    */
   @Nested
   class ParseTests {
-    @Test
-    void testReturnsNullWhenGivenNull() throws InvalidPathException {
-      GenericFilePath path = GenericFilePath.parse( null );
-      assertNull( path );
-    }
-
-    @Test
-    void testReturnsNullWhenGivenEmptyString() throws InvalidPathException {
-      GenericFilePath path = GenericFilePath.parse( "" );
-      assertNull( path );
-    }
-
-    @Test
-    void testReturnsNullWhenGivenAllSpacesString() throws InvalidPathException {
-      GenericFilePath path = GenericFilePath.parse( "   " );
+    @ParameterizedTest
+    @NullSource
+    @ValueSource( strings = { "", "   " } )
+    void testStringReturns( String pathString ) throws InvalidPathException {
+      GenericFilePath path = GenericFilePath.parse( pathString );
       assertNull( path );
     }
 
@@ -128,7 +122,7 @@ class GenericFilePathTest {
       GenericFilePath path = GenericFilePath.parseRequired( "/home" );
       assertNotNull( path );
       assertArrayEquals( new String[] { "/", "home" }, path.getSegments().toArray() );
-      assertEquals( path.toString(), "/home" );
+      assertEquals( "/home", path.toString() );
     }
 
     @Test
@@ -136,7 +130,7 @@ class GenericFilePathTest {
       GenericFilePath path = GenericFilePath.parseRequired( "scheme://my/folder" );
       assertNotNull( path );
       assertArrayEquals( new String[] { "scheme://", "my", "folder" }, path.getSegments().toArray() );
-      assertEquals( path.toString(), "scheme://my/folder" );
+      assertEquals( "scheme://my/folder", path.toString() );
     }
   }
 
@@ -179,7 +173,7 @@ class GenericFilePathTest {
       "'/', 'Root'",
       "'  /  ', 'Normalizes Root With Leading and Trailing Spaces'"
     } )
-    void testRootPathCases( @NonNull String pathString, @NonNull String testTitle ) throws InvalidPathException {
+    void testRootPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertIsRepositoryPath( path );
       assertSegments( new String[] { "/" }, path );
@@ -198,7 +192,7 @@ class GenericFilePathTest {
       "'/home///', 'Removes Two Consecutive Trailing Empty Segments'",
       "'/home/ / / /', 'Removes Three Consecutive Trailing Blank Segments'"
     } )
-    void testTwoSegmentPathCases( @NonNull String pathString, @NonNull String testTitle ) throws InvalidPathException {
+    void testTwoSegmentPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertIsRepositoryPath( path );
       assertSegments( new String[] { "/", "home" }, path );
@@ -212,9 +206,7 @@ class GenericFilePathTest {
       "'/home///admin', 'Removes Two Consecutive Middle Empty Segments'",
       "'/home/ / / /admin', 'Removes Three Consecutive Middle Blank Segments'"
     } )
-    void testThreeSegmentPathCases( @NonNull String pathString, @NonNull String testTitle )
-      throws InvalidPathException {
-
+    void testThreeSegmentPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertIsRepositoryPath( path );
       assertSegments( new String[] { "/", "home", "admin" }, path );
@@ -240,7 +232,7 @@ class GenericFilePathTest {
    */
   @Nested
   class URLPathTests {
-    final String SAMPLE_SCHEME = "scheme";
+    static final String SAMPLE_SCHEME = "scheme";
 
     void assertScheme( @Nullable String scheme, @Nullable GenericFilePath path ) {
       assertNotNull( path );
@@ -253,7 +245,7 @@ class GenericFilePathTest {
       "'scheme://', 'Root'",
       "'  scheme://  ', 'Normalizes Root With Leading and Trailing Spaces'"
     } )
-    void testRootPathCases( @NonNull String pathString, @NonNull String testTitle ) throws InvalidPathException {
+    void testRootPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertScheme( SAMPLE_SCHEME, path );
       assertSegments( new String[] { "scheme://" }, path );
@@ -280,7 +272,7 @@ class GenericFilePathTest {
       "'scheme://my///', 'Removes Two Consecutive Trailing Empty Segments'",
       "'scheme://my/ / / /', 'Removes Three Consecutive Trailing Blank Segments'"
     } )
-    void testTwoSegmentPathCases( @NonNull String pathString, @NonNull String testTitle ) throws InvalidPathException {
+    void testTwoSegmentPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertScheme( SAMPLE_SCHEME, path );
       assertSegments( new String[] { "scheme://", "my" }, path );
@@ -294,9 +286,7 @@ class GenericFilePathTest {
       "'scheme://my///folder', 'Removes Two Consecutive Middle Empty Segments'",
       "'scheme://my/ / / /folder', 'Removes Three Consecutive Middle Blank Segments'"
     } )
-    void testThreeSegmentPathCases( @NonNull String pathString, @NonNull String testTitle )
-      throws InvalidPathException {
-
+    void testThreeSegmentPathCases( @NonNull String pathString ) throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( pathString );
       assertScheme( SAMPLE_SCHEME, path );
       assertSegments( new String[] { "scheme://", "my", "folder" }, path );
@@ -322,14 +312,14 @@ class GenericFilePathTest {
       GenericFilePath path = GenericFilePath.parse( "scheme://my/folder" );
       assertNotNull( path );
       // Sonar issue: Want to directly test the #equals(.) method.
-      assertTrue( path.equals( path ) );
+      assertEquals( path, path );
     }
 
     @Test
     void testNotEqualsNull() throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( "scheme://my/folder" );
       assertNotNull( path );
-      assertFalse( path.equals( null ) );
+      assertNotEquals( null, path );
     }
 
     @Test
@@ -337,7 +327,8 @@ class GenericFilePathTest {
       GenericFilePath path1 = GenericFilePath.parse( "scheme://my/folder" );
       GenericFilePath path2 = GenericFilePath.parse( "scheme://my/folder" );
       assertNotNull( path1 );
-      assertTrue( path1.equals( path2 ) );
+      assertEquals( path1, path2 );
+      assertNotNull( path2 );
       assertEquals( path1.hashCode(), path2.hashCode() );
     }
 
@@ -346,7 +337,8 @@ class GenericFilePathTest {
       GenericFilePath path1 = GenericFilePath.parse( "scheme://my/  folder" );
       GenericFilePath path2 = GenericFilePath.parse( "scheme://my//folder  " );
       assertNotNull( path1 );
-      assertTrue( path1.equals( path2 ) );
+      assertEquals( path1, path2 );
+      assertNotNull( path2 );
       assertEquals( path1.hashCode(), path2.hashCode() );
     }
 
@@ -355,7 +347,7 @@ class GenericFilePathTest {
       GenericFilePath path = GenericFilePath.parse( "scheme://my/folder" );
       Object other = new Object();
       assertNotNull( path );
-      assertFalse( path.equals( other ) );
+      assertNotEquals( path, other );
     }
   }
 
@@ -448,11 +440,8 @@ class GenericFilePathTest {
       "'scheme://my1/folder', 'scheme://my2', 'Does Not Contain an Aunt'",
       "'scheme://my1', 'scheme://my2/folder', 'Does Not Contain a Cousin'"
     } )
-    void testDoesNotContainVariousCases( @NonNull String path1String,
-                                         @NonNull String path2String,
-                                         @NonNull String testTitle )
+    void testDoesNotContainVariousCases( @NonNull String path1String, @NonNull String path2String )
       throws InvalidPathException {
-
       GenericFilePath path1 = GenericFilePath.parse( path1String );
       GenericFilePath path2 = GenericFilePath.parse( path2String );
       assertNotNull( path1 );
@@ -467,9 +456,7 @@ class GenericFilePathTest {
       "'scheme://my/folder', 'scheme://my/folder/a', 'Contains A Child'",
       "'scheme://my/folder', 'scheme://my/folder/a/b', 'Contains A Grandchild'"
     } )
-    void testContainsVariousCases( @NonNull String path1String,
-                                   @NonNull String path2String,
-                                   @NonNull String testTitle )
+    void testContainsVariousCases( @NonNull String path1String, @NonNull String path2String )
       throws InvalidPathException {
 
       GenericFilePath path1 = GenericFilePath.parse( path1String );

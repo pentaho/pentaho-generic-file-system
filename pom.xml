@@ -17,7 +17,10 @@
 
   <properties>
     <platform.version>10.2.0.0-SNAPSHOT</platform.version>
-    <mockito-core.version>4.0.0</mockito-core.version>
+    <junit-jupiter.version>5.10.0</junit-jupiter.version>
+    <mockito.version>5.6.0</mockito.version>
+    <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
     <artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
     <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
@@ -32,6 +35,37 @@
         <scope>provided</scope>
         <optional>true</optional>
       </dependency>
+
+      <!-- region test dependencies -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit-jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit-jupiter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
+        <version>${junit-jupiter.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit-jupiter.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <!-- endregion test dependencies -->
     </dependencies>
   </dependencyManagement>
 
