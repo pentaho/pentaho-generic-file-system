@@ -650,12 +650,12 @@ class DefaultGenericFileServiceTest {
   }
   // endregion
 
-  // region getProperties
-  private static class GetPropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
+  // region getFileProperties
+  private static class GetFilePropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
     public final GenericFilePath path1;
     public final GenericFilePath path2;
 
-    public GetPropertiesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+    public GetFilePropertiesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
       path1 = mock( GenericFilePath.class );
       path2 = mock( GenericFilePath.class );
 
@@ -668,43 +668,43 @@ class DefaultGenericFileServiceTest {
   }
 
   @Test
-  void testGetPropertiesSuccess() throws Exception {
-    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+  void testGetFilePropertiesSuccess() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
 
     IGenericFile mockFile1 = mock( IGenericFile.class );
-    doReturn( mockFile1 ).when( useCase.provider1Mock ).getProperties( useCase.path1 );
+    doReturn( mockFile1 ).when( useCase.provider1Mock ).getFileProperties( useCase.path1 );
 
-    IGenericFile result = useCase.service.getProperties( useCase.path1 );
+    IGenericFile result = useCase.service.getFileProperties( useCase.path1 );
 
     assertEquals( mockFile1, result );
-    verify( useCase.provider1Mock ).getProperties( useCase.path1 );
+    verify( useCase.provider1Mock ).getFileProperties( useCase.path1 );
   }
 
   @Test
-  void testGetPropertiesPathNotFound() throws Exception {
-    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+  void testGetFilePropertiesPathNotFound() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
 
     NotFoundException exception = assertThrows( NotFoundException.class,
-      () -> useCase.service.getProperties( useCase.path1 ) );
+      () -> useCase.service.getFileProperties( useCase.path1 ) );
 
     assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
-    verify( useCase.provider1Mock, never() ).getProperties( any( GenericFilePath.class ) );
+    verify( useCase.provider1Mock, never() ).getFileProperties( any( GenericFilePath.class ) );
   }
 
   @Test
-  void testGetPropertiesException() throws Exception {
-    GetPropertiesMultipleProviderUseCase useCase = new GetPropertiesMultipleProviderUseCase();
+  void testGetFilePropertiesException() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
 
-    doThrow( new OperationFailedException( "Get properties failed." ) ).when( useCase.provider1Mock )
-      .getProperties( useCase.path1 );
+    doThrow( new OperationFailedException( "Get file properties failed." ) ).when( useCase.provider1Mock )
+      .getFileProperties( useCase.path1 );
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> useCase.service.getProperties( useCase.path1 ) );
+      () -> useCase.service.getFileProperties( useCase.path1 ) );
 
-    assertEquals( "Get properties failed.", exception.getMessage() );
-    verify( useCase.provider1Mock ).getProperties( useCase.path1 );
+    assertEquals( "Get file properties failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).getFileProperties( useCase.path1 );
   }
   // endregion
 

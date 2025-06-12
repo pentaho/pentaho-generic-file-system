@@ -567,7 +567,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
     try {
       return convertFromNativeFileDto( fileService.doGetProperties( getFileId( path ) ) );
     } catch ( Exception e ) {

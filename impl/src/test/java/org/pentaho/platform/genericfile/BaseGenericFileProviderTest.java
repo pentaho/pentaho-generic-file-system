@@ -104,7 +104,7 @@ class BaseGenericFileProviderTest {
     }
 
     @Override
-    public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+    public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

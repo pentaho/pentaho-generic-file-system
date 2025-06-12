@@ -1070,9 +1070,9 @@ class RepositoryFileProviderTest {
   }
   // endregion
 
-  // region getProperties
+  // region getFileProperties
   @Test
-  void testGetPropertiesSuccess() throws Exception {
+  void testGetFilePropertiesSuccess() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     RepositoryFileDto mockFile = createSampleFile( fileId );
@@ -1082,7 +1082,7 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile result = repositoryProvider.getProperties( path );
+    IGenericFile result = repositoryProvider.getFileProperties( path );
 
     assertNotNull( result );
     assertEquals( mockFile.getPath(), result.getPath() );
@@ -1090,7 +1090,7 @@ class RepositoryFileProviderTest {
   }
 
   @Test
-  void testGetPropertiesNotFound() throws Exception {
+  void testGetFilePropertiesNotFound() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
@@ -1099,25 +1099,25 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> repositoryProvider.getProperties( path ) );
+      () -> repositoryProvider.getFileProperties( path ) );
     assertNotNull( exception.getCause() );
 
     verify( fileServiceMock ).doGetProperties( any() );
   }
 
   @Test
-  void testGetPropertiesException() throws Exception {
+  void testGetFilePropertiesException() throws Exception {
     GenericFilePath path =
       GenericFilePath.parse( "/home/admin/8b69da2b-2a10-4a82-89bc-a376e52d5482/PAZReport.xanalyzer" );
 
     FileService fileServiceMock = mock( FileService.class );
-    doThrow( new RuntimeException( "get properties failed" ) ).when( fileServiceMock ).doGetProperties( any() );
+    doThrow( new RuntimeException( "get file properties failed" ) ).when( fileServiceMock ).doGetProperties( any() );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> repositoryProvider.getProperties( path ) );
-    assertEquals( "get properties failed", exception.getCause().getMessage() );
+      () -> repositoryProvider.getFileProperties( path ) );
+    assertEquals( "get file properties failed", exception.getCause().getMessage() );
 
     verify( fileServiceMock ).doGetProperties( any() );
   }

@@ -315,8 +315,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getProperties( path );
+  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFileProperties( path );
   }
 
   @Override

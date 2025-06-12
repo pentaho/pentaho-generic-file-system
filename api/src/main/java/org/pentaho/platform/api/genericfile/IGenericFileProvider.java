@@ -264,7 +264,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  IGenericFile getProperties( @NonNull GenericFilePath path ) throws OperationFailedException;
+  IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
    * Gets the properties of the root folder.
