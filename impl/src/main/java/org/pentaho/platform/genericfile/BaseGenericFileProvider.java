@@ -65,9 +65,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
       expandPathsInTrees( rootTrees, options );
     }
 
-    return rootTrees.stream()
-      .map( tree -> (IGenericFileTree) tree )
-      .collect( Collectors.toList() );
+    return rootTrees.stream().map( IGenericFileTree.class::cast ).collect( Collectors.toList() );
   }
 
   @NonNull

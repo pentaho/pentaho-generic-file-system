@@ -388,4 +388,54 @@ public interface IGenericFileService {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Renames a file, given its path and the new name.
+   *
+   * @param path    The file path to be renamed. This path must not correspond to a file in the trash/deleted.
+   * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
+
+  /**
+   * Gets the properties of a file, given its path.
+   *
+   * @param path The file path to get properties for. This path must not correspond to a file in the trash/deleted.
+   * @return The file's properties.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets the properties for the root folder in each provider.
+   *
+   * @return A list containing the root folder's properties for each provider.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  List<IGenericFile> getRootProperties() throws OperationFailedException;
+
+  /**
+   * Downloads a file, given its path. The returned {@link IGenericFileContentWrapper} contains the file's content
+   * and metadata.
+   *
+   * @param path The file path to be downloaded. This path must not correspond to a file in the trash/deleted.
+   * @return The file's content wrapper contains the file's content and metadata.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

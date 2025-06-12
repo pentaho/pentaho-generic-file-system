@@ -12,7 +12,7 @@
 
 package org.pentaho.platform.genericfile;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.ArrayList;
@@ -32,15 +33,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -49,18 +51,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DefaultGenericFileServiceTest {
-
+class DefaultGenericFileServiceTest {
   // region Construction Tests
-  @Test( expected = InvalidGenericFileProviderException.class )
-  public void testThrowsInvalidGenericFileProviderExceptionIfCreatedWithEmptyProviderList()
-    throws InvalidGenericFileProviderException {
+  @Test
+  void testThrowsInvalidGenericFileProviderExceptionIfCreatedWithEmptyProviderList() {
     List<IGenericFileProvider<?>> providers = new ArrayList<>();
-    new DefaultGenericFileService( providers );
+    assertThrows( InvalidGenericFileProviderException.class, () -> new DefaultGenericFileService( providers ) );
   }
 
   @Test
-  public void testCanBeCreatedWithASingleProvider() throws InvalidGenericFileProviderException {
+  void testCanBeCreatedWithASingleProvider() throws InvalidGenericFileProviderException {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
 
     DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
@@ -69,7 +69,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testCanBeCreatedWithTwoProviders() throws InvalidGenericFileProviderException {
+  void testCanBeCreatedWithTwoProviders() throws InvalidGenericFileProviderException {
     IGenericFileProvider<?> provider1Mock = mock( IGenericFileProvider.class );
     IGenericFileProvider<?> provider2Mock = mock( IGenericFileProvider.class );
 
@@ -83,7 +83,7 @@ public class DefaultGenericFileServiceTest {
     public final IGenericFileProvider<?> provider2Mock;
     public final DefaultGenericFileService service;
 
-    public MultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+    public MultipleProviderUseCase() throws InvalidGenericFileProviderException {
       provider1Mock = mock( IGenericFileProvider.class );
 
       provider2Mock = mock( IGenericFileProvider.class );
@@ -110,9 +110,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetTreeWithSingleProviderReturnsProviderTreeDirectly()
+  void testGetTreeWithSingleProviderReturnsProviderTreeDirectly()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
 
     IGenericFileTree treeMock = mock( IGenericFileTree.class );
@@ -127,9 +126,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetTreeWithMultipleProvidersAndNullBasePathAggregatesProviderTrees()
+  void testGetTreeWithMultipleProvidersAndNullBasePathAggregatesProviderTrees()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     IGenericFileTree aggregateTree = useCase.service.getTree( useCase.optionsMock );
@@ -152,9 +150,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetTreeWithMultipleProvidersAndNullBasePathIgnoresFailedProviders()
+  void testGetTreeWithMultipleProvidersAndNullBasePathIgnoresFailedProviders()
     throws OperationFailedException, InvalidGenericFileProviderException {
-
     GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doThrow( mock( OperationFailedException.class ) )
@@ -170,9 +167,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetTreeWithMultipleProvidersAndNullBasePathThrowsFirstExceptionIfAllFailed()
+  void testGetTreeWithMultipleProvidersAndNullBasePathThrowsFirstExceptionIfAllFailed()
     throws OperationFailedException, InvalidGenericFileProviderException {
-
     GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     OperationFailedException ex1 = mock( OperationFailedException.class );
@@ -193,10 +189,9 @@ public class DefaultGenericFileServiceTest {
     }
   }
 
-  @Test( expected = NotFoundException.class )
-  public void testGetTreeWithMultipleProvidersAndUnknownProviderBasePathThrowsNotFoundException()
+  @Test
+  void testGetTreeWithMultipleProvidersAndUnknownProviderBasePathThrowsNotFoundException()
     throws OperationFailedException, InvalidGenericFileProviderException {
-
     GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
@@ -204,13 +199,12 @@ public class DefaultGenericFileServiceTest {
 
     doReturn( mock( GenericFilePath.class ) ).when( useCase.optionsMock ).getBasePath();
 
-    useCase.service.getTree( useCase.optionsMock );
+    assertThrows( NotFoundException.class, () -> useCase.service.getTree( useCase.optionsMock ) );
   }
 
   @Test
-  public void testGetTreeWithMultipleProvidersAndKnownProviderBasePathReturnsProviderSubtree()
+  void testGetTreeWithMultipleProvidersAndKnownProviderBasePathReturnsProviderSubtree()
     throws OperationFailedException, InvalidGenericFileProviderException {
-
     GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
@@ -249,9 +243,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetTreeWithMultipleProvidersAggregatesAllProvidersRootTrees()
+  void testGetTreeWithMultipleProvidersAggregatesAllProvidersRootTrees()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     GetRootTreesMultipleProviderUseCase useCase = new GetRootTreesMultipleProviderUseCase();
 
     List<IGenericFileTree> rootTrees = useCase.service.getRootTrees( useCase.optionsMock );
@@ -268,9 +261,8 @@ public class DefaultGenericFileServiceTest {
 
 
   @Test
-  public void testGetTreeWithMultipleProvidersIgnoresFailedProviders()
+  void testGetTreeWithMultipleProvidersIgnoresFailedProviders()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     GetRootTreesMultipleProviderUseCase useCase = new GetRootTreesMultipleProviderUseCase();
 
     doThrow( mock( OperationFailedException.class ) )
@@ -303,7 +295,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFile() throws Exception {
+  void testGetFile() throws Exception {
     GetFileMultipleProviderUseCase useCase = new GetFileMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
@@ -337,9 +329,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetDeletedFilesWithMultipleProvidersAggregatesAllProvidersDeletedFiles()
+  void testGetDeletedFilesWithMultipleProvidersAggregatesAllProvidersDeletedFiles()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     GetDeletedFilesMultipleProviderUseCase useCase = new GetDeletedFilesMultipleProviderUseCase();
 
     List<IGenericFile> rootTrees = useCase.service.getDeletedFiles();
@@ -355,9 +346,8 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetDeletedFilesWithMultipleProvidersIgnoresFailedProviders()
+  void testGetDeletedFilesWithMultipleProvidersIgnoresFailedProviders()
     throws InvalidGenericFileProviderException, OperationFailedException {
-
     GetDeletedFilesMultipleProviderUseCase useCase = new GetDeletedFilesMultipleProviderUseCase();
 
     doThrow( mock( OperationFailedException.class ) )
@@ -380,8 +370,7 @@ public class DefaultGenericFileServiceTest {
     public final GenericFilePath path1;
     public final GenericFilePath path2;
 
-    public DeleteFilesPermanentlyMultipleProviderUseCase()
-      throws OperationFailedException, InvalidGenericFileProviderException {
+    public DeleteFilesPermanentlyMultipleProviderUseCase() throws InvalidGenericFileProviderException {
       path1 = mock( GenericFilePath.class );
       path2 = mock( GenericFilePath.class );
 
@@ -394,7 +383,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testDeleteFilesPermanentlySuccess() throws Exception {
+  void testDeleteFilesPermanentlySuccess() throws Exception {
     DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
 
     useCase.service.deleteFilesPermanently( Arrays.asList( useCase.path1, useCase.path2 ) );
@@ -404,7 +393,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testDeleteFilePermanentlyPathNotFound() throws Exception {
+  void testDeleteFilePermanentlyPathNotFound() throws Exception {
     DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
@@ -425,27 +414,26 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testDeleteFilePermanentlyInvalidPath() throws Exception {
+  void testDeleteFilePermanentlyInvalidPath() throws Exception {
     DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
 
-    doThrow( InvalidPathException.class ).when( useCase.provider1Mock )
-      .deleteFilePermanently( useCase.path1 );
+    doThrow( InvalidPathException.class ).when( useCase.provider1Mock ).deleteFilePermanently( useCase.path1 );
 
-    InvalidPathException exception = assertThrows( InvalidPathException.class,
-      () -> useCase.service.deleteFilePermanently( useCase.path1 ) );
+    InvalidPathException exception =
+      assertThrows( InvalidPathException.class, () -> useCase.service.deleteFilePermanently( useCase.path1 ) );
 
     assertEquals( InvalidPathException.class, exception.getClass() );
   }
 
   @Test
-  public void testDeleteFilesPermanentlyException() throws Exception {
+  void testDeleteFilesPermanentlyException() throws Exception {
     DeleteFilesPermanentlyMultipleProviderUseCase useCase = new DeleteFilesPermanentlyMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Deletion failed." ) ).when( useCase.provider1Mock )
       .deleteFilePermanently( useCase.path1 );
 
-    BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class, () ->
-      useCase.service.deleteFilesPermanently( Arrays.asList( useCase.path1, useCase.path2 ) )
+    BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
+      () -> useCase.service.deleteFilesPermanently( Arrays.asList( useCase.path1, useCase.path2 ) )
     );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
@@ -466,8 +454,7 @@ public class DefaultGenericFileServiceTest {
     public final GenericFilePath path1;
     public final GenericFilePath path2;
 
-    public DeleteFilesMultipleProviderUseCase()
-      throws OperationFailedException, InvalidGenericFileProviderException {
+    public DeleteFilesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
       path1 = mock( GenericFilePath.class );
       path2 = mock( GenericFilePath.class );
 
@@ -481,7 +468,7 @@ public class DefaultGenericFileServiceTest {
 
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFilesSuccess( boolean permanent ) throws Exception {
+  void testDeleteFilesSuccess( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
     useCase.service.deleteFiles( Arrays.asList( useCase.path1, useCase.path2 ), permanent );
@@ -492,7 +479,7 @@ public class DefaultGenericFileServiceTest {
 
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFilePathNotFound( boolean permanent ) throws Exception {
+  void testDeleteFilePathNotFound( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
@@ -508,12 +495,12 @@ public class DefaultGenericFileServiceTest {
     assertEquals( 1, failedFiles.size() );
     assertTrue( failedFiles.containsKey( useCase.path1 ) );
     assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock, never() ).deleteFile( any( GenericFilePath.class ), permanent );
+    verify( useCase.provider1Mock, never() ).deleteFile( any( GenericFilePath.class ), eq( permanent ) );
   }
 
   @ParameterizedTest
   @ValueSource( booleans = { true, false } )
-  public void testDeleteFilesException( boolean permanent ) throws Exception {
+  void testDeleteFilesException( boolean permanent ) throws Exception {
     DeleteFilesMultipleProviderUseCase useCase = new DeleteFilesMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Deletion failed." ) ).when( useCase.provider1Mock )
@@ -541,8 +528,7 @@ public class DefaultGenericFileServiceTest {
     public final GenericFilePath path1;
     public final GenericFilePath path2;
 
-    public RestoreFilesMultipleProviderUseCase()
-      throws OperationFailedException, InvalidGenericFileProviderException {
+    public RestoreFilesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
       path1 = mock( GenericFilePath.class );
       path2 = mock( GenericFilePath.class );
 
@@ -555,7 +541,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testRestoreFilesSuccess() throws Exception {
+  void testRestoreFilesSuccess() throws Exception {
     RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
 
     useCase.service.restoreFiles( Arrays.asList( useCase.path1, useCase.path2 ) );
@@ -565,7 +551,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testRestoreFilePathNotFound() throws Exception {
+  void testRestoreFilePathNotFound() throws Exception {
     RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
@@ -585,7 +571,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testRestoreFilesException() throws Exception {
+  void testRestoreFilesException() throws Exception {
     RestoreFilesMultipleProviderUseCase useCase = new RestoreFilesMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Restore failed." ) ).when( useCase.provider1Mock )
@@ -605,6 +591,230 @@ public class DefaultGenericFileServiceTest {
     assertEquals( "Restore failed.", failedFiles.get( useCase.path1 ).getMessage() );
     verify( useCase.provider1Mock ).restoreFile( useCase.path1 );
     verify( useCase.provider2Mock ).restoreFile( useCase.path2 );
+  }
+  // endregion
+
+  // region renameFile
+  private static class RenameFilesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public RenameFilesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  void testRenameFilesSuccess() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    useCase.service.renameFile( useCase.path1, "newName1" );
+    useCase.service.renameFile( useCase.path2, "newName2" );
+
+    verify( useCase.provider1Mock ).renameFile( useCase.path1, "newName1" );
+    verify( useCase.provider2Mock ).renameFile( useCase.path2, "newName2" );
+  }
+
+  @Test
+  void testRenameFilePathNotFound() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.renameFile( useCase.path1, "newName" ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).renameFile( any( GenericFilePath.class ), any() );
+  }
+
+  @Test
+  void testRenameFileException() throws Exception {
+    RenameFilesMultipleProviderUseCase useCase = new RenameFilesMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Rename failed." ) ).when( useCase.provider1Mock )
+      .renameFile( useCase.path1, "newName" );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.renameFile( useCase.path1, "newName" ) );
+
+    assertEquals( "Rename failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).renameFile( useCase.path1, "newName" );
+  }
+  // endregion
+
+  // region getFileProperties
+  private static class GetFilePropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public GetFilePropertiesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  void testGetFilePropertiesSuccess() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
+
+    IGenericFile mockFile1 = mock( IGenericFile.class );
+    doReturn( mockFile1 ).when( useCase.provider1Mock ).getFileProperties( useCase.path1 );
+
+    IGenericFile result = useCase.service.getFileProperties( useCase.path1 );
+
+    assertEquals( mockFile1, result );
+    verify( useCase.provider1Mock ).getFileProperties( useCase.path1 );
+  }
+
+  @Test
+  void testGetFilePropertiesPathNotFound() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.getFileProperties( useCase.path1 ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).getFileProperties( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  void testGetFilePropertiesException() throws Exception {
+    GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Get file properties failed." ) ).when( useCase.provider1Mock )
+      .getFileProperties( useCase.path1 );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.getFileProperties( useCase.path1 ) );
+
+    assertEquals( "Get file properties failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).getFileProperties( useCase.path1 );
+  }
+  // endregion
+
+  // region getRootProperties
+  private static class GetRootPropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public GetRootPropertiesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  void testGetRootPropertiesSuccess() throws Exception {
+    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
+
+    IGenericFile root1 = mock( IGenericFile.class );
+    IGenericFile root2 = mock( IGenericFile.class );
+    doReturn( root1 ).when( useCase.provider1Mock ).getRootProperties();
+    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
+
+    List<IGenericFile> result = useCase.service.getRootProperties();
+
+    assertTrue( result.contains( root1 ) );
+    assertTrue( result.contains( root2 ) );
+    verify( useCase.provider1Mock ).getRootProperties();
+    verify( useCase.provider2Mock ).getRootProperties();
+  }
+
+  @Test
+  void testGetRootPropertiesException() throws Exception {
+    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
+
+    IGenericFile root2 = mock( IGenericFile.class );
+    doThrow( new OperationFailedException( "Root properties failed." ) ).when( useCase.provider1Mock )
+      .getRootProperties();
+    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
+
+    List<IGenericFile> result = useCase.service.getRootProperties();
+
+    assertFalse( result.isEmpty() );
+    assertTrue( result.contains( root2 ) );
+    verify( useCase.provider1Mock ).getRootProperties();
+    verify( useCase.provider2Mock ).getRootProperties();
+  }
+  // endregion
+
+  // region downloadFile
+  private static class DownloadFileMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final GenericFilePath path1;
+    public final GenericFilePath path2;
+
+    public DownloadFileMultipleProviderUseCase() throws InvalidGenericFileProviderException {
+      path1 = mock( GenericFilePath.class );
+      path2 = mock( GenericFilePath.class );
+
+      doReturn( true ).when( provider1Mock ).owns( path1 );
+      doReturn( false ).when( provider1Mock ).owns( path2 );
+
+      doReturn( false ).when( provider2Mock ).owns( path1 );
+      doReturn( true ).when( provider2Mock ).owns( path2 );
+    }
+  }
+
+  @Test
+  void testDownloadFileSuccess() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    IGenericFileContentWrapper mockWrapper = mock( IGenericFileContentWrapper.class );
+    doReturn( mockWrapper ).when( useCase.provider1Mock ).downloadFile( useCase.path1 );
+
+    IGenericFileContentWrapper result = useCase.service.downloadFile( useCase.path1 );
+
+    assertEquals( mockWrapper, result );
+    verify( useCase.provider1Mock ).downloadFile( useCase.path1 );
+  }
+
+  @Test
+  void testDownloadFilePathNotFound() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.downloadFile( useCase.path1 ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).downloadFile( any( GenericFilePath.class ) );
+  }
+
+  @Test
+  void testDownloadFileException() throws Exception {
+    DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
+
+    doThrow( new OperationFailedException( "Download failed." ) ).when( useCase.provider1Mock )
+      .downloadFile( useCase.path1 );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.downloadFile( useCase.path1 ) );
+
+    assertEquals( "Download failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).downloadFile( useCase.path1 );
   }
   // endregion
 }
