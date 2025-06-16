@@ -573,7 +573,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
     try {
-      return convertFromNativeFileDto( fileService.doGetProperties( getFileId( path ) ) );
+      return convertFromNativeFileDto( getNativeFileProperties( path ) );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -634,8 +634,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return new FileInputStream( zipFile );
   }
 
+  protected RepositoryFileDto getNativeFileProperties( @NonNull GenericFilePath path ) throws FileNotFoundException {
+    return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) );
+  }
+
   protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {
-    return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) ).getId();
+    return getNativeFileProperties( path ).getId();
   }
 
   protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {
