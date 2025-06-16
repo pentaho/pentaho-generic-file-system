@@ -70,6 +70,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider.ROOT_PATH;
+import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
 /**
  * Tests for the {@link RepositoryFileProvider} class.
@@ -1086,7 +1087,7 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( mockFile.getPath(), result.getPath() );
-    verify( fileServiceMock ).doGetProperties( fileId );
+    verify( fileServiceMock ).doGetProperties( encodeRepositoryPath( path.toString() ) );
   }
 
   @Test
