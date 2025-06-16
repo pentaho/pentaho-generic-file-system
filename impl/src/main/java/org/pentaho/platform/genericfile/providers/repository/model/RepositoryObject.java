@@ -18,11 +18,17 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
+import java.util.Date;
+
 public abstract class RepositoryObject extends BaseGenericFile implements IGenericFile {
   private String objectId;
   private String extension;
   private String repository;
   private boolean hidden;
+  private Date createdDate;
+  private String creatorId;
+  private long fileSize;
+  private boolean schedulable;
 
   @NonNull
   @Override
@@ -60,5 +66,37 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
 
   public void setHidden( boolean hidden ) {
     this.hidden = hidden;
+  }
+
+  public Date getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate( Date createdDate ) {
+    this.createdDate = createdDate;
+  }
+
+  public String getCreatorId() {
+    return creatorId;
+  }
+
+  public void setCreatorId( String creatorId ) {
+    this.creatorId = creatorId;
+  }
+
+  public long getFileSize() {
+    return fileSize;
+  }
+
+  public void setFileSize( long fileSize ) {
+    this.fileSize = fileSize;
+  }
+
+  public boolean isSchedulable() {
+    return schedulable;
+  }
+
+  public void setSchedulable( boolean schedulable ) {
+    this.schedulable = schedulable;
   }
 }

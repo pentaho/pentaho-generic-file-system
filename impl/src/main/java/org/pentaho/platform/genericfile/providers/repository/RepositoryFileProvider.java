@@ -355,6 +355,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     repositoryObject.setObjectId( nativeFile.getId() );
     repositoryObject.setDescription( nativeFile.getDescription() );
     repositoryObject.setOwner( getOwnerFromNativeFileDto( nativeFile ) );
+    repositoryObject.setCreatedDate( parseDate( nativeFile.getCreatedDate() ) );
+    repositoryObject.setCreatorId( nativeFile.getCreatorId() );
+    repositoryObject.setFileSize( nativeFile.getFileSize() );
+    repositoryObject.setSchedulable( !nativeFile.isNotSchedulable() );
 
     return repositoryObject;
   }
