@@ -47,7 +47,6 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObj
 import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
 import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ExportHandler;
-import org.pentaho.platform.plugin.services.importexport.SimpleExportProcessor;
 import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
@@ -601,10 +600,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
 
     try {
-      String fileName = repositoryFile.isFolder() ? repositoryFile.getName() + ".zip" : repositoryFile.getName();
-      FileInputStream inputStream = getDownloadStream( repositoryFile );
-
-      return new DefaultGenericFileContentWrapper( inputStream, fileName, MediaType.ZIP.toString() );
+      return new DefaultGenericFileContentWrapper( getDownloadStream( repositoryFile ),
+        repositoryFile.getName() + ".zip", MediaType.ZIP.toString() );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -612,12 +609,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   protected BaseExportProcessor getDownloadExportProcessor(
     @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) {
-    BaseExportProcessor exportProcessor = repositoryFile.isFolder()
-      ?
-      new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true )
-      :
-      new SimpleExportProcessor( repositoryFile.getPath(), fileService.getRepository() );
-
+    BaseExportProcessor exportProcessor =
+      new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true );
     exportProcessor.addExportHandler( getDownloadExportHandler() );
 
     return exportProcessor;

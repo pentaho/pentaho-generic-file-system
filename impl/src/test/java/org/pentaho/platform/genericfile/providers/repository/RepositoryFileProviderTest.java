@@ -1125,8 +1125,13 @@ class RepositoryFileProviderTest {
     String pathString = "/home/admin/" + fileId + "/" + fileName;
     GenericFilePath path = GenericFilePath.parse( pathString );
 
-    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class ) ) {
+    try ( MockedStatic<SystemUtils> systemUtilsMock = mockStatic( SystemUtils.class );
+          MockedStatic<PentahoSessionHolder> sessionHolderMock = mockStatic( PentahoSessionHolder.class ) ) {
       systemUtilsMock.when( () -> SystemUtils.canDownload( any() ) ).thenReturn( true );
+
+      IPentahoSession pentahoSessionMock = mock( IPentahoSession.class );
+      doReturn( "sessionName" ).when( pentahoSessionMock ).getName();
+      sessionHolderMock.when( PentahoSessionHolder::getSession ).thenReturn( pentahoSessionMock );
 
       FileService fileServiceMock = mock( FileService.class );
       doReturn( true ).when( fileServiceMock ).isPathValid( any() );
@@ -1146,7 +1151,7 @@ class RepositoryFileProviderTest {
       IGenericFileContentWrapper result = repositoryProvider.downloadFile( path );
 
       assertNotNull( result );
-      assertEquals( fileName, result.getFileName() );
+      assertEquals( fileName + ".zip", result.getFileName() );
       assertEquals( MediaType.ZIP.toString(), result.getMimeType() );
       assertNotNull( result.getInputStream() );
     }
