@@ -965,14 +965,13 @@ class RepositoryFileProviderTest {
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
-    doReturn( true ).when( fileServiceMock ).doRename( fileId, newName );
+    doReturn( true ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     repositoryProvider.renameFile( path, newName );
 
-    verify( fileServiceMock, times( 1 ) ).doRename( fileId, newName );
+    verify( fileServiceMock, times( 1 ) ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
 
   @Test
@@ -983,8 +982,8 @@ class RepositoryFileProviderTest {
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
-    doThrow( new RuntimeException( "rename failed" ) ).when( fileServiceMock ).doRename( fileId, newName );
+    doThrow( new RuntimeException( "rename failed" ) ).when( fileServiceMock )
+      .doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -992,7 +991,7 @@ class RepositoryFileProviderTest {
       () -> repositoryProvider.renameFile( path, newName ) );
 
     assertEquals( "rename failed", exception.getCause().getMessage() );
-    verify( fileServiceMock ).doRename( fileId, newName );
+    verify( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
 
   @Test
@@ -1003,8 +1002,7 @@ class RepositoryFileProviderTest {
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doReturn( createSampleFile( fileId ) ).when( fileServiceMock ).doGetProperties( any() );
-    doReturn( false ).when( fileServiceMock ).doRename( fileId, newName );
+    doReturn( false ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -1012,44 +1010,7 @@ class RepositoryFileProviderTest {
       () -> repositoryProvider.renameFile( path, newName ) );
     assertEquals( String.format( "Failed to rename file '%s' to '%s'.", path, newName ), exception.getMessage() );
 
-    verify( fileServiceMock ).doRename( fileId, newName );
-  }
-
-  @Test
-  void testRenameFileGetFileIdThrows() throws Exception {
-    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
-    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    String newName = "renamed.xanalyzer";
-
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doThrow( new RuntimeException( "id failed" ) ).when( fileServiceMock ).doGetProperties( any() );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> repositoryProvider.renameFile( path, newName ) );
-
-    assertEquals( "id failed", exception.getCause().getMessage() );
-    verify( fileServiceMock, never() ).doRename( fileId, newName );
-  }
-
-  @Test
-  void testRenameFileNotFound() throws Exception {
-    GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
-    String newName = "renamed.xanalyzer";
-
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doReturn( null ).when( fileServiceMock ).doGetProperties( any() );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> repositoryProvider.renameFile( path, newName ) );
-    assertNotNull( exception.getCause() );
-
-    verify( fileServiceMock, never() ).doRename( any(), any() );
+    verify( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
 
   @Test
@@ -1067,7 +1028,7 @@ class RepositoryFileProviderTest {
       assertThrows( OperationFailedException.class, () -> repositoryProvider.renameFile( path, newName ) );
     assertInstanceOf( IllegalArgumentException.class, exception.getCause() );
     assertEquals( "Invalid name to rename the file: " + newName, exception.getCause().getMessage() );
-    verify( fileServiceMock, never() ).doRename( fileId, newName );
+    verify( fileServiceMock, never() ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
   // endregion
 
