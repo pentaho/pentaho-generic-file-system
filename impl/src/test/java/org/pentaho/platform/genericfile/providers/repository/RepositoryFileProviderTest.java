@@ -1008,8 +1008,8 @@ class RepositoryFileProviderTest {
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
       () -> repositoryProvider.renameFile( path, newName ) );
-    assertEquals( String.format( "Failed to rename file '%s' to '%s'.", path, newName ), exception.getMessage() );
 
+    assertEquals( String.format( "Failed to rename file '%s' to '%s'.", path, newName ), exception.getMessage() );
     verify( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
 
@@ -1026,6 +1026,7 @@ class RepositoryFileProviderTest {
 
     OperationFailedException exception =
       assertThrows( OperationFailedException.class, () -> repositoryProvider.renameFile( path, newName ) );
+
     assertInstanceOf( IllegalArgumentException.class, exception.getCause() );
     assertEquals( "Invalid name to rename the file: " + newName, exception.getCause().getMessage() );
     verify( fileServiceMock, never() ).doRename( encodeRepositoryPath( path.toString() ), newName );
@@ -1062,8 +1063,8 @@ class RepositoryFileProviderTest {
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
       () -> repositoryProvider.getFileProperties( path ) );
-    assertNotNull( exception.getCause() );
 
+    assertNotNull( exception.getCause() );
     verify( fileServiceMock ).doGetProperties( any() );
   }
 
@@ -1079,8 +1080,8 @@ class RepositoryFileProviderTest {
 
     OperationFailedException exception = assertThrows( OperationFailedException.class,
       () -> repositoryProvider.getFileProperties( path ) );
-    assertEquals( "get file properties failed", exception.getCause().getMessage() );
 
+    assertEquals( "get file properties failed", exception.getCause().getMessage() );
     verify( fileServiceMock ).doGetProperties( any() );
   }
   // endregion

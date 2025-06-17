@@ -672,12 +672,17 @@ class DefaultGenericFileServiceTest {
     GetFilePropertiesMultipleProviderUseCase useCase = new GetFilePropertiesMultipleProviderUseCase();
 
     IGenericFile mockFile1 = mock( IGenericFile.class );
+    IGenericFile mockFile2 = mock( IGenericFile.class );
     doReturn( mockFile1 ).when( useCase.provider1Mock ).getFileProperties( useCase.path1 );
+    doReturn( mockFile2 ).when( useCase.provider2Mock ).getFileProperties( useCase.path2 );
 
-    IGenericFile result = useCase.service.getFileProperties( useCase.path1 );
+    IGenericFile result1 = useCase.service.getFileProperties( useCase.path1 );
+    IGenericFile result2 = useCase.service.getFileProperties( useCase.path2 );
 
-    assertEquals( mockFile1, result );
+    assertEquals( mockFile1, result1 );
+    assertEquals( mockFile2, result2 );
     verify( useCase.provider1Mock ).getFileProperties( useCase.path1 );
+    verify( useCase.provider2Mock ).getFileProperties( useCase.path2 );
   }
 
   @Test
@@ -781,13 +786,18 @@ class DefaultGenericFileServiceTest {
   void testDownloadFileSuccess() throws Exception {
     DownloadFileMultipleProviderUseCase useCase = new DownloadFileMultipleProviderUseCase();
 
-    IGenericFileContentWrapper mockWrapper = mock( IGenericFileContentWrapper.class );
-    doReturn( mockWrapper ).when( useCase.provider1Mock ).downloadFile( useCase.path1 );
+    IGenericFileContentWrapper mockWrapper1 = mock( IGenericFileContentWrapper.class );
+    IGenericFileContentWrapper mockWrapper2 = mock( IGenericFileContentWrapper.class );
+    doReturn( mockWrapper1 ).when( useCase.provider1Mock ).downloadFile( useCase.path1 );
+    doReturn( mockWrapper2 ).when( useCase.provider2Mock ).downloadFile( useCase.path2 );
 
-    IGenericFileContentWrapper result = useCase.service.downloadFile( useCase.path1 );
+    IGenericFileContentWrapper result1 = useCase.service.downloadFile( useCase.path1 );
+    IGenericFileContentWrapper result2 = useCase.service.downloadFile( useCase.path2 );
 
-    assertEquals( mockWrapper, result );
+    assertEquals( mockWrapper1, result1 );
+    assertEquals( mockWrapper2, result2 );
     verify( useCase.provider1Mock ).downloadFile( useCase.path1 );
+    verify( useCase.provider2Mock ).downloadFile( useCase.path2 );
   }
 
   @Test
