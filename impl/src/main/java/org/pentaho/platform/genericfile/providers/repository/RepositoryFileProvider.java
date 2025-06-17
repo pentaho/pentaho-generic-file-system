@@ -604,7 +604,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       String fileName = repositoryFile.isFolder() ? repositoryFile.getName() + ".zip" : repositoryFile.getName();
       FileInputStream inputStream = getDownloadStream( repositoryFile );
 
-      return new DefaultGenericFileContentWrapper( inputStream, fileName, MediaType.ZIP.type() );
+      return new DefaultGenericFileContentWrapper( inputStream, fileName, MediaType.ZIP.toString() );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }

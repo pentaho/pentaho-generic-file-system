@@ -1147,7 +1147,7 @@ class RepositoryFileProviderTest {
 
       assertNotNull( result );
       assertEquals( fileName, result.getFileName() );
-      assertEquals( MediaType.ZIP.type(), result.getMimeType() );
+      assertEquals( MediaType.ZIP.toString(), result.getMimeType() );
       assertNotNull( result.getInputStream() );
     }
   }
@@ -1186,7 +1186,7 @@ class RepositoryFileProviderTest {
 
       assertNotNull( result );
       assertEquals( fileName + ".zip", result.getFileName() );
-      assertEquals( MediaType.ZIP.type(), result.getMimeType() );
+      assertEquals( MediaType.ZIP.toString(), result.getMimeType() );
       assertNotNull( result.getInputStream() );
     }
   }
