@@ -17,10 +17,12 @@
   </properties>
 
   <dependencies>
+    <!-- region Project Dependencies -->
     <dependency>
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
     </dependency>
+    <!-- endregion Project Dependencies -->
 
     <!-- region test dependencies -->
     <dependency>

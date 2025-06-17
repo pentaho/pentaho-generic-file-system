@@ -17,35 +17,36 @@
   </properties>
 
   <dependencies>
+    <!-- region Project Dependencies -->
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-generic-file-system-api</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+    </dependency>
+    <!-- endregion Project Dependencies -->
+
+    <!-- region Platform Dependencies -->
+    <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-api</artifactId>
-      <version>${platform.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-core</artifactId>
-      <version>${platform.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-extensions</artifactId>
-      <version>${platform.version}</version>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-repository</artifactId>
-      <version>${platform.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.github.spotbugs</groupId>
-      <artifactId>spotbugs-annotations</artifactId>
-    </dependency>
+    <!-- endregion Platform Dependencies -->
 
     <!-- region test dependencies -->
     <dependency>
