@@ -13,8 +13,9 @@
 
 package org.pentaho.platform.genericfile.providers.repository;
 
-import com.cronutils.utils.VisibleForTesting;
-import com.google.gwt.thirdparty.guava.common.net.MediaType;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;

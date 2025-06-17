@@ -13,7 +13,7 @@
 
 package org.pentaho.platform.genericfile.providers.repository;
 
-import com.google.gwt.thirdparty.guava.common.net.MediaType;
+import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
