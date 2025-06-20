@@ -267,16 +267,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Gets the properties of the root folder.
-   *
-   * @return The root folder's properties.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
-   */
-  IGenericFile getRootProperties() throws OperationFailedException;
-
-  /**
    * Downloads a file, given its path. The returned {@link IGenericFileContentWrapper} contains the file's content
    * and metadata.
    *

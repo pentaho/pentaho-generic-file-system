@@ -579,15 +579,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
-  @Override
-  public IGenericFile getRootProperties() throws OperationFailedException {
-    try {
-      return convertFromNativeFileDto( fileService.doGetRootProperties() );
-    } catch ( Exception e ) {
-      throw new OperationFailedException( e );
-    }
-  }
-
   public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
     if ( !SystemUtils.canDownload( path.toString() ) ) {
       throw new AccessControlException( "User is not authorized to perform this operation." );

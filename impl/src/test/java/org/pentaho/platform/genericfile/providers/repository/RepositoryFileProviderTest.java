@@ -1086,37 +1086,6 @@ class RepositoryFileProviderTest {
   }
   // endregion
 
-  // region getRootProperties
-  @Test
-  void testGetRootPropertiesSuccess() throws Exception {
-    RepositoryFileDto rootFile = createSampleFile( "fileId" );
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( rootFile ).when( fileServiceMock ).doGetRootProperties();
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    IGenericFile result = repositoryProvider.getRootProperties();
-
-    assertNotNull( result );
-    assertEquals( rootFile.getPath(), result.getPath() );
-    verify( fileServiceMock ).doGetRootProperties();
-  }
-
-  @Test
-  void testGetRootPropertiesException() {
-    FileService fileServiceMock = mock( FileService.class );
-    doThrow( new RuntimeException( "root properties failed" ) ).when( fileServiceMock ).doGetRootProperties();
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    OperationFailedException exception =
-      assertThrows( OperationFailedException.class, repositoryProvider::getRootProperties );
-
-    assertEquals( "root properties failed", exception.getCause().getMessage() );
-    verify( fileServiceMock ).doGetRootProperties();
-  }
-  // endregion
-
   // region downloadFile
   @Test
   void testDownloadFileSuccess() throws Exception {

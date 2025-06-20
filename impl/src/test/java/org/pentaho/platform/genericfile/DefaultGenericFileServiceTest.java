@@ -713,58 +713,6 @@ class DefaultGenericFileServiceTest {
   }
   // endregion
 
-  // region getRootProperties
-  private static class GetRootPropertiesMultipleProviderUseCase extends MultipleProviderUseCase {
-    public final GenericFilePath path1;
-    public final GenericFilePath path2;
-
-    public GetRootPropertiesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
-      path1 = mock( GenericFilePath.class );
-      path2 = mock( GenericFilePath.class );
-
-      doReturn( true ).when( provider1Mock ).owns( path1 );
-      doReturn( false ).when( provider1Mock ).owns( path2 );
-
-      doReturn( false ).when( provider2Mock ).owns( path1 );
-      doReturn( true ).when( provider2Mock ).owns( path2 );
-    }
-  }
-
-  @Test
-  void testGetRootPropertiesSuccess() throws Exception {
-    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
-
-    IGenericFile root1 = mock( IGenericFile.class );
-    IGenericFile root2 = mock( IGenericFile.class );
-    doReturn( root1 ).when( useCase.provider1Mock ).getRootProperties();
-    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
-
-    List<IGenericFile> result = useCase.service.getRootProperties();
-
-    assertTrue( result.contains( root1 ) );
-    assertTrue( result.contains( root2 ) );
-    verify( useCase.provider1Mock ).getRootProperties();
-    verify( useCase.provider2Mock ).getRootProperties();
-  }
-
-  @Test
-  void testGetRootPropertiesException() throws Exception {
-    GetRootPropertiesMultipleProviderUseCase useCase = new GetRootPropertiesMultipleProviderUseCase();
-
-    IGenericFile root2 = mock( IGenericFile.class );
-    doThrow( new OperationFailedException( "Root properties failed." ) ).when( useCase.provider1Mock )
-      .getRootProperties();
-    doReturn( root2 ).when( useCase.provider2Mock ).getRootProperties();
-
-    List<IGenericFile> result = useCase.service.getRootProperties();
-
-    assertFalse( result.isEmpty() );
-    assertTrue( result.contains( root2 ) );
-    verify( useCase.provider1Mock ).getRootProperties();
-    verify( useCase.provider2Mock ).getRootProperties();
-  }
-  // endregion
-
   // region downloadFile
   private static class DownloadFileMultipleProviderUseCase extends MultipleProviderUseCase {
     public final GenericFilePath path1;

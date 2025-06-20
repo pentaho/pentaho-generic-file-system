@@ -330,39 +330,6 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public List<IGenericFile> getRootProperties() throws OperationFailedException {
-    List<IGenericFile> result = new ArrayList<>();
-
-    boolean oneProviderSucceeded = false;
-    Exception firstProviderException = null;
-
-    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
-      try {
-        result.add( fileProvider.getRootProperties() );
-        oneProviderSucceeded = true;
-      } catch ( Exception e ) {
-        if ( firstProviderException == null ) {
-          firstProviderException = e;
-        }
-
-        // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
-      }
-    }
-
-    if ( firstProviderException != null && !oneProviderSucceeded ) {
-      // All providers failed. Opting to throw the error of the first failed one to the caller.
-      if ( firstProviderException instanceof OperationFailedException ) {
-        throw (OperationFailedException) firstProviderException;
-      } else {
-        throw new OperationFailedException( firstProviderException );
-      }
-    }
-
-    return result;
-  }
-
-  @Override
   public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).downloadFile( path );
   }
