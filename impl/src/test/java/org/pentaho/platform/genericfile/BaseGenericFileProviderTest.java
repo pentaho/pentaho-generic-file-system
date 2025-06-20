@@ -19,6 +19,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.UnsupportedOperationException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -50,13 +51,13 @@ import static org.pentaho.platform.api.genericfile.model.IGenericFile.TYPE_FOLDE
 class BaseGenericFileProviderTest {
   static class GenericFileProviderForTesting<T extends IGenericFile> extends BaseGenericFileProvider<T> {
     @Override
-    protected boolean createFolderCore( @NonNull GenericFilePath path ) {
+    protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public BaseGenericFileTree getTreeCore( @NonNull GetTreeOptions options ) {
+    public BaseGenericFileTree getTreeCore( @NonNull GetTreeOptions options ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -68,18 +69,20 @@ class BaseGenericFileProviderTest {
     }
 
     @Override
-    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
+    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
-    @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
+    @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public IGenericFile getFile( @NonNull GenericFilePath path ) {
+    public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -115,24 +118,24 @@ class BaseGenericFileProviderTest {
 
     @NonNull
     @Override
-    public Class<T> getFileClass() {
+    public Class<T> getFileClass() throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public String getName() {
+    public String getName() throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public String getType() {
+    public String getType() throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean doesFolderExist( @NonNull GenericFilePath path ) {
+    public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

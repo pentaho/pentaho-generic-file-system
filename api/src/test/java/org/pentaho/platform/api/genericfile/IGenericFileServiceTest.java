@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.UnsupportedOperationException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -47,34 +48,36 @@ class IGenericFileServiceTest {
 
     @NonNull
     @Override
-    public IGenericFileTree getTree( @NonNull GetTreeOptions options ) {
+    public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) {
+    public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean doesFolderExist( @NonNull GenericFilePath path ) {
+    public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
+    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean createFolder( @NonNull GenericFilePath path ) {
+    public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
+    public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -86,7 +89,7 @@ class IGenericFileServiceTest {
 
     @NonNull
     @Override
-    public List<IGenericFile> getDeletedFiles() {
+    public List<IGenericFile> getDeletedFiles() throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

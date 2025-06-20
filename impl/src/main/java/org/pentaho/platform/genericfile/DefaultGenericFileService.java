@@ -74,13 +74,13 @@ public class DefaultGenericFileService implements IGenericFileService {
     List<IGenericFileTree> rootTrees = new ArrayList<>();
 
     boolean oneProviderSucceeded = false;
-    Exception firstProviderException = null;
+    OperationFailedException firstProviderException = null;
 
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         rootTrees.addAll( fileProvider.getRootTrees( options ) );
         oneProviderSucceeded = true;
-      } catch ( Exception e ) {
+      } catch ( OperationFailedException e ) {
         if ( firstProviderException == null ) {
           firstProviderException = e;
         }
@@ -92,11 +92,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     if ( firstProviderException != null && !oneProviderSucceeded ) {
       // All providers failed. Opting to throw the error of the first failed one to the caller.
-      if ( firstProviderException instanceof OperationFailedException ) {
-        throw (OperationFailedException) firstProviderException;
-      } else {
-        throw new OperationFailedException( firstProviderException );
-      }
+      throw firstProviderException;
     }
 
     return rootTrees;
@@ -124,12 +120,12 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options ) throws OperationFailedException {
     BaseGenericFileTree rootTree = createMultipleProviderTreeRoot();
-    Exception firstProviderException = null;
+    OperationFailedException firstProviderException = null;
 
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         rootTree.addChild( fileProvider.getTree( options ) );
-      } catch ( Exception e ) {
+      } catch ( OperationFailedException e ) {
         if ( firstProviderException == null ) {
           firstProviderException = e;
         }
@@ -141,11 +137,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     if ( firstProviderException != null && rootTree.getChildren() == null ) {
       // All providers failed. Opting to throw the error of the first failed one to the caller.
-      if ( firstProviderException instanceof OperationFailedException ) {
-        throw (OperationFailedException) firstProviderException;
-      } else {
-        throw new OperationFailedException( firstProviderException );
-      }
+      throw firstProviderException;
     }
 
     return rootTree;
@@ -210,13 +202,13 @@ public class DefaultGenericFileService implements IGenericFileService {
     List<IGenericFile> deletedFiles = new ArrayList<>();
 
     boolean oneProviderSucceeded = false;
-    Exception firstProviderException = null;
+    OperationFailedException firstProviderException = null;
 
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         deletedFiles.addAll( fileProvider.getDeletedFiles() );
         oneProviderSucceeded = true;
-      } catch ( Exception e ) {
+      } catch ( OperationFailedException e ) {
         if ( firstProviderException == null ) {
           firstProviderException = e;
         }
@@ -228,11 +220,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     if ( firstProviderException != null && !oneProviderSucceeded ) {
       // All providers failed. Opting to throw the error of the first failed one to the caller.
-      if ( firstProviderException instanceof OperationFailedException ) {
-        throw (OperationFailedException) firstProviderException;
-      } else {
-        throw new OperationFailedException( firstProviderException );
-      }
+      throw firstProviderException;
     }
 
     return deletedFiles;

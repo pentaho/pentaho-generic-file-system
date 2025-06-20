@@ -42,7 +42,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Gets specific {@link IGenericFile generic file} class used by the provider, matching the type parameter, {@code T}.
    */
   @NonNull
-  Class<T> getFileClass();
+  Class<T> getFileClass() throws OperationFailedException;
 
   /**
    * Gets the name of the provider.
@@ -52,7 +52,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @see #getType()
    */
   @NonNull
-  String getName();
+  String getName() throws OperationFailedException;
 
   /**
    * Gets the unique identifier of the provider.
@@ -60,7 +60,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @see #getName()
    */
   @NonNull
-  String getType();
+  String getType() throws OperationFailedException;
 
   /**
    * Gets a tree of files.
