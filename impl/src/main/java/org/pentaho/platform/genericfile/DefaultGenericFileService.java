@@ -25,7 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProvider
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
@@ -172,9 +172,9 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   @NonNull
-  public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+  public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileContentWrapper( path );
+    return getOwnerFileProvider( path ).getFileContent( path );
   }
 
   @Override

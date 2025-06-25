@@ -20,7 +20,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.Collections;
@@ -166,14 +166,14 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Gets the content of a file, given its path.
    *
    * @param path The path of the file.
-   * @return The file's content wrapper.
+   * @return The file's content.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
    *                                  it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
-  IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) throws OperationFailedException;
+  IGenericFileContent getFileContent( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
    * Gets a file given its path.

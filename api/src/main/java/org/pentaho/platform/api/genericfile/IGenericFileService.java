@@ -22,7 +22,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -222,33 +222,33 @@ public interface IGenericFileService {
    * Gets the content of a file, given its path's string representation.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileContentWrapper(GenericFilePath)} with
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileContent(GenericFilePath)} with
    * the result.
    *
    * @param path The string representation of the path of the file.
-   * @return The file's content wrapper.
+   * @return The file's content.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
    *                                  it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  default IGenericFileContentWrapper getFileContentWrapper( @NonNull String path )
+  default IGenericFileContent getFileContent( @NonNull String path )
     throws OperationFailedException {
-    return getFileContentWrapper( GenericFilePath.parseRequired( path ) );
+    return getFileContent( GenericFilePath.parseRequired( path ) );
   }
 
   /**
    * Gets the content of a file, given its path.
    *
    * @param path The path of the file.
-   * @return The file's content wrapper.
+   * @return The file's content.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
    *                                  it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
-  IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) throws OperationFailedException;
+  IGenericFileContent getFileContent( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
    * Gets a file given its path's string representation.

@@ -25,7 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -37,7 +37,7 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
-import org.pentaho.platform.genericfile.model.DefaultGenericFileContentWrapper;
+import org.pentaho.platform.genericfile.model.DefaultGenericFileContent;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
@@ -228,7 +228,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+  public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
     throws OperationFailedException {
 
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
@@ -239,7 +239,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       String fileName = repositoryFile.getName();
       String mimeType = inputStream.getMimeType();
 
-      return new DefaultGenericFileContentWrapper( inputStream, fileName, mimeType );
+      return new DefaultGenericFileContent( inputStream, fileName, mimeType );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
     }
