@@ -106,16 +106,6 @@ class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
-    @Override
-    public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-      throw new UnsupportedOperationException();
-    }
-
     @NonNull
     @Override
     public Class<T> getFileClass() throws OperationFailedException {

@@ -311,14 +311,4 @@ public class DefaultGenericFileService implements IGenericFileService {
   public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
     getOwnerFileProvider( path ).renameFile( path, newName );
   }
-
-  @Override
-  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileProperties( path );
-  }
-
-  @Override
-  public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).downloadFile( path );
-  }
 }

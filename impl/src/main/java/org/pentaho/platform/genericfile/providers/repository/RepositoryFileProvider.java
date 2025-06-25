@@ -15,7 +15,6 @@ package org.pentaho.platform.genericfile.providers.repository;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
@@ -27,7 +26,6 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
-import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -44,22 +42,14 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFil
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
-import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
-import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
-import org.pentaho.platform.plugin.services.importexport.ExportHandler;
-import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
-import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -568,55 +558,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
-  }
-
-  @Override
-  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
-    try {
-      return convertFromNativeFileDto( getNativeFileProperties( path ) );
-    } catch ( Exception e ) {
-      throw new OperationFailedException( e );
-    }
-  }
-
-  public IGenericFileContentWrapper downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    if ( !SystemUtils.canDownload( path.toString() ) ) {
-      throw new AccessControlException( "User is not authorized to perform this operation." );
-    }
-
-    if ( !fileService.isPathValid( path.toString() ) ) {
-      throw new InvalidPathException();
-    }
-
-    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
-
-    try {
-      return new DefaultGenericFileContentWrapper( getDownloadStream( repositoryFile ),
-        repositoryFile.getName() + ".zip", MediaType.ZIP.toString() );
-    } catch ( Exception e ) {
-      throw new OperationFailedException( e );
-    }
-  }
-
-  protected BaseExportProcessor getDownloadExportProcessor(
-    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) {
-    BaseExportProcessor exportProcessor =
-      new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true );
-    exportProcessor.addExportHandler( getDownloadExportHandler() );
-
-    return exportProcessor;
-  }
-
-  protected ExportHandler getDownloadExportHandler() {
-    return PentahoSystem.get( DefaultExportHandler.class );
-  }
-
-  protected FileInputStream getDownloadStream(
-    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws ExportException, IOException {
-    BaseExportProcessor exportProcessor = getDownloadExportProcessor( repositoryFile );
-    File zipFile = exportProcessor.performExport( repositoryFile );
-
-    return new FileInputStream( zipFile );
   }
 
   protected RepositoryFileDto getNativeFileProperties( @NonNull GenericFilePath path ) throws FileNotFoundException {
