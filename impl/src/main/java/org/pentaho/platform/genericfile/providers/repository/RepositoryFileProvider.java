@@ -10,9 +10,7 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.genericfile.providers.repository;
-
 
 import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -60,12 +58,11 @@ import java.util.stream.Collectors;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
+@SuppressWarnings( { "java:S3008" } )
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
   public static final String ROOT_PATH = "/";
   public static final String FOLDER_NAME_TRASH = ".trash";
 
-  // Ignore Sonar rule regarding field name convention. There's no way to mark the field as final due to lazy
-  // initialization. Correctly using the name convention for constants.
   private static GenericFilePath ROOT_GENERIC_PATH;
 
   static {
@@ -131,8 +128,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     this( unifiedRepository, new CustomFileService( unifiedRepository ) );
   }
 
-  public RepositoryFileProvider( @NonNull IUnifiedRepository unifiedRepository,
-                                 @NonNull FileService fileService ) {
+  public RepositoryFileProvider( @NonNull IUnifiedRepository unifiedRepository, @NonNull FileService fileService ) {
     this.unifiedRepository = Objects.requireNonNull( unifiedRepository );
     this.fileService = Objects.requireNonNull( fileService );
     this.repositoryWsDateAdapter = new DateAdapter();
@@ -158,7 +154,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @Override
   protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
-    // When parent path is not found, its creation is attempted.
+    // When the parent path is not found, its creation is attempted.
     try {
       return fileService.doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
@@ -200,6 +196,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     // So, until that's fixed, must send depth = 1 and then cut children on this side.
     Integer maxDepth = options.getMaxDepth();
     boolean isZeroDepth = maxDepth != null && maxDepth == 0;
+
     if ( isZeroDepth ) {
       maxDepth = 1;
     }
@@ -220,7 +217,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       nativeTree.setChildren( null );
     }
 
-    // The parent path of base path.
+    // The parent path of the base path.
     String parentPathString = getParentPath( basePath );
 
     return convertFromNativeFileTreeDto( nativeTree, parentPathString );
@@ -228,9 +225,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
+  public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
     throws OperationFailedException {
-
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
 
     try {
@@ -270,9 +266,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   /**
    * Get the tree filter's corresponding repository filter
-   *
-   * @param treeFilter
-   * @return
    */
   protected String getRepositoryFilter( GetTreeOptions.TreeFilter treeFilter ) {
     switch ( treeFilter ) {
@@ -558,6 +551,55 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
+  }
+
+  @Override
+  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+    try {
+      return convertFromNativeFileDto( getNativeFileProperties( path ) );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  public IGenericFileContent downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    if ( !SystemUtils.canDownload( path.toString() ) ) {
+      throw new AccessControlException( "User is not authorized to perform this operation." );
+    }
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException();
+    }
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
+
+    try {
+      return new DefaultGenericFileContent( getDownloadStream( repositoryFile ),
+        repositoryFile.getName() + ".zip", MediaType.ZIP.toString() );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  protected BaseExportProcessor getDownloadExportProcessor(
+    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) {
+    BaseExportProcessor exportProcessor =
+      new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true );
+    exportProcessor.addExportHandler( getDownloadExportHandler() );
+
+    return exportProcessor;
+  }
+
+  protected ExportHandler getDownloadExportHandler() {
+    return PentahoSystem.get( DefaultExportHandler.class );
+  }
+
+  protected FileInputStream getDownloadStream(
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws ExportException, IOException {
+    BaseExportProcessor exportProcessor = getDownloadExportProcessor( repositoryFile );
+    File zipFile = exportProcessor.performExport( repositoryFile );
+
+    return new FileInputStream( zipFile );
   }
 
   protected RepositoryFileDto getNativeFileProperties( @NonNull GenericFilePath path ) throws FileNotFoundException {

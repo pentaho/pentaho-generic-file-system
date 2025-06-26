@@ -29,6 +29,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
+import org.pentaho.platform.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class DefaultGenericFileService implements IGenericFileService {
-
   @VisibleForTesting
   static final String MULTIPLE_PROVIDER_ROOT_PROVIDER = "combined";
   @VisibleForTesting
@@ -46,7 +46,6 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   public DefaultGenericFileService( @NonNull List<IGenericFileProvider<?>> fileProviders )
     throws InvalidGenericFileProviderException {
-
     Objects.requireNonNull( fileProviders );
 
     if ( fileProviders.isEmpty() ) {
@@ -57,13 +56,14 @@ public class DefaultGenericFileService implements IGenericFileService {
     this.fileProviders = new ArrayList<>( fileProviders );
   }
 
+  @Override
   public void clearTreeCache() {
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         fileProvider.clearTreeCache();
       } catch ( OperationFailedException e ) {
         // Clear as many as possible. Still, log each failure.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error clearing tree cache.", e );
       }
     }
   }
@@ -86,7 +86,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting root trees.", e );
       }
     }
 
@@ -99,8 +99,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
+  @Override
   public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
-
     Objects.requireNonNull( options );
 
     if ( isSingleProviderMode() ) {
@@ -131,7 +131,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting tree from root.", e );
       }
     }
 
@@ -157,28 +157,29 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
-
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
     return getOwnerFileProvider( basePath ).getTree( options );
   }
 
+  @Override
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).doesFolderExist( path );
   }
 
+  @Override
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).createFolder( path );
   }
 
-  @Override
   @NonNull
-  public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
+  @Override
+  public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileContent( path );
+    return getOwnerFileProvider( path ).getFileContent( path, compressed );
   }
 
-  @Override
   @NonNull
+  @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).getFile( path );
   }
@@ -214,7 +215,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting deleted files.", e );
       }
     }
 
@@ -235,8 +236,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         deleteFilePermanently( path );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred during permanent deletion." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred during permanent deletion." );
         }
 
         batchException.addFailedPath( path, e );
@@ -262,8 +262,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         deleteFile( path, permanent );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred during deletion." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred during deletion." );
         }
 
         batchException.addFailedPath( path, e );
@@ -289,8 +288,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         restoreFile( path );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred while attempting to restore." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to restore." );
         }
 
         batchException.addFailedPath( path, e );

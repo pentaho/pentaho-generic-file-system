@@ -75,7 +75,7 @@ class BaseGenericFileProviderTest {
     }
 
     @NonNull
-    @Override public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
+    @Override public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }

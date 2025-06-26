@@ -76,7 +76,7 @@ class IGenericFileServiceTest {
 
     @NonNull
     @Override
-    public IGenericFileContent getFileContent( @NonNull GenericFilePath path )
+    public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
@@ -125,6 +125,30 @@ class IGenericFileServiceTest {
 
     @Override
     public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void moveFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
   }
