@@ -18,19 +18,13 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
-import java.util.Date;
-
 public abstract class RepositoryObject extends BaseGenericFile implements IGenericFile {
+  private static final String HIDDEN_PROPERTY = "hidden";
+  private static final String SCHEDULABLE_PROPERTY = "schedulable";
+
   private String objectId;
   private String extension;
   private String repository;
-
-  // TODO move this to IGenericFile
-  private boolean hidden;
-  private Date createdDate;
-  private String creatorId;
-  private long fileSize;
-  private boolean schedulable;
 
   @NonNull
   @Override
@@ -63,42 +57,18 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
   }
 
   public boolean isHidden() {
-    return hidden;
+    return Boolean.parseBoolean( String.valueOf( getCustomProperty( HIDDEN_PROPERTY ) ) );
   }
 
   public void setHidden( boolean hidden ) {
-    this.hidden = hidden;
-  }
-
-  public Date getCreatedDate() {
-    return createdDate;
-  }
-
-  public void setCreatedDate( Date createdDate ) {
-    this.createdDate = createdDate;
-  }
-
-  public String getCreatorId() {
-    return creatorId;
-  }
-
-  public void setCreatorId( String creatorId ) {
-    this.creatorId = creatorId;
-  }
-
-  public long getFileSize() {
-    return fileSize;
-  }
-
-  public void setFileSize( long fileSize ) {
-    this.fileSize = fileSize;
+    addCustomProperty( HIDDEN_PROPERTY, hidden );
   }
 
   public boolean isSchedulable() {
-    return schedulable;
+    return Boolean.parseBoolean( String.valueOf( getCustomProperty( SCHEDULABLE_PROPERTY ) ) );
   }
 
   public void setSchedulable( boolean schedulable ) {
-    this.schedulable = schedulable;
+    addCustomProperty( SCHEDULABLE_PROPERTY, schedulable );
   }
 }

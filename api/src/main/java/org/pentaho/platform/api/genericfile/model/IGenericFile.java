@@ -15,6 +15,7 @@ package org.pentaho.platform.api.genericfile.model;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@code IGenericFile} interface contains basic information about a generic file.
@@ -162,4 +163,24 @@ public interface IGenericFile extends IProviderable {
    * Gets the owner of the generic file.
    */
   String getOwner();
+
+  /**
+   * Gets the creation date of the generic file.
+   */
+  Date getCreatedDate();
+
+  /**
+   * Gets the user ID that created the generic file.
+   */
+  String getCreatorId();
+
+  /**
+   * Gets the file size in bytes.
+   */
+  long getFileSize();
+
+  /**
+   * Gets whether the generic file is schedulable.
+   */
+  Map<String, Object> getCustomProperties();
 }
