@@ -163,7 +163,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).doesFolderExist( path );
+    return getOwnerFileProvider( path ).doesFolderExist( path ); //FIXME
   }
 
   @Override
@@ -288,7 +288,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         restoreFile( path );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to restore." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to restore files." );
         }
 
         batchException.addFailedPath( path, e );
@@ -308,5 +308,61 @@ public class DefaultGenericFileService implements IGenericFileService {
   @Override
   public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
     getOwnerFileProvider( path ).renameFile( path, newName );
+  }
+
+  @Override
+  public void copyFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
+    BatchOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        copyFile( path, destinationPath );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to copy files." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
+  }
+
+  @Override
+  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
+    getOwnerFileProvider( path ).copyFile( path, destinationPath );
+  }
+
+  @Override
+  public void moveFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
+    BatchOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        moveFile( path, destinationPath );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to move files." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
+  }
+
+  @Override
+  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
+    getOwnerFileProvider( path ).moveFile( path, destinationPath );
   }
 }

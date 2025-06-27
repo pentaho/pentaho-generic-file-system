@@ -24,6 +24,8 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
   private String objectId;
   private String extension;
   private String repository;
+
+  // TODO move this to IGenericFile
   private boolean hidden;
   private Date createdDate;
   private String creatorId;

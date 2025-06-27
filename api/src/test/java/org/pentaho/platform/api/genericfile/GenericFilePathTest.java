@@ -311,7 +311,6 @@ class GenericFilePathTest {
     void testEqualsItself() throws InvalidPathException {
       GenericFilePath path = GenericFilePath.parse( "scheme://my/folder" );
       assertNotNull( path );
-      // Sonar issue: Want to directly test the #equals(.) method.
       assertEquals( path, path );
     }
 
@@ -327,8 +326,8 @@ class GenericFilePathTest {
       GenericFilePath path1 = GenericFilePath.parse( "scheme://my/folder" );
       GenericFilePath path2 = GenericFilePath.parse( "scheme://my/folder" );
       assertNotNull( path1 );
-      assertEquals( path1, path2 );
       assertNotNull( path2 );
+      assertEquals( path1, path2 );
       assertEquals( path1.hashCode(), path2.hashCode() );
     }
 
@@ -337,8 +336,8 @@ class GenericFilePathTest {
       GenericFilePath path1 = GenericFilePath.parse( "scheme://my/  folder" );
       GenericFilePath path2 = GenericFilePath.parse( "scheme://my//folder  " );
       assertNotNull( path1 );
-      assertEquals( path1, path2 );
       assertNotNull( path2 );
+      assertEquals( path1, path2 );
       assertEquals( path1.hashCode(), path2.hashCode() );
     }
 

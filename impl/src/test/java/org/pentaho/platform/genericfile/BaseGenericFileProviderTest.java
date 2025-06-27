@@ -106,6 +106,18 @@ class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
     @NonNull
     @Override
     public Class<T> getFileClass() throws OperationFailedException {

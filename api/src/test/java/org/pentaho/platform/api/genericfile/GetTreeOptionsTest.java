@@ -360,8 +360,6 @@ class GetTreeOptionsTest {
     @Test
     void testEqualsItself() {
       GetTreeOptions options = new GetTreeOptions();
-
-      // Sonar issue: Want to directly test the #equals(.) method.
       assertEquals( options, options );
     }
 

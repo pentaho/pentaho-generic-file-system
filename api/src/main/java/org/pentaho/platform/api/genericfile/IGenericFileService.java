@@ -547,20 +547,20 @@ public interface IGenericFileService {
   /**
    * Copies files, given their paths, to a destination path.
    *
-   * @param files           The list of file paths to be copied. These paths must not correspond to files that are in
+   * @param paths           The list of file paths to be copied. These paths must not correspond to files that are in
    *                        the trash/deleted.
    * @param destinationPath The file path to copy the files to.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
-  void copyFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+  void copyFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 
   /**
    * Copies a file, given its path, to a destination path.
    *
-   * @param file            The file path to be copied. This path must not correspond to a file in the trash/deleted.
+   * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to copy the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
@@ -568,26 +568,26 @@ public interface IGenericFileService {
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+  void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 
   /**
    * Moves files, given their paths, to a destination path.
    *
-   * @param files           The list of file paths to be moved. These paths must not correspond to files that are in the
+   * @param paths           The list of file paths to be moved. These paths must not correspond to files that are in the
    *                        trash/deleted.
    * @param destinationPath The file path to move the files to.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
-  void moveFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+  void moveFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 
   /**
    * Moves a file, given its path, to a destination path.
    *
-   * @param file            The file path to be moved. This path must not correspond to a file in the trash/deleted.
+   * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to move the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
@@ -595,6 +595,6 @@ public interface IGenericFileService {
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+  void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 }

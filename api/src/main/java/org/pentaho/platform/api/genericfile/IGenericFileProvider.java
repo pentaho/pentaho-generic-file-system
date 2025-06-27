@@ -268,7 +268,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Copies a file, given its path, to a destination path.
    *
-   * @param file            The file path to be copied. This path must not correspond to a file in the trash/deleted.
+   * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to copy the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
@@ -276,13 +276,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+  void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 
   /**
    * Moves a file, given its path, to a destination path.
    *
-   * @param file            The file path to be moved. This path must not correspond to a file in the trash/deleted.
+   * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to move the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
@@ -290,6 +290,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+  void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
 }

@@ -13,6 +13,7 @@
 package org.pentaho.platform.genericfile.providers.repository;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
@@ -22,8 +23,10 @@ import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.PathAlreadyExistsException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -40,14 +43,21 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFil
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
+import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
+import org.pentaho.platform.plugin.services.importexport.ExportHandler;
+import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
+import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -58,7 +68,7 @@ import java.util.stream.Collectors;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
-@SuppressWarnings( { "java:S3008" } )
+@SuppressWarnings( { "java:S3008", "java:S1192" } )
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
   public static final String ROOT_PATH = "/";
   public static final String FOLDER_NAME_TRASH = ".trash";
@@ -154,9 +164,15 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @Override
   protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
+    String pathId = encodeRepositoryPath( path.toString() );
+
+    if ( fileService.doesExist( pathId ) ) {
+      throw new PathAlreadyExistsException( "Folder already exists: " + path );
+    }
+
     // When the parent path is not found, its creation is attempted.
     try {
-      return fileService.doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+      return fileService.doCreateDirSafe( pathId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new AccessControlException( e );
     } catch ( FileService.InvalidNameException e ) {
@@ -227,17 +243,29 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
     throws OperationFailedException {
+    if ( !SystemUtils.canDownload( path.toString() ) ) {
+      throw new AccessControlException( "User is not authorized to perform this operation." );
+    }
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException();
+    }
+
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
 
     try {
+      if ( compressed || repositoryFile.isFolder() ) {
+        FileInputStream inputStream = getFileContentCompressedStream( repositoryFile );
+        return new DefaultGenericFileContent( inputStream, repositoryFile.getName() + ".zip",
+          MediaType.ZIP.toString() );
+      }
+
       RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
-
-      String fileName = repositoryFile.getName();
-      String mimeType = inputStream.getMimeType();
-
-      return new DefaultGenericFileContent( inputStream, fileName, mimeType );
+      return new DefaultGenericFileContent( inputStream, repositoryFile.getName(), inputStream.getMimeType() );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
     }
   }
 
@@ -346,7 +374,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return repositoryObject;
   }
 
-  private RepositoryObject convertFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+  protected RepositoryObject convertFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
     return convertFromNativeFileDto( nativeFile, getParentPath( nativeFile ) );
   }
 
@@ -419,7 +447,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
    * Must be kept in sync with {@link #convertFromNativeFileDto(RepositoryFileDto, String)}.
    */
   @NonNull
-  private RepositoryObject convertFromNativeFile(
+  protected RepositoryObject convertFromNativeFile(
     @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile, @Nullable String parentPath ) {
 
     RepositoryObject repositoryObject = createRepositoryObject(
@@ -435,6 +463,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
       repositoryObject.setObjectId( id );
       repositoryObject.setOwner( getOwnerByFileId( id ) );
+      repositoryObject.setCreatedDate( nativeFile.getCreatedDate() );
+      repositoryObject.setCreatorId( nativeFile.getCreatorId() );
+      repositoryObject.setFileSize( nativeFile.getFileSize() );
+      repositoryObject.setSchedulable( nativeFile.isSchedulable() );
     }
 
     repositoryObject.setDescription( nativeFile.getDescription() );
@@ -541,6 +573,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         throw new IllegalArgumentException( "Invalid name to rename the file: " + newName );
       }
 
+      GenericFilePath newPath = getNewPath( path, newName );
+
+      if ( fileService.doesExist( encodeRepositoryPath( newPath.toString() ) ) ) {
+        throw new PathAlreadyExistsException( "Folder already exists: " + newPath );
+      }
+
       boolean success = fileService.doRename( encodeRepositoryPath( path.toString() ), newName );
 
       if ( !success ) {
@@ -554,60 +592,66 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public IGenericFile getFileProperties( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
     try {
-      return convertFromNativeFileDto( getNativeFileProperties( path ) );
+      if ( !fileService.isPathValid( path.toString() ) ) {
+        throw new InvalidPathException( "Invalid source path: " + path );
+      }
+
+      if ( !fileService.isPathValid( destinationPath.toString() ) ) {
+        throw new InvalidPathException( "Invalid destination path: " + destinationPath );
+      }
+
+      fileService.doCopyFiles( encodeRepositoryPath( destinationPath.toString() ), FileService.MODE_RENAME,
+        getFileId( path ) );
+    } catch ( OperationFailedException e ) {
+      throw e;
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
   }
 
-  public IGenericFileContent downloadFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    if ( !SystemUtils.canDownload( path.toString() ) ) {
-      throw new AccessControlException( "User is not authorized to perform this operation." );
-    }
-
-    if ( !fileService.isPathValid( path.toString() ) ) {
-      throw new InvalidPathException();
-    }
-
-    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
-
+  @Override
+  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+    throws OperationFailedException {
     try {
-      return new DefaultGenericFileContent( getDownloadStream( repositoryFile ),
-        repositoryFile.getName() + ".zip", MediaType.ZIP.toString() );
+      if ( !fileService.isPathValid( path.toString() ) ) {
+        throw new InvalidPathException( "Invalid source path: " + path );
+      }
+
+      if ( !fileService.isPathValid( destinationPath.toString() ) ) {
+        throw new InvalidPathException( "Invalid destination path: " + destinationPath );
+      }
+
+      fileService.doMoveFiles( encodeRepositoryPath( destinationPath.toString() ), getFileId( path ) );
+    } catch ( OperationFailedException e ) {
+      throw e;
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
   }
 
-  protected BaseExportProcessor getDownloadExportProcessor(
-    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) {
+  protected GenericFilePath getNewPath( @NonNull GenericFilePath path, @NonNull String newName )
+    throws InvalidPathException {
+    return GenericFilePath.parseRequired( getParentPath( path ) + GenericFilePath.PATH_SEPARATOR + newName );
+  }
+
+  protected FileInputStream getFileContentCompressedStream(
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws ExportException, IOException {
     BaseExportProcessor exportProcessor =
       new ZipExportProcessor( repositoryFile.getPath(), fileService.getRepository(), true );
-    exportProcessor.addExportHandler( getDownloadExportHandler() );
+    exportProcessor.addExportHandler( getPentahoExportHandler() );
 
-    return exportProcessor;
+    return new FileInputStream( exportProcessor.performExport( repositoryFile ) );
   }
 
-  protected ExportHandler getDownloadExportHandler() {
+  protected ExportHandler getPentahoExportHandler() {
     return PentahoSystem.get( DefaultExportHandler.class );
   }
 
-  protected FileInputStream getDownloadStream(
-    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws ExportException, IOException {
-    BaseExportProcessor exportProcessor = getDownloadExportProcessor( repositoryFile );
-    File zipFile = exportProcessor.performExport( repositoryFile );
-
-    return new FileInputStream( zipFile );
-  }
-
-  protected RepositoryFileDto getNativeFileProperties( @NonNull GenericFilePath path ) throws FileNotFoundException {
-    return fileService.doGetProperties( encodeRepositoryPath( path.toString() ) );
-  }
-
-  protected String getFileId( @NonNull GenericFilePath path ) throws FileNotFoundException {
-    return getNativeFileProperties( path ).getId();
+  protected String getFileId( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getNativeFile( path ).getId().toString();
   }
 
   protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {
@@ -666,7 +710,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         folder = getFile( locationPath );
       } catch ( OperationFailedException e ) {
-        // Location folder not found, most likely because it was deleted.
+        // The Folder wasn't found, most likely because it was deleted.
         String parentPath = getParentPath( locationPath );
         String name = locationPath.getLastSegment();
 
