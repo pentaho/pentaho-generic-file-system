@@ -597,21 +597,38 @@ class RepositoryFileProviderTest {
   // region getFile
   @Test
   void testGetFileThrowsNotFoundExceptionIfPathNotOwned() {
+    FileService fileServiceMock = mock( FileService.class );
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    doReturn( true ).when( fileServiceMock ).isPathValid( any() );
 
     assertThrows( NotFoundException.class,
       () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) ) );
   }
 
   @Test
+  void testGetFileThrowsInvalidPathExceptionIfPathIsInvalid() {
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( false ).when( fileServiceMock ).isPathValid( "/system" );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    assertThrows( InvalidPathException.class, () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
+  }
+
+  @Test
   void testGetFileThrowsNotFoundExceptionIfPathNotFound() {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    doReturn( true ).when( fileServiceMock ).isPathValid( any() );
     doReturn( null )
       .when( repositoryMock )
       .getFile( "/path" );
 
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     assertThrows( NotFoundException.class, () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
   }
@@ -621,11 +638,14 @@ class RepositoryFileProviderTest {
     RepositoryFile nativeFile = createNativeFile( ROOT_PATH, "", true );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    doReturn( true ).when( fileServiceMock ).isPathValid( any() );
     doReturn( nativeFile )
       .when( repositoryMock )
       .getFile( ROOT_PATH );
 
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( ROOT_PATH ) );
 
@@ -637,11 +657,14 @@ class RepositoryFileProviderTest {
     RepositoryFile nativeFile = createNativeFile( "/public/testFile1", "testFile1", false );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    doReturn( true ).when( fileServiceMock ).isPathValid( any() );
     doReturn( nativeFile )
       .when( repositoryMock )
       .getFile( nativeFile.getPath() );
 
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ) );
 
@@ -839,6 +862,7 @@ class RepositoryFileProviderTest {
     }
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( any() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -869,6 +893,7 @@ class RepositoryFileProviderTest {
     }
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( any() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -890,10 +915,27 @@ class RepositoryFileProviderTest {
 
     FileService fileServiceMock = mock( FileService.class );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
     doReturn( null ).when( repositoryMock ).getFile( any() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     assertThrows( OperationFailedException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
+
+    verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
+    verify( fileServiceMock, never() ).doDeleteFilesPermanent( anyString() );
+  }
+
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testDeleteInvalidPath( boolean permanent ) throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/nonexistent-file.xanalyzer" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( false ).when( fileServiceMock ).isPathValid( path.toString() );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertThrows( InvalidPathException.class, () -> repositoryProvider.deleteFile( path, permanent ) );
 
     verify( fileServiceMock, never() ).doDeleteFiles( anyString() );
     verify( fileServiceMock, never() ).doDeleteFilesPermanent( anyString() );

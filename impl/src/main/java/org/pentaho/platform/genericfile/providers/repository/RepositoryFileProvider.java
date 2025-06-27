@@ -247,10 +247,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new AccessControlException( "User is not authorized to perform this operation." );
     }
 
-    if ( !fileService.isPathValid( path.toString() ) ) {
-      throw new InvalidPathException();
-    }
-
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = getNativeFile( path );
 
     try {
@@ -280,6 +276,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     Objects.requireNonNull( path );
 
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = null;
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException();
+    }
 
     if ( owns( path ) ) {
       repositoryFile = unifiedRepository.getFile( path.toString() );
@@ -550,6 +550,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       }
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+    } catch ( OperationFailedException e ) {
+      throw e;
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }

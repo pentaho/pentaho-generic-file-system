@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class DefaultGenericFileService implements IGenericFileService {
   @VisibleForTesting
@@ -163,7 +164,8 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).doesFolderExist( path ); //FIXME
+    Optional<IGenericFileProvider<?>> fileProvider = getFirstOwnerFileProvider( path );
+    return fileProvider.isPresent() && fileProvider.get().doesFolderExist( path );
   }
 
   @Override
@@ -184,11 +186,15 @@ public class DefaultGenericFileService implements IGenericFileService {
     return getOwnerFileProvider( path ).getFile( path );
   }
 
-  private IGenericFileProvider<?> getOwnerFileProvider( @NonNull GenericFilePath path ) throws NotFoundException {
+  private Optional<IGenericFileProvider<?>> getFirstOwnerFileProvider( @NonNull GenericFilePath path ) {
     return fileProviders.stream()
       .filter( fileProvider -> fileProvider.owns( path ) )
-      .findFirst()
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) );
+      .findFirst();
+  }
+
+  private IGenericFileProvider<?> getOwnerFileProvider( @NonNull GenericFilePath path ) throws NotFoundException {
+    return getFirstOwnerFileProvider( path ).orElseThrow(
+      () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) );
   }
 
   @Override
