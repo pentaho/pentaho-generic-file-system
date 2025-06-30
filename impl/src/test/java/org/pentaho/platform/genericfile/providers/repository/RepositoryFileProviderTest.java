@@ -21,10 +21,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -77,7 +77,7 @@ import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPa
 /**
  * Tests for the {@link RepositoryFileProvider} class.
  */
-@SuppressWarnings( { "DataFlowIssue", "ExtractMethodRecommender" } )
+@SuppressWarnings( { "DataFlowIssue" } )
 class RepositoryFileProviderTest {
   static final String ENCODED_ROOT_PATH = RepositoryPathEncoder.encodeRepositoryPath( ROOT_PATH );
   static final String ALL_FILTER = "*";
@@ -208,20 +208,6 @@ class RepositoryFileProviderTest {
     nativeFile.setCreatedDate( numberOfMilliseconds );
 
     return nativeFile;
-  }
-
-  @NonNull
-  private static RepositoryFile createNativeFile( String path, String name, boolean isFolder ) {
-    Date createdDate = new Date( 100 );
-    Date lastModeDate = new Date( 200 );
-    Date lockDate = new Date();
-
-    return new RepositoryFile(
-      "12345", name, isFolder, false, false, false, "versionId", path, createdDate,
-      lastModeDate,
-      false, "lockOwner", "lockMessage", lockDate, "en_US", name + " title", name + " description",
-      null, null, 4096, name + "creatorId", null
-    );
   }
 
   @NonNull
@@ -504,7 +490,6 @@ class RepositoryFileProviderTest {
     assertEquals( "Test File 1 Id", testFile1.getObjectId() );
     assertEquals( "Test File 1 title", testFile1.getTitle() );
     assertEquals( "Test File 1 description", testFile1.getDescription() );
-    assertTrue( testFile1.isHidden() );
     assertEquals( new Date( 100 ), testFile1.getModifiedDate() );
   }
 
@@ -535,7 +520,6 @@ class RepositoryFileProviderTest {
     assertEquals( "Test Folder 2 Id", testFolder2.getObjectId() );
     assertEquals( "Test Folder 2 title", testFolder2.getTitle() );
     assertEquals( "Test Folder 2 description", testFolder2.getDescription() );
-    assertFalse( testFolder2.isHidden() );
     assertEquals( new Date( 200 ), testFolder2.getModifiedDate() );
   }
 
@@ -635,7 +619,8 @@ class RepositoryFileProviderTest {
 
   @Test
   void testGetFileRootHasExpectedProperties() throws OperationFailedException {
-    RepositoryFile nativeFile = createNativeFile( ROOT_PATH, "", true );
+    GenericFilePath path = GenericFilePath.parse( ROOT_PATH );
+    RepositoryFile nativeFile = createNativeFile( "12345", path, true );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -647,14 +632,15 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( ROOT_PATH ) );
+    IGenericFile file = repositoryProvider.getFile( path );
 
     assertRootFolder( file );
   }
 
   @Test
   void testGetFileRegularHasExpectedProperties() throws OperationFailedException {
-    RepositoryFile nativeFile = createNativeFile( "/public/testFile1", "testFile1", false );
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    RepositoryFile nativeFile = createNativeFile( "12345", path, false );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -1144,7 +1130,7 @@ class RepositoryFileProviderTest {
 
     OperationFailedException exception =
       assertThrows( OperationFailedException.class, () -> repositoryProvider.copyFile( path, destPath ) );
-    assertEquals( "Invalid destination path: " + destPath, exception.getMessage() );
+    assertEquals( "Destination path does not exists: " + destPath, exception.getMessage() );
     verify( fileServiceMock, never() ).doCopyFiles( anyString(), anyInt(), any() );
   }
 
@@ -1481,11 +1467,9 @@ class RepositoryFileProviderTest {
     dto.setTitle( "File Title" );
     dto.setDescription( "File Description" );
     dto.setId( "id-1" );
-    dto.setHidden( true );
     dto.setOwner( "owner1" );
     dto.setCreatorId( "creator1" );
     dto.setFileSize( 123L );
-    dto.setNotSchedulable( false );
 
     RepositoryObject obj = provider.convertFromNativeFileDto( dto );
 
@@ -1497,13 +1481,11 @@ class RepositoryFileProviderTest {
     assertEquals( "File Title", obj.getTitle() );
     assertEquals( "File Description", obj.getDescription() );
     assertFalse( obj.isFolder() );
-    assertTrue( obj.isHidden() );
     assertEquals( new Date( 1000 ), obj.getCreatedDate() );
     assertEquals( new Date( 2000 ), obj.getModifiedDate() );
     assertEquals( "owner1", obj.getOwner() );
     assertEquals( "creator1", obj.getCreatorId() );
     assertEquals( 123L, obj.getFileSize() );
-    assertTrue( obj.isSchedulable() );
   }
 
   @Test
@@ -1520,11 +1502,9 @@ class RepositoryFileProviderTest {
     dto.setTitle( "Folder Title" );
     dto.setDescription( "Folder Description" );
     dto.setId( "id-2" );
-    dto.setHidden( false );
     dto.setOwner( "owner2" );
     dto.setCreatorId( "creator2" );
     dto.setFileSize( 0L );
-    dto.setNotSchedulable( true );
 
     RepositoryObject obj = provider.convertFromNativeFileDto( dto );
 
@@ -1536,13 +1516,11 @@ class RepositoryFileProviderTest {
     assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), obj.getTitle() );
     assertEquals( "Folder Description", obj.getDescription() );
     assertTrue( obj.isFolder() );
-    assertFalse( obj.isHidden() );
     assertEquals( new Date( 1000 ), obj.getCreatedDate() );
     assertEquals( new Date( 2000 ), obj.getModifiedDate() );
     assertEquals( "owner2", obj.getOwner() );
     assertEquals( "creator2", obj.getCreatorId() );
     assertEquals( 0L, obj.getFileSize() );
-    assertFalse( obj.isSchedulable() );
   }
 
   @Test
@@ -1559,11 +1537,9 @@ class RepositoryFileProviderTest {
     dto.setTitle( "File Title" );
     dto.setDescription( "File Description" );
     dto.setId( "id-1" );
-    dto.setHidden( true );
     dto.setOwner( "owner1" );
     dto.setCreatorId( "creator1" );
     dto.setFileSize( 123L );
-    dto.setNotSchedulable( false );
 
     RepositoryObject obj = provider.convertFromNativeFileDto( dto );
 
@@ -1575,13 +1551,11 @@ class RepositoryFileProviderTest {
     assertEquals( "File Title", obj.getTitle() );
     assertEquals( "File Description", obj.getDescription() );
     assertFalse( obj.isFolder() );
-    assertTrue( obj.isHidden() );
     assertEquals( new Date( 1000 ), obj.getCreatedDate() );
     assertEquals( new Date( 1000 ), obj.getModifiedDate() );
     assertEquals( "owner1", obj.getOwner() );
     assertEquals( "creator1", obj.getCreatorId() );
     assertEquals( 123L, obj.getFileSize() );
-    assertTrue( obj.isSchedulable() );
   }
   // endregion
 
@@ -1598,27 +1572,23 @@ class RepositoryFileProviderTest {
     String title = "File Title";
     String description = "File Description";
     boolean isFolder = false;
-    boolean isHidden = true;
     Date createdDate = new Date( 1000 );
     Date modifiedDate = new Date( 2000 );
     String owner = "owner1";
     String creatorId = "creator1";
     long fileSize = 123L;
-    boolean schedulable = true;
 
     RepositoryFile nativeFile = mock( RepositoryFile.class );
     doReturn( name ).when( nativeFile ).getName();
     doReturn( path ).when( nativeFile ).getPath();
     doReturn( title ).when( nativeFile ).getTitle();
     doReturn( isFolder ).when( nativeFile ).isFolder();
-    doReturn( isHidden ).when( nativeFile ).isHidden();
     doReturn( createdDate ).when( nativeFile ).getCreatedDate();
     doReturn( modifiedDate ).when( nativeFile ).getLastModifiedDate();
     doReturn( id ).when( nativeFile ).getId();
     doReturn( description ).when( nativeFile ).getDescription();
     doReturn( creatorId ).when( nativeFile ).getCreatorId();
     doReturn( fileSize ).when( nativeFile ).getFileSize();
-    doReturn( schedulable ).when( nativeFile ).isSchedulable();
     doReturn( owner ).when( provider ).getOwnerByFileId( id );
 
     RepositoryObject obj = provider.convertFromNativeFile( nativeFile, parentPath );
@@ -1631,13 +1601,11 @@ class RepositoryFileProviderTest {
     assertEquals( title, obj.getTitle() );
     assertEquals( description, obj.getDescription() );
     assertEquals( isFolder, obj.isFolder() );
-    assertEquals( isHidden, obj.isHidden() );
     assertEquals( createdDate, obj.getCreatedDate() );
     assertEquals( modifiedDate, obj.getModifiedDate() );
     assertEquals( owner, obj.getOwner() );
     assertEquals( creatorId, obj.getCreatorId() );
     assertEquals( fileSize, obj.getFileSize() );
-    assertEquals( schedulable, obj.isSchedulable() );
   }
 
   @Test
@@ -1651,27 +1619,23 @@ class RepositoryFileProviderTest {
     String title = "Root Folder";
     String description = "Root Folder Description";
     boolean isFolder = true;
-    boolean isHidden = false;
     Date createdDate = new Date( 1000 );
     Date modifiedDate = new Date( 2000 );
     String owner = "owner1";
     String creatorId = "creator1";
     long fileSize = 0L;
-    boolean schedulable = false;
 
     RepositoryFile nativeFile = mock( RepositoryFile.class );
     doReturn( name ).when( nativeFile ).getName();
     doReturn( path ).when( nativeFile ).getPath();
     doReturn( title ).when( nativeFile ).getTitle();
     doReturn( isFolder ).when( nativeFile ).isFolder();
-    doReturn( isHidden ).when( nativeFile ).isHidden();
     doReturn( createdDate ).when( nativeFile ).getCreatedDate();
     doReturn( modifiedDate ).when( nativeFile ).getLastModifiedDate();
     doReturn( id ).when( nativeFile ).getId();
     doReturn( description ).when( nativeFile ).getDescription();
     doReturn( creatorId ).when( nativeFile ).getCreatorId();
     doReturn( fileSize ).when( nativeFile ).getFileSize();
-    doReturn( schedulable ).when( nativeFile ).isSchedulable();
     doReturn( owner ).when( provider ).getOwnerByFileId( id );
 
     RepositoryObject obj = provider.convertFromNativeFile( nativeFile, null );
@@ -1684,13 +1648,11 @@ class RepositoryFileProviderTest {
     assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), obj.getTitle() );
     assertEquals( description, obj.getDescription() );
     assertEquals( isFolder, obj.isFolder() );
-    assertEquals( isHidden, obj.isHidden() );
     assertEquals( createdDate, obj.getCreatedDate() );
     assertEquals( modifiedDate, obj.getModifiedDate() );
     assertEquals( owner, obj.getOwner() );
     assertEquals( creatorId, obj.getCreatorId() );
     assertEquals( fileSize, obj.getFileSize() );
-    assertEquals( schedulable, obj.isSchedulable() );
   }
 
   @Test
@@ -1704,26 +1666,22 @@ class RepositoryFileProviderTest {
     String title = "File Title";
     String description = "File Description";
     boolean isFolder = false;
-    boolean isHidden = true;
     Date createdDate = new Date( 1000 );
     Date modifiedDate = new Date( 2000 );
     String creatorId = "creator1";
     long fileSize = 123L;
-    boolean schedulable = true;
 
     RepositoryFile nativeFile = mock( RepositoryFile.class );
     doReturn( name ).when( nativeFile ).getName();
     doReturn( path ).when( nativeFile ).getPath();
     doReturn( title ).when( nativeFile ).getTitle();
     doReturn( isFolder ).when( nativeFile ).isFolder();
-    doReturn( isHidden ).when( nativeFile ).isHidden();
     doReturn( createdDate ).when( nativeFile ).getCreatedDate();
     doReturn( modifiedDate ).when( nativeFile ).getLastModifiedDate();
     doReturn( null ).when( nativeFile ).getId();
     doReturn( description ).when( nativeFile ).getDescription();
     doReturn( creatorId ).when( nativeFile ).getCreatorId();
     doReturn( fileSize ).when( nativeFile ).getFileSize();
-    doReturn( schedulable ).when( nativeFile ).isSchedulable();
 
     RepositoryObject obj = provider.convertFromNativeFile( nativeFile, parentPath );
 
@@ -1735,13 +1693,11 @@ class RepositoryFileProviderTest {
     assertEquals( title, obj.getTitle() );
     assertEquals( description, obj.getDescription() );
     assertEquals( isFolder, obj.isFolder() );
-    assertEquals( isHidden, obj.isHidden() );
     assertNull( obj.getCreatedDate() );
     assertEquals( modifiedDate, obj.getModifiedDate() );
     assertNull( obj.getOwner() );
     assertNull( obj.getCreatorId() );
     assertEquals( 0L, obj.getFileSize() );
-    assertFalse( obj.isSchedulable() );
   }
 
   @Test
@@ -1756,26 +1712,22 @@ class RepositoryFileProviderTest {
     String title = "File Title";
     String description = "File Description";
     boolean isFolder = false;
-    boolean isHidden = true;
     Date createdDate = new Date( 1000 );
     String owner = "owner1";
     String creatorId = "creator1";
     long fileSize = 123L;
-    boolean schedulable = true;
 
     RepositoryFile nativeFile = mock( RepositoryFile.class );
     doReturn( name ).when( nativeFile ).getName();
     doReturn( path ).when( nativeFile ).getPath();
     doReturn( title ).when( nativeFile ).getTitle();
     doReturn( isFolder ).when( nativeFile ).isFolder();
-    doReturn( isHidden ).when( nativeFile ).isHidden();
     doReturn( createdDate ).when( nativeFile ).getCreatedDate();
     doReturn( null ).when( nativeFile ).getLastModifiedDate();
     doReturn( id ).when( nativeFile ).getId();
     doReturn( description ).when( nativeFile ).getDescription();
     doReturn( creatorId ).when( nativeFile ).getCreatorId();
     doReturn( fileSize ).when( nativeFile ).getFileSize();
-    doReturn( schedulable ).when( nativeFile ).isSchedulable();
     doReturn( owner ).when( provider ).getOwnerByFileId( id );
 
     RepositoryObject obj = provider.convertFromNativeFile( nativeFile, parentPath );
@@ -1788,13 +1740,11 @@ class RepositoryFileProviderTest {
     assertEquals( title, obj.getTitle() );
     assertEquals( description, obj.getDescription() );
     assertEquals( isFolder, obj.isFolder() );
-    assertEquals( isHidden, obj.isHidden() );
     assertEquals( createdDate, obj.getCreatedDate() );
     assertEquals( createdDate, obj.getModifiedDate() );
     assertEquals( owner, obj.getOwner() );
     assertEquals( creatorId, obj.getCreatorId() );
     assertEquals( fileSize, obj.getFileSize() );
-    assertEquals( schedulable, obj.isSchedulable() );
   }
   // endregion
 }

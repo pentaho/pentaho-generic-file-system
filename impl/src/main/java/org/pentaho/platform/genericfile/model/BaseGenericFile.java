@@ -17,9 +17,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class BaseGenericFile implements IGenericFile {
   private String provider;
@@ -39,7 +37,6 @@ public class BaseGenericFile implements IGenericFile {
   private Date createdDate;
   private String creatorId;
   private long fileSize;
-  private Map<String, Object> customProperties = new HashMap<>();
 
   @NonNull
   @Override
@@ -193,22 +190,5 @@ public class BaseGenericFile implements IGenericFile {
 
   public void setFileSize( long fileSize ) {
     this.fileSize = fileSize;
-  }
-
-  @Override
-  public Map<String, Object> getCustomProperties() {
-    return customProperties;
-  }
-
-  public void setCustomProperties( Map<String, Object> customProperties ) {
-    this.customProperties = customProperties;
-  }
-
-  public Object getCustomProperty( String key ) {
-    return customProperties.get( key );
-  }
-
-  public void addCustomProperty( String key, Object value ) {
-    this.customProperties.put( key, value );
   }
 }

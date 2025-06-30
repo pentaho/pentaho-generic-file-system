@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -590,7 +591,6 @@ public interface IGenericFileService {
    * @param destinationPath The file path to copy the files to. This path must not correspond to a file in the
    *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -610,8 +610,7 @@ public interface IGenericFileService {
    * @param destinationPath The string representation of the path of the file to copy the files to. This path must not
    *                        correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid, or if the specified path's string
-   *                                  representation is not valid, according to
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
@@ -642,7 +641,6 @@ public interface IGenericFileService {
    * @param destinationPath The file path to move the files to. This path must not correspond to a file in the
    *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -662,8 +660,7 @@ public interface IGenericFileService {
    * @param destinationPath The string representation of the path of the file to move the files to. This path must not
    *                        correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid, or if the specified path's string
-   *                                  representation is not valid, according to
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
@@ -671,5 +668,39 @@ public interface IGenericFileService {
    */
   default void moveFile( @NonNull String path, @NonNull String destinationPath ) throws OperationFailedException {
     copyFile( GenericFilePath.parseRequired( path ), GenericFilePath.parseRequired( destinationPath ) );
+  }
+
+  /**
+   * Gets the file metadata, given its path.
+   *
+   * @param path The file path to get the metadata from. This path must correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#restoreFile(GenericFilePath)
+   */
+  @NonNull
+  List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets the file metadata, given its path's string representation.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileMetadata(GenericFilePath)}
+   * with the result.
+   *
+   * @param path The string representation of the path of the file to get the metadata from. This path must
+   *             correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  default List<IGenericFileMetadata> getFileMetadata( @NonNull String path ) throws OperationFailedException {
+    return getFileMetadata( GenericFilePath.parseRequired( path ) );
   }
 }

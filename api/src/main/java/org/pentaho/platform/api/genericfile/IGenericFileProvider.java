@@ -22,6 +22,7 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.Collections;
@@ -274,10 +275,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to copy the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#copyFile(GenericFilePath, GenericFilePath)
    */
   void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
@@ -288,11 +289,23 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to move the files to.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#moveFile(GenericFilePath, GenericFilePath)
    */
   void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
+
+  /**
+   * Gets the file metadata, given its path.
+   *
+   * @param path The file path to get the metadata from. This path must correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getFileMetadata(GenericFilePath)
+   */
+  List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

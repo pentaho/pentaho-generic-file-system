@@ -20,6 +20,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -123,7 +124,8 @@ class IGenericFileServiceTest {
     }
 
     @Override
-    public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -148,6 +150,12 @@ class IGenericFileServiceTest {
     @Override
     public void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
       throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
   }

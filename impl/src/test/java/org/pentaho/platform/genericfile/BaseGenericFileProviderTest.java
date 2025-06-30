@@ -21,6 +21,7 @@ import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
@@ -115,6 +116,12 @@ class BaseGenericFileProviderTest {
     @Override
     public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
       throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -581,7 +588,7 @@ class BaseGenericFileProviderTest {
   @Test
   void testGetTreeDoesNotExpandPathIfMaxDepthIsNull() throws OperationFailedException {
     // All folders should already be included, so no need to expand anything.
-    // Also, an expanded path should be a descendant or self of the base path.
+    // Also, 'expandedPath' should be a descendant or self of the base path.
 
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
     BaseGenericFileTree tree = getSampleRepositoryTreeOfDepth1();
@@ -609,7 +616,7 @@ class BaseGenericFileProviderTest {
 
   @Test
   void testGetTreeDoesNotExpandPathIfExpandedPathNotOwned() throws OperationFailedException {
-    // Expanded path should be a descendant or self of the base path, or is ignored.
+    // 'expanded path' should be a descendant or self of the base path, or is ignored.
 
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
     BaseGenericFileTree tree = getSampleRepositoryTreeOfDepth1();
@@ -657,7 +664,7 @@ class BaseGenericFileProviderTest {
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
-    // The Expanded path is 1 level below a base path, and thus within max depth of 1 (last element)
+    // 'expanded path' is 1 level below 'base path', and thus within max depth of 1 (last element)
     // Will still need to request its children with the same max depth of 1.
     options.setExpandedPath( "/home" );
     options.setMaxDepth( 1 );
@@ -687,7 +694,7 @@ class BaseGenericFileProviderTest {
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
-    // The Expanded path is 1 level below a base path, and thus within max depth of 1 (last element)
+    // 'expanded path' is 1 level below 'base path', and thus within max depth of 1 (last element)
     // Will still need to request its children with the same max depth of 1.
     options.setExpandedPath( "/home" );
     options.setMaxDepth( 1 );
@@ -724,7 +731,7 @@ class BaseGenericFileProviderTest {
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
 
-    // The Expanded path is 2 levels below the base path, and thus deeper than the max depth of 1.
+    // 'expanded path' is 2 levels below 'base path', and thus deeper than the max depth of 1.
     options.setExpandedPath( "/home/admin" );
     options.setMaxDepth( 1 );
     options.setExpandedMaxDepth( 2 );
@@ -780,7 +787,7 @@ class BaseGenericFileProviderTest {
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
 
-    // The Expanded path is 2 levels below the base path, and thus deeper than the max depth of 1.
+    // 'expanded path' is 2 levels below 'base path', and thus deeper than the max depth of 1.
     options.setExpandedPath( "/home/admin" );
     options.setMaxDepth( 1 );
 
@@ -835,7 +842,7 @@ class BaseGenericFileProviderTest {
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
 
-    // The Expanded path is 4 levels below the base path, and thus deeper than the max depth of 1.
+    // 'expanded path' is 4 levels below 'base path', and thus deeper than the max depth of 1.
     options.setExpandedPath( "/home/admin/missingFolder/anotherMissingFolder" );
     options.setMaxDepth( 1 );
 
@@ -891,7 +898,7 @@ class BaseGenericFileProviderTest {
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
 
-    // The Expanded path is 2 levels below the base path, and thus deeper than the max depth of 1.
+    // 'expanded path' is 2 levels below 'base path', and thus deeper than the max depth of 1.
     // Will need to request 'getTree' to get children of /home and then another to get children of /home/admin to
     // expand the children of the expanded path with the same max depth of 1.
     options.setExpandedPath( "/home/admin" );
@@ -1041,7 +1048,7 @@ class BaseGenericFileProviderTest {
   @Test
   void testGetRootTreesDoesNotExpandPathIfMaxDepthIsNull() throws OperationFailedException {
     // All folders should already be included, so no need to expand anything.
-    // Also, an expanded path should be a descendant or self of the base path.
+    // Also, 'expanded path' should be a descendant or self of the base path.
 
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
 
@@ -1083,7 +1090,7 @@ class BaseGenericFileProviderTest {
 
   @Test
   void testGetRootTreesDoesNotExpandPathIfExpandedPathNotOwned() throws OperationFailedException {
-    // Expanded path should be a descendant or self of the base path, or is ignored.
+    // 'expanded path' should be a descendant or self of the base path, or is ignored.
 
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
 
@@ -1162,7 +1169,7 @@ class BaseGenericFileProviderTest {
     // ---
 
     GetTreeOptions options = new GetTreeOptions();
-    // The Expanded path is at depth 1 below the / root, and thus within max depth of 1 (last element).
+    // 'expanded path' is at depth 1 below the / root, and thus within max depth of 1 (last element).
     // Will still need to request its children with the same max depth of 1.
     options.setExpandedPath( "/home" );
     options.setMaxDepth( 1 );
@@ -1224,7 +1231,7 @@ class BaseGenericFileProviderTest {
     // ---
 
     GetTreeOptions options = new GetTreeOptions();
-    // The Expanded path is at depth 1 below the / root, and thus within max depth of 1 (last element).
+    // 'expanded path' is at depth 1 below the / root, and thus within max depth of 1 (last element).
     // Will still need to request its children with the same max depth of 1.
     options.setExpandedPaths( GenericFilePath.parseManyRequired( List.of(
       "/home",

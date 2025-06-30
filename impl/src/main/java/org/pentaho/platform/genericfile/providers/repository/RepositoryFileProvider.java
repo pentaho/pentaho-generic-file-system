@@ -27,6 +27,7 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
@@ -34,10 +35,12 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
+import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
+import org.pentaho.platform.genericfile.model.BaseGenericFileMetadata;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.model.DefaultGenericFileContent;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
@@ -245,12 +248,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         "To get the content of a folder, the 'compressed' parameter must be set to true." );
     }
 
-    if ( !fileService.isPathValid( path.toString() ) ) {
-      throw new InvalidOperationException( "Invalid source path: " + path );
-    }
-
     try {
       if ( compressed ) {
+        if ( !fileService.isPathValid( path.toString() ) ) {
+          throw new InvalidOperationException( "Invalid source path: " + path );
+        }
+
         if ( !SystemUtils.canDownload( path.toString() ) ) {
           throw new AccessControlException( "User is not authorized to perform this operation." );
         }
@@ -362,7 +365,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     RepositoryObject repositoryObject = createRepositoryObject(
       nativeFile.getName(), nativeFile.getPath(), nativeFile.getTitle(), nativeFile.isFolder(), parentPath );
 
-    repositoryObject.setHidden( nativeFile.isHidden() );
     repositoryObject.setModifiedDate( getModifiedDateFromNativeFileDto( nativeFile ) );
     repositoryObject.setObjectId( nativeFile.getId() );
     repositoryObject.setDescription( nativeFile.getDescription() );
@@ -370,7 +372,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     repositoryObject.setCreatedDate( parseDate( nativeFile.getCreatedDate() ) );
     repositoryObject.setCreatorId( nativeFile.getCreatorId() );
     repositoryObject.setFileSize( nativeFile.getFileSize() );
-    repositoryObject.setSchedulable( !nativeFile.isNotSchedulable() );
 
     return repositoryObject;
   }
@@ -456,8 +457,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     RepositoryObject repositoryObject = createRepositoryObject(
       nativeFile.getName(), nativeFile.getPath(), nativeFile.getTitle(), nativeFile.isFolder(), parentPath );
 
-    repositoryObject.setHidden( nativeFile.isHidden() );
-
     repositoryObject.setModifiedDate(
       nativeFile.getLastModifiedDate() != null ? nativeFile.getLastModifiedDate() : nativeFile.getCreatedDate() );
 
@@ -469,12 +468,21 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       repositoryObject.setCreatedDate( nativeFile.getCreatedDate() );
       repositoryObject.setCreatorId( nativeFile.getCreatorId() );
       repositoryObject.setFileSize( nativeFile.getFileSize() );
-      repositoryObject.setSchedulable( nativeFile.isSchedulable() );
     }
 
     repositoryObject.setDescription( nativeFile.getDescription() );
 
     return repositoryObject;
+  }
+
+  @NonNull
+  private List<IGenericFileMetadata> convertFromNativeFileMetadata( List<StringKeyStringValueDto> metadata ) {
+    if ( metadata == null || metadata.isEmpty() ) {
+      return Collections.emptyList();
+    }
+
+    return metadata.stream().map( dto -> new BaseGenericFileMetadata( dto.getKey(), dto.getValue() ) )
+      .collect( Collectors.toList() );
   }
   // endregion
 
@@ -593,9 +601,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new InvalidOperationException( "Destination path does not exists: " + destinationPath );
     }
 
+    String fileId = getFileId( path );
+
     try {
-      fileService.doCopyFiles( pathToString( destinationPath ), FileService.MODE_RENAME,
-        getFileId( path ) );
+      fileService.doCopyFiles( pathToString( destinationPath ), FileService.MODE_RENAME, fileId );
     } catch ( Exception | InternalError e ) {
       throw new OperationFailedException( e );
     }
@@ -608,10 +617,22 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new InvalidOperationException( "Destination path does not exists: " + destinationPath );
     }
 
+    String fileId = getFileId( path );
+
     try {
-      fileService.doMoveFiles( pathToString( destinationPath ), getFileId( path ) );
+      fileService.doMoveFiles( pathToString( destinationPath ), fileId );
     } catch ( Exception | InternalError e ) {
       throw new OperationFailedException( e );
+    }
+  }
+
+  @NonNull
+  @Override
+  public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+    try {
+      return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
+    } catch ( FileNotFoundException e ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
     }
   }
 

@@ -15,7 +15,6 @@ package org.pentaho.platform.api.genericfile.model;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The {@code IGenericFile} interface contains basic information about a generic file.
@@ -178,9 +177,4 @@ public interface IGenericFile extends IProviderable {
    * Gets the file size in bytes.
    */
   long getFileSize();
-
-  /**
-   * Gets whether the generic file is schedulable.
-   */
-  Map<String, Object> getCustomProperties();
 }

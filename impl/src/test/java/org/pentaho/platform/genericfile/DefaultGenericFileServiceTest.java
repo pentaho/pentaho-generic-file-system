@@ -146,7 +146,7 @@ class DefaultGenericFileServiceTest {
     assertEquals( DefaultGenericFileService.MULTIPLE_PROVIDER_ROOT_PROVIDER, aggregateRoot.getProvider() );
     assertTrue( aggregateRoot.isFolder() );
 
-    // Test Aggregate Tree Children
+    // Test Aggregate Tree's Children
     assertEquals( Arrays.asList( useCase.tree1Mock, useCase.tree2Mock ), aggregateTree.getChildren() );
   }
 

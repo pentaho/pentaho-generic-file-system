@@ -26,6 +26,7 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
@@ -313,8 +314,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
-    getOwnerFileProvider( path ).renameFile( path, newName );
+  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).renameFile( path, newName );
   }
 
   @Override
@@ -371,5 +372,11 @@ public class DefaultGenericFileService implements IGenericFileService {
   public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException {
     getOwnerFileProvider( path ).moveFile( path, destinationPath );
+  }
+
+  @NonNull
+  @Override
+  public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFileMetadata( path );
   }
 }
