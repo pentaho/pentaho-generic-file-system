@@ -15,11 +15,11 @@ package org.pentaho.platform.api.genericfile;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.exception.PathAlreadyExistsException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -43,7 +43,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Gets specific {@link IGenericFile generic file} class used by the provider, matching the type parameter, {@code T}.
    */
   @NonNull
-  Class<T> getFileClass() throws OperationFailedException;
+  Class<T> getFileClass();
 
   /**
    * Gets the name of the provider.
@@ -53,7 +53,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @see #getType()
    */
   @NonNull
-  String getName() throws OperationFailedException;
+  String getName();
 
   /**
    * Gets the unique identifier of the provider.
@@ -61,7 +61,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @see #getName()
    */
   @NonNull
-  String getType() throws OperationFailedException;
+  String getType();
 
   /**
    * Gets a tree of files.
@@ -112,6 +112,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not allowed to read it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#doesFolderExist(GenericFilePath)
@@ -128,15 +130,14 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path The path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the folder path is not valid.
-   * @throws InvalidOperationException  If the path, or one of its prefixes, does not exist and cannot be created using
-   *                                    this service (e.g. connections, buckets);
-   *                                    if the path or its longest existing prefix does not reference a folder;
-   *                                    if the path does not exist and the current user is not allowed to create folders
-   *                                    on the folder denoted by its longest existing prefix.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the folder path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using
+   *                                   this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create folders
+   *                                   on the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
    * @see IGenericFileService#createFolder(GenericFilePath)
    */
@@ -173,10 +174,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param compressed If {@code true}, returns the content as a compressed archive (works for files and folders).
    *                   If {@code false}, returns the raw file content (only valid for files).
    * @return The file's content.
-   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
-   *                                  it.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException If the path is a folder and {@code compressed} is {@code false}.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to
+   *                                   read it.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getFileContent(String, boolean)
    */
   @NonNull
@@ -255,15 +257,16 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path    The file path to be renamed. This path must not correspond to a file in the trash/deleted.
    * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the specified path is not valid.
-   * @throws NotFoundException          If the specified path does not exist, or does correspond to a file in the
-   *                                    trash/deleted, or the current user is not allowed to access it.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidOperationException If the newName is not valid.
+   * @throws InvalidPathException      If the specified path is not valid.
+   * @throws NotFoundException         If the specified path does not exist, or does correspond to a file in the
+   *                                   trash/deleted, or the current user is not allowed to access it.
+   * @throws ConflictException         If the path with the new name already exists.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#renameFile(GenericFilePath, String)
    */
-  void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
+  boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
 
   /**
    * Copies a file, given its path, to a destination path.

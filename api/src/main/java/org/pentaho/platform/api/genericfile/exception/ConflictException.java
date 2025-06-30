@@ -16,16 +16,16 @@ package org.pentaho.platform.api.genericfile.exception;
 /**
  * The exception class thrown when a generic file path already exists.
  */
-public class PathAlreadyExistsException extends OperationFailedException {
-  public PathAlreadyExistsException() {
+public class ConflictException extends OperationFailedException {
+  public ConflictException() {
     super();
   }
 
-  public PathAlreadyExistsException( String message ) {
+  public ConflictException( String message ) {
     super( message );
   }
 
-  public PathAlreadyExistsException( Throwable cause ) {
+  public ConflictException( Throwable cause ) {
     super( cause );
   }
 }

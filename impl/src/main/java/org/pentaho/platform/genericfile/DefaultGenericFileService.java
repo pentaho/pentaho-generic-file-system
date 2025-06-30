@@ -200,7 +200,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   @Override
   public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).hasAccess( path, permissions );
+    Optional<IGenericFileProvider<?>> fileProvider = getFirstOwnerFileProvider( path );
+    return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );
   }
 
   @Override

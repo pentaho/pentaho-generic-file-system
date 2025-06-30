@@ -24,7 +24,7 @@ import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.exception.PathAlreadyExistsException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -1083,8 +1083,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    PathAlreadyExistsException exception =
-      assertThrows( PathAlreadyExistsException.class, () -> repositoryProvider.renameFile( path, newName ) );
+    ConflictException exception =
+      assertThrows( ConflictException.class, () -> repositoryProvider.renameFile( path, newName ) );
 
     assertEquals( "Folder already exists: " + path.getParent() + GenericFilePath.PATH_SEPARATOR + newName,
       exception.getMessage() );
@@ -1417,7 +1417,7 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( org.pentaho.platform.api.genericfile.exception.PathAlreadyExistsException.class,
+    assertThrows( ConflictException.class,
       () -> repositoryProvider.createFolder( path ) );
     verify( fileServiceMock, never() ).doCreateDirSafe( anyString() );
   }

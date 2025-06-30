@@ -17,11 +17,11 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.exception.PathAlreadyExistsException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -111,6 +111,8 @@ public interface IGenericFileService {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not allowed to read it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -127,6 +129,8 @@ public interface IGenericFileService {
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not allowed to read it.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -145,15 +149,14 @@ public interface IGenericFileService {
    *
    * @param path The path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the folder path is not valid.
-   * @throws InvalidOperationException  If the path, or one of its prefixes, does not exist and cannot be created
-   *                                    using this service (e.g. connections, buckets);
-   *                                    if the path or its longest existing prefix does not reference a folder;
-   *                                    if the path does not exist and the current user is not allowed to create
-   *                                    folders on the folder denoted by its longest existing prefix.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the folder path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   folders on the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -173,15 +176,15 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the folder path is not valid.
-   * @throws InvalidOperationException  If the path, or one of its prefixes, does not exist and cannot be created using
-   *                                    this service (e.g. connections, buckets);
-   *                                    if the path or its longest existing prefix does not reference a folder;
-   *                                    if the path does not exist and the current user is not allowed to create folders
-   *                                    on the folder denoted by its longest existing prefix.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the specified path's string representation is not valid, according to
+   *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using
+   *                                   this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create folders
+   *                                   on the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
    */
   default boolean createFolder( @Nullable String path ) throws OperationFailedException {
@@ -199,6 +202,8 @@ public interface IGenericFileService {
    * @param path        The string representation of the path of the generic file.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -230,10 +235,13 @@ public interface IGenericFileService {
    * @param compressed If {@code true}, returns the content as a compressed archive (works for files and folders).
    *                   If {@code false}, returns the raw file content (only valid for files).
    * @return The file's content.
-   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
-   *                                  it.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException If the path is a folder and {@code compressed} is {@code false}.
+   * @throws InvalidPathException      If the specified path's string representation is not valid, according to
+   *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to read
+   *                                   it.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
   @NonNull
   default IGenericFileContent getFileContent( @NonNull String path, boolean compressed )
@@ -248,10 +256,11 @@ public interface IGenericFileService {
    * @param compressed If {@code true}, returns the content as a compressed archive (works for files and folders).
    *                   If {@code false}, returns the raw file content (only valid for files).
    * @return The file's content.
-   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
-   *                                  it.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException If the path is a folder and {@code compressed} is {@code false}.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to read
+   *                                   it.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
   @NonNull
   IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
@@ -284,6 +293,8 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the path of the file.
    * @return The compressed file's content.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
    *                                  it.
    * @throws AccessControlException   If the current user cannot perform this operation.
@@ -302,6 +313,8 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the path of the file.
    * @return The file.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to
    *                                  read it.
    * @throws AccessControlException   If the current user cannot perform this operation.
@@ -368,7 +381,9 @@ public interface IGenericFileService {
    * @param path The string representation of the path of the file to be permanently deleted. This path must
    *             correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws InvalidPathException     If the specified path is not valid, or if the specified path's string
+   *                                  representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -441,6 +456,8 @@ public interface IGenericFileService {
    *                  to a file in the trash/deleted.
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
    *                                  access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -459,6 +476,8 @@ public interface IGenericFileService {
    * @param path The string representation of the path of the file to be deleted. This path must not correspond to a
    *             file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
    *                                  access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -500,7 +519,9 @@ public interface IGenericFileService {
    * @param path The string representation of the path of the file to be restored. This path must correspond to a
    *             file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If the specified path is not valid.
+   * @throws InvalidPathException     If the specified path is not valid, or if the specified path's string
+   *                                  representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
@@ -514,14 +535,16 @@ public interface IGenericFileService {
    *
    * @param path    The file path to be renamed. This path must not correspond to a file in the trash/deleted.
    * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the specified path is not valid.
-   * @throws NotFoundException          If the specified path does not exist, or does correspond to a file in the
-   *                                    trash/deleted, or the current user is not allowed to access it.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @return {@code true} if the file was renamed, {@code false} if the file already had the new name.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidOperationException If the newName is not valid.‘
+   * @throws InvalidPathException      If the specified path is not valid.
+   * @throws NotFoundException         If the specified path does not exist, or does correspond to a file in the
+   *                                   trash/deleted, or the current user is not allowed to access it.
+   * @throws ConflictException         If the path with the new name already exists.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
-  void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
+  boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
 
   /**
    * Renames a file, given its path's string representation and the new name.
@@ -533,15 +556,18 @@ public interface IGenericFileService {
    * @param path    The string representation of the path of the file to be renamed. This path must not correspond to
    *                a file in the trash/deleted.
    * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
-   * @throws AccessControlException     If the current user cannot perform this operation.
-   * @throws InvalidPathException       If the specified path is not valid.
-   * @throws NotFoundException          If the specified path does not exist, or does correspond to a file in the
-   *                                    trash/deleted, or the current user is not allowed to access it.
-   * @throws PathAlreadyExistsException If the path with the new name already exists.
-   * @throws OperationFailedException   If the operation fails for some other (checked) reason.
+   * @return {@code true} if the file was renamed, {@code false} if the file already had the new name.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If the specified path is not valid, or if the specified path's string
+   *                                  representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws ConflictException        If the path with the new name already exists.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  default void renameFile( @NonNull String path, @NonNull String newName ) throws OperationFailedException {
-    renameFile( GenericFilePath.parseRequired( path ), newName );
+  default boolean renameFile( @NonNull String path, @NonNull String newName ) throws OperationFailedException {
+    return renameFile( GenericFilePath.parseRequired( path ), newName );
   }
 
   /**
@@ -561,7 +587,8 @@ public interface IGenericFileService {
    * Copies a file, given its path, to a destination path.
    *
    * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
-   * @param destinationPath The file path to copy the files to.
+   * @param destinationPath The file path to copy the files to. This path must not correspond to a file in the
+   *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
@@ -572,11 +599,35 @@ public interface IGenericFileService {
     throws OperationFailedException;
 
   /**
+   * Copies a file, given its path's string representation, to a destination path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #copyFile(GenericFilePath, GenericFilePath)}
+   * with the result.
+   *
+   * @param path            The string representation of the path of the file to be copied. This path must not
+   *                        correspond to a file in the trash/deleted.
+   * @param destinationPath The string representation of the path of the file to copy the files to. This path must not
+   *                        correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If either path is not valid, or if the specified path's string
+   *                                  representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException        If either path does not exist or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  default void copyFile( @NonNull String path, @NonNull String destinationPath ) throws OperationFailedException {
+    copyFile( GenericFilePath.parseRequired( path ), GenericFilePath.parseRequired( destinationPath ) );
+  }
+
+  /**
    * Moves files, given their paths, to a destination path.
    *
    * @param paths           The list of file paths to be moved. These paths must not correspond to files that are in the
    *                        trash/deleted.
-   * @param destinationPath The file path to move the files to.
+   * @param destinationPath The file path to move the files to. This path must not correspond to a file in the
+   *                        trash/deleted.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -588,7 +639,8 @@ public interface IGenericFileService {
    * Moves a file, given its path, to a destination path.
    *
    * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
-   * @param destinationPath The file path to move the files to.
+   * @param destinationPath The file path to move the files to. This path must not correspond to a file in the
+   *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If either path is not valid.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
@@ -597,4 +649,27 @@ public interface IGenericFileService {
    */
   void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
     throws OperationFailedException;
+
+  /**
+   * Moves a file, given its path's string representation, to a destination path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #moveFile(GenericFilePath, GenericFilePath)}
+   * with the result.
+   *
+   * @param path            The string representation of the path of the file to be moved. This path must not
+   *                        correspond to a file in the trash/deleted.
+   * @param destinationPath The string representation of the path of the file to move the files to. This path must not
+   *                        correspond to a file in the trash/deleted.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws InvalidPathException     If either path is not valid, or if the specified path's string
+   *                                  representation is not valid, according to
+   *                                  {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException        If either path does not exist or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  default void moveFile( @NonNull String path, @NonNull String destinationPath ) throws OperationFailedException {
+    copyFile( GenericFilePath.parseRequired( path ), GenericFilePath.parseRequired( destinationPath ) );
+  }
 }

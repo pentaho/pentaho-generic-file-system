@@ -19,7 +19,6 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.exception.UnsupportedOperationException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -102,7 +101,8 @@ class BaseGenericFileProviderTest {
     }
 
     @Override
-    public void renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -120,19 +120,19 @@ class BaseGenericFileProviderTest {
 
     @NonNull
     @Override
-    public Class<T> getFileClass() throws OperationFailedException {
+    public Class<T> getFileClass() {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public String getName() throws OperationFailedException {
+    public String getName() {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public String getType() throws OperationFailedException {
+    public String getType() {
       throw new UnsupportedOperationException();
     }
 
