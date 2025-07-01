@@ -477,7 +477,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  private List<IGenericFileMetadata> convertFromNativeFileMetadata( List<StringKeyStringValueDto> metadata ) {
+  protected List<IGenericFileMetadata> convertFromNativeFileMetadata( List<StringKeyStringValueDto> metadata ) {
     if ( metadata == null || metadata.isEmpty() ) {
       return Collections.emptyList();
     }
@@ -487,7 +487,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  private List<StringKeyStringValueDto> convertToNativeFileMetadata( List<IGenericFileMetadata> metadata ) {
+  protected List<StringKeyStringValueDto> convertToNativeFileMetadata( List<IGenericFileMetadata> metadata ) {
     if ( metadata == null || metadata.isEmpty() ) {
       return Collections.emptyList();
     }
