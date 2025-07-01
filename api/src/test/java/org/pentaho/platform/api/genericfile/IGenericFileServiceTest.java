@@ -158,6 +158,12 @@ class IGenericFileServiceTest {
     public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**

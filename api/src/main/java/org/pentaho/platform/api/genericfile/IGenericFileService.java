@@ -258,8 +258,8 @@ public interface IGenericFileService {
    *                   If {@code false}, returns the raw file content (only valid for files).
    * @return The file's content.
    * @throws InvalidOperationException If the path is a folder and {@code compressed} is {@code false}.
-   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to read
-   *                                   it.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to
+   *                                   read it.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
@@ -426,8 +426,8 @@ public interface IGenericFileService {
    * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
-   *                                  access it.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException;
@@ -538,7 +538,7 @@ public interface IGenericFileService {
    * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
    * @return {@code true} if the file was renamed, {@code false} if the file already had the new name.
    * @throws AccessControlException    If the current user cannot perform this operation.
-   * @throws InvalidOperationException If the newName is not valid.‘
+   * @throws InvalidOperationException If the newName is not valid.
    * @throws InvalidPathException      If the specified path is not valid.
    * @throws NotFoundException         If the specified path does not exist, or does correspond to a file in the
    *                                   trash/deleted, or the current user is not allowed to access it.
@@ -673,12 +673,11 @@ public interface IGenericFileService {
   /**
    * Gets the file metadata, given its path.
    *
-   * @param path The file path to get the metadata from. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to get the metadata from. This path must not correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
-   * @see IGenericFileService#restoreFile(GenericFilePath)
    */
   @NonNull
   List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -690,17 +689,52 @@ public interface IGenericFileService {
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileMetadata(GenericFilePath)}
    * with the result.
    *
-   * @param path The string representation of the path of the file to get the metadata from. This path must
+   * @param path The string representation of the path of the file to get the metadata from. This path must not
    *             correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
   default List<IGenericFileMetadata> getFileMetadata( @NonNull String path ) throws OperationFailedException {
     return getFileMetadata( GenericFilePath.parseRequired( path ) );
+  }
+
+  /**
+   * Sets the file metadata, given its path and the metadata to set.
+   *
+   * @param path     The file path to set the metadata for. This path must not correspond to a file in the
+   *                 trash/deleted.
+   * @param metadata The metadata to set. If empty, all existing metadata is removed.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+    throws OperationFailedException;
+
+  /**
+   * Sets the file metadata, given its path's string representation and the metadata to set.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #setFileMetadata(GenericFilePath, List)}
+   * with the result.
+   *
+   * @param path     The string representation of the path of the file to set the metadata for. This path must not
+   *                 correspond to a file in the trash/deleted.
+   * @param metadata The metadata to set. If empty, all existing metadata is removed.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#setFileMetadata(GenericFilePath, List)
+   */
+  default void setFileMetadata( @NonNull String path, @NonNull List<IGenericFileMetadata> metadata )
+    throws OperationFailedException {
+    setFileMetadata( GenericFilePath.parseRequired( path ), metadata );
   }
 }

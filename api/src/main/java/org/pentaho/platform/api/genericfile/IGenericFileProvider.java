@@ -233,8 +233,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
-   *                                  access it.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#deleteFile(GenericFilePath, boolean)
    */
@@ -258,6 +258,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path    The file path to be renamed. This path must not correspond to a file in the trash/deleted.
    * @param newName The new name of the file. This name must not be empty, and must not contain any control characters.
+   * @return {@code true} if the file was renamed, {@code false} if the file already had the new name.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws InvalidOperationException If the newName is not valid.
    * @throws InvalidPathException      If the specified path is not valid.
@@ -273,7 +274,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Copies a file, given its path, to a destination path.
    *
    * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
-   * @param destinationPath The file path to copy the files to.
+   * @param destinationPath The file path to copy the files to. This path must not correspond to a file in the
+   *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
@@ -287,7 +289,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Moves a file, given its path, to a destination path.
    *
    * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
-   * @param destinationPath The file path to move the files to.
+   * @param destinationPath The file path to move the files to. This path must not correspond to a file in the
+   *                        trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws NotFoundException        If either path does not exist or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
@@ -300,12 +303,28 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Gets the file metadata, given its path.
    *
-   * @param path The file path to get the metadata from. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to get the metadata from. This path must not correspond to a file in the trash/deleted.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
    *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getFileMetadata(GenericFilePath)
    */
+  @NonNull
   List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Sets the file metadata, given its path and the metadata to set.
+   *
+   * @param path     The file path to set the metadata for. This path must not correspond to a file in the
+   *                 trash/deleted.
+   * @param metadata The metadata to set. If empty, all existing metadata is removed.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
+   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#setFileMetadata(GenericFilePath, List)
+   */
+  void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+    throws OperationFailedException;
 }

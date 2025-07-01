@@ -62,6 +62,7 @@ import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -484,6 +485,16 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return metadata.stream().map( dto -> new BaseGenericFileMetadata( dto.getKey(), dto.getValue() ) )
       .collect( Collectors.toList() );
   }
+
+  @NonNull
+  private List<StringKeyStringValueDto> convertToNativeFileMetadata( List<IGenericFileMetadata> metadata ) {
+    if ( metadata == null || metadata.isEmpty() ) {
+      return Collections.emptyList();
+    }
+
+    return metadata.stream().map( genericFileMetadata -> new StringKeyStringValueDto( genericFileMetadata.getKey(),
+      genericFileMetadata.getValue() ) ).collect( Collectors.toList() );
+  }
   // endregion
 
   @Override
@@ -570,7 +581,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       fileService.doRestoreFiles( fileId );
-    } catch ( Exception | InternalError e ) {
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
+    } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
   }
@@ -605,7 +618,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       fileService.doCopyFiles( pathToString( destinationPath ), FileService.MODE_RENAME, fileId );
-    } catch ( Exception | InternalError e ) {
+    } catch ( IllegalArgumentException e ) {
       throw new OperationFailedException( e );
     }
   }
@@ -621,7 +634,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       fileService.doMoveFiles( pathToString( destinationPath ), fileId );
-    } catch ( Exception | InternalError e ) {
+    } catch ( FileNotFoundException e ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
+    } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
   }
@@ -633,6 +650,16 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+    }
+  }
+
+  @Override
+  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+    throws OperationFailedException {
+    try {
+      fileService.doSetMetadata( pathToString( path ), convertToNativeFileMetadata( metadata ) );
+    } catch ( GeneralSecurityException e ) {
+      throw new AccessControlException( "User is not authorized to perform this operation." );
     }
   }
 

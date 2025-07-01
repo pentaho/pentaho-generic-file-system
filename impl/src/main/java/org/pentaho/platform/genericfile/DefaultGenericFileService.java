@@ -379,4 +379,10 @@ public class DefaultGenericFileService implements IGenericFileService {
   public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).getFileMetadata( path );
   }
+
+  @Override
+  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+    throws OperationFailedException {
+    getOwnerFileProvider( path ).setFileMetadata( path, metadata );
+  }
 }
