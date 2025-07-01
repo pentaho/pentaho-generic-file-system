@@ -176,6 +176,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                   If {@code false}, returns the raw file content (only valid for files).
    * @return The file's content.
    * @throws InvalidOperationException If the path is a folder and {@code compressed} is {@code false}.
+   *                                   Or if the path is invalid and the output is compressed.
    * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed to
    *                                   read it.
    * @throws AccessControlException    If the current user cannot perform this operation.
@@ -276,10 +277,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param path            The file path to be copied. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to copy the files to. This path must not correspond to a file in the
    *                        trash/deleted.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If either path does not exist or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidOperationException If the destination path is not valid.
+   * @throws NotFoundException         If either path does not exist or does correspond to a file in the
+   *                                   trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#copyFile(GenericFilePath, GenericFilePath)
    */
   void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
@@ -291,10 +293,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param path            The file path to be moved. This path must not correspond to a file in the trash/deleted.
    * @param destinationPath The file path to move the files to. This path must not correspond to a file in the
    *                        trash/deleted.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If either path does not exist or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidOperationException If the destination path is not valid.
+   * @throws NotFoundException         If either path does not exist or does correspond to a file in the
+   *                                   trash/deleted, or the current user is not allowed to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#moveFile(GenericFilePath, GenericFilePath)
    */
   void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
@@ -320,8 +323,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                 trash/deleted.
    * @param metadata The metadata to set. If empty, all existing metadata is removed.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileMetadata(GenericFilePath, List)
    */
