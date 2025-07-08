@@ -318,14 +318,21 @@ public class DefaultGenericFileService implements IGenericFileService {
     return getOwnerFileProvider( path ).renameFile( path, newName );
   }
 
+  protected boolean isDifferentProvider( @NonNull GenericFilePath path1, @NonNull GenericFilePath path2 ) {
+    Objects.requireNonNull( path1 );
+    Objects.requireNonNull( path2 );
+
+    return !getFirstOwnerFileProvider( path1 ).equals( getFirstOwnerFileProvider( path2 ) );
+  }
+
   @Override
-  public void copyFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
+  public void copyFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
     BatchOperationFailedException batchException = null;
 
     for ( GenericFilePath path : paths ) {
       try {
-        copyFile( path, destinationPath );
+        copyFile( path, destinationFolder );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
           batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to copy files." );
@@ -341,19 +348,23 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
-    getOwnerFileProvider( path ).copyFile( path, destinationPath );
+    if ( isDifferentProvider( path, destinationFolder ) ) {
+      throw new UnsupportedOperationException( "Cannot copy files to different providers." );
+    }
+
+    getOwnerFileProvider( path ).copyFile( path, destinationFolder );
   }
 
   @Override
-  public void moveFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationPath )
+  public void moveFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
     BatchOperationFailedException batchException = null;
 
     for ( GenericFilePath path : paths ) {
       try {
-        moveFile( path, destinationPath );
+        moveFile( path, destinationFolder );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
           batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to move files." );
@@ -369,19 +380,23 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
-    getOwnerFileProvider( path ).moveFile( path, destinationPath );
+    if ( isDifferentProvider( path, destinationFolder ) ) {
+      throw new UnsupportedOperationException( "Cannot move files to different providers." );
+    }
+
+    getOwnerFileProvider( path ).moveFile( path, destinationFolder );
   }
 
   @NonNull
   @Override
-  public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).getFileMetadata( path );
   }
 
   @Override
-  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException {
     getOwnerFileProvider( path ).setFileMetadata( path, metadata );
   }

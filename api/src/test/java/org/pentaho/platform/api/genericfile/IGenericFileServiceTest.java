@@ -130,37 +130,37 @@ class IGenericFileServiceTest {
     }
 
     @Override
-    public void copyFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+    public void copyFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationFolder )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+    public void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationFolder )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void moveFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationPath )
+    public void moveFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationFolder )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationPath )
+    public void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationFolder )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+    public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+    public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }

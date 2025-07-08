@@ -25,6 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
@@ -33,6 +34,7 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
@@ -55,9 +57,11 @@ import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
+import org.pentaho.platform.security.policy.rolebased.actions.PublishAction;
 import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
+import org.springframework.dao.DataRetrievalFailureException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -68,6 +72,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -202,7 +207,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       basePath = ROOT_GENERIC_PATH;
       assert basePath != null;
     } else if ( !owns( basePath ) ) {
-      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ) );
+      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
     }
 
     String repositoryFilterString = getRepositoryFilter( options.getFilter() );
@@ -225,7 +230,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       false );
 
     if ( nativeTree == null ) {
-      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ) );
+      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
     }
 
     if ( isZeroDepth ) {
@@ -252,11 +257,18 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       if ( compressed ) {
         if ( !fileService.isPathValid( path.toString() ) ) {
-          throw new InvalidOperationException( "Invalid source path: " + path );
+          throw new InvalidOperationException( String.format( "Invalid path: '%s'.", path ) );
+        }
+
+        // This is called twice to validate the operation itself and the operation on the specific resource.
+
+        if ( !SystemUtils.canDownload( null ) ) {
+          throw new AccessControlException( "User is not authorized to perform this operation." );
         }
 
         if ( !SystemUtils.canDownload( path.toString() ) ) {
-          throw new AccessControlException( "User is not authorized to perform this operation." );
+          throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.",
+            path );
         }
 
         FileInputStream inputStream = getFileContentCompressedStream( repositoryFile );
@@ -264,10 +276,18 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           MediaType.ZIP.toString() );
       }
 
+      if ( !fileService.getWhitelist().accept( repositoryFile.getName() ) && !fileService.getPolicy()
+        .isAllowed( PublishAction.NAME ) ) {
+        //TODO change this to the commented version
+        //if ( !fileService.canGetFileContent( repositoryFile ) ) {
+        throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.",
+          path );
+      }
+
       RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
       return new DefaultGenericFileContent( inputStream, repositoryFile.getName(), inputStream.getMimeType() );
     } catch ( FileNotFoundException e ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     } catch ( ExportException | IOException e ) {
       throw new OperationFailedException( e );
     }
@@ -290,7 +310,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     if ( repositoryFile == null ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ) );
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
     }
 
     return repositoryFile;
@@ -477,23 +497,33 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  protected List<IGenericFileMetadata> convertFromNativeFileMetadata( List<StringKeyStringValueDto> metadata ) {
-    if ( metadata == null || metadata.isEmpty() ) {
-      return Collections.emptyList();
+  protected IGenericFileMetadata convertFromNativeFileMetadata( List<StringKeyStringValueDto> nativeMetadata ) {
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+
+    if ( nativeMetadata == null || nativeMetadata.isEmpty() ) {
+      return metadata;
     }
 
-    return metadata.stream().map( dto -> new BaseGenericFileMetadata( dto.getKey(), dto.getValue() ) )
-      .collect( Collectors.toList() );
+    nativeMetadata.forEach( dto -> metadata.addMetadatum( dto.getKey(), dto.getValue() ) );
+
+    return metadata;
   }
 
   @NonNull
-  protected List<StringKeyStringValueDto> convertToNativeFileMetadata( List<IGenericFileMetadata> metadata ) {
-    if ( metadata == null || metadata.isEmpty() ) {
+  protected List<StringKeyStringValueDto> convertToNativeFileMetadata( IGenericFileMetadata metadata ) {
+    if ( metadata == null ) {
       return Collections.emptyList();
     }
 
-    return metadata.stream().map( genericFileMetadata -> new StringKeyStringValueDto( genericFileMetadata.getKey(),
-      genericFileMetadata.getValue() ) ).collect( Collectors.toList() );
+    Map<String, String> fileMetadata = metadata.getMetadata();
+
+    if ( fileMetadata == null || fileMetadata.isEmpty() ) {
+      return Collections.emptyList();
+    }
+
+    return fileMetadata.entrySet().stream()
+      .map( fileMetadatum -> new StringKeyStringValueDto( fileMetadatum.getKey(), fileMetadatum.getValue() ) )
+      .collect( Collectors.toList() );
   }
   // endregion
 
@@ -589,55 +619,97 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
+    throws OperationFailedException {
     if ( !fileService.isValidFileName( newName ) ) {
-      throw new InvalidOperationException( "Invalid name to rename the file: " + newName );
+      throw new InvalidOperationException(
+        String.format( "Invalid name to rename the file/folder: '%s'.", newName ) );
     }
 
-    GenericFilePath newPath = getNewPath( path, newName );
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
+    }
+
+    /*GenericFilePath newPath = getNewPath( path, newName );
 
     if ( fileService.doesExist( pathToString( newPath ) ) ) {
-      throw new ConflictException( "Path already exists: " + newPath );
-    }
+      throw new ConflictException( "File with the given path already exists: " + newPath );
+    }*/
 
     try {
       return fileService.doRename( pathToString( path ), newName );
+    } catch ( DataRetrievalFailureException e ) { //TODO verify this
+      throw new ResourceAccessDeniedException( "User is not authorized to rename this path.",
+        path );
+    } catch ( UnifiedRepositoryException e ) {
+      throw new ConflictException(
+        String.format( "File to be renamed already exists on the destination folder: '%s'.", newName ),
+        e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
   }
 
   @Override
-  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
-    if ( !fileService.doesExist( pathToString( destinationPath ) ) ) {
-      throw new InvalidOperationException( "Destination path does not exists: " + destinationPath );
+    String destinationFolderString = pathToString( destinationFolder );
+
+    if ( !fileService.doesExist( destinationFolderString ) ) {
+      throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
+        destinationFolder );
+    }
+
+    GenericFilePath newPath = getNewPath( destinationFolder, path.getLastSegment() );
+
+    if ( fileService.doesExist( pathToString( newPath ) ) ) {
+      throw new ConflictException(
+        String.format( "File to be copied already exists on the destination folder: '%s'.", path ) );
+    }
+
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
     }
 
     String fileId = getFileId( path );
 
     try {
-      fileService.doCopyFiles( pathToString( destinationPath ), FileService.MODE_RENAME, fileId );
+      fileService.doCopyFiles( destinationFolderString, FileService.MODE_RENAME, fileId );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new ResourceAccessDeniedException(
+        "User is not authorized to copy this path.", destinationFolder );
+      //TODO test this exception
     } catch ( IllegalArgumentException e ) {
       throw new OperationFailedException( e );
     }
   }
 
   @Override
-  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationPath )
+  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
-    if ( !fileService.doesExist( pathToString( destinationPath ) ) ) {
-      throw new InvalidOperationException( "Destination path does not exists: " + destinationPath );
-    }
+    /*String destinationPathString = pathToString( destinationPath );
+
+    if ( !fileService.doesExist( destinationPathString ) ) {
+      throw new InvalidOperationException( "Destination path does not exist: " + destinationPath );
+    }*/
+    //TODO test if this is necessary
 
     String fileId = getFileId( path );
 
     try {
-      fileService.doMoveFiles( pathToString( destinationPath ), fileId );
+      fileService.doMoveFiles( pathToString( destinationFolder ), fileId );
+    } catch ( DataRetrievalFailureException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to move this path.",
+        path ); //TODO test this exception
     } catch ( FileNotFoundException e ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+      throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
+        destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new AccessControlException( e );
+    } catch ( UnifiedRepositoryException e ) {
+      throw new ConflictException(
+        String.format( "File to be moved already exists on the destination folder: '%s'.", path ),
+        e );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
@@ -645,16 +717,16 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public List<IGenericFileMetadata> getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
     try {
       return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
     } catch ( FileNotFoundException e ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     }
   }
 
   @Override
-  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull List<IGenericFileMetadata> metadata )
+  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException {
     try {
       fileService.doSetMetadata( pathToString( path ), convertToNativeFileMetadata( metadata ) );
@@ -670,7 +742,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   protected GenericFilePath getNewPath( @NonNull GenericFilePath path, @NonNull String newName )
     throws InvalidPathException {
-    return GenericFilePath.parseRequired( getParentPath( path ) + GenericFilePath.PATH_SEPARATOR + newName );
+    Objects.requireNonNull( path );
+    Objects.requireNonNull( newName );
+
+    GenericFilePath parent = path.getParent();
+    Objects.requireNonNull( parent );
+
+    return parent.child( newName );
   }
 
   protected FileInputStream getFileContentCompressedStream(
@@ -711,7 +789,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new InvalidPathException( "File ID not found in the path." );
     }
 
-    throw new NotFoundException( "The path does not correspond to a deleted file." );
+    throw new NotFoundException( "The path does not correspond to a deleted file.", path );
   }
 
   private String getParentPath( RepositoryFileDto fileDto ) {

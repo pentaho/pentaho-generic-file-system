@@ -12,22 +12,12 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
+import java.util.Map;
+
 /**
  * The {@code IGenericFileMetadata} interface contains the necessary information for returning a
  * {@code IGenericFile}'s metadata.
  */
 public interface IGenericFileMetadata {
-  /**
-   * Gets the key of the metadata.
-   *
-   * @return the key of the metadata
-   */
-  String getKey();
-
-  /**
-   * Gets the value of the metadata.
-   *
-   * @return the value of the metadata
-   */
-  String getValue();
+  Map<String, String> getMetadata();
 }

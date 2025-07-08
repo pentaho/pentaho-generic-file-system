@@ -14,30 +14,22 @@ package org.pentaho.platform.genericfile.model;
 
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BaseGenericFileMetadata implements IGenericFileMetadata {
-  private String key;
-  private String value;
-
-  public BaseGenericFileMetadata( String key, String value ) {
-    this.key = key;
-    this.value = value;
-  }
+  private Map<String, String> metadata = new HashMap<>();
 
   @Override
-  public String getKey() {
-    return key;
+  public Map<String, String> getMetadata() {
+    return metadata;
   }
 
-  public void setKey( String key ) {
-    this.key = key;
+  public void setMetadata( Map<String, String> metadata ) {
+    this.metadata = metadata;
   }
 
-  @Override
-  public String getValue() {
-    return value;
-  }
-
-  public void setValue( String value ) {
-    this.value = value;
+  public void addMetadatum( String key, String value ) {
+    metadata.put( key, value );
   }
 }

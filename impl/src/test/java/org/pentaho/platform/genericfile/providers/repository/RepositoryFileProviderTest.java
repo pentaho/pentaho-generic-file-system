@@ -1738,14 +1738,15 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
-    List<IGenericFileMetadata> metadata = repositoryProvider.getFileMetadata( path );
+    IGenericFileMetadata metadata = repositoryProvider.getFileMetadata( path );
 
     assertNotNull( metadata );
-    assertEquals( 2, metadata.size() );
-    assertEquals( "key1", metadata.get( 0 ).getKey() );
-    assertEquals( "value1", metadata.get( 0 ).getValue() );
-    assertEquals( "key2", metadata.get( 1 ).getKey() );
-    assertEquals( "value2", metadata.get( 1 ).getValue() );
+    assertNotNull( metadata.getMetadata() );
+    assertEquals( 2, metadata.getMetadata().size() );
+    assertTrue( metadata.getMetadata().containsKey( "key1" ) );
+    assertTrue( metadata.getMetadata().containsValue( "value1" ) );
+    assertTrue( metadata.getMetadata().containsKey( "key2" ) );
+    assertTrue( metadata.getMetadata().containsValue( "value2" ) );
     verify( fileServiceMock ).doGetMetadata( encodeRepositoryPath( path.toString() ) );
   }
 
@@ -1771,10 +1772,11 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
-    List<IGenericFileMetadata> metadata = repositoryProvider.getFileMetadata( path );
+    IGenericFileMetadata metadata = repositoryProvider.getFileMetadata( path );
 
     assertNotNull( metadata );
-    assertTrue( metadata.isEmpty() );
+    assertNotNull( metadata.getMetadata() );
+    assertTrue( metadata.getMetadata().isEmpty() );
     verify( fileServiceMock ).doGetMetadata( encodeRepositoryPath( path.toString() ) );
   }
 
@@ -1788,10 +1790,11 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
-    List<IGenericFileMetadata> metadata = repositoryProvider.getFileMetadata( path );
+    IGenericFileMetadata metadata = repositoryProvider.getFileMetadata( path );
 
     assertNotNull( metadata );
-    assertTrue( metadata.isEmpty() );
+    assertNotNull( metadata.getMetadata() );
+    assertTrue( metadata.getMetadata().isEmpty() );
     verify( fileServiceMock ).doGetMetadata( encodeRepositoryPath( path.toString() ) );
   }
 
@@ -1814,10 +1817,9 @@ class RepositoryFileProviderTest {
   @Test
   void testSetFileMetadataSuccess() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
-    List<IGenericFileMetadata> metadata = List.of(
-      new BaseGenericFileMetadata( "key1", "value1" ),
-      new BaseGenericFileMetadata( "key2", "value2" )
-    );
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+    metadata.addMetadatum( "key1", "value1" );
+    metadata.addMetadatum( "key2", "value2" );
 
     FileService fileServiceMock = mock( FileService.class );
     doNothing().when( fileServiceMock ).doSetMetadata( any(), any() );
@@ -1865,13 +1867,14 @@ class RepositoryFileProviderTest {
   @Test
   void testSetFileMetadataEmpty() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
 
     FileService fileServiceMock = mock( FileService.class );
     doNothing().when( fileServiceMock ).doSetMetadata( any(), any() );
     RepositoryFileProvider repositoryProvider =
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
-    repositoryProvider.setFileMetadata( path, Collections.emptyList() );
+    repositoryProvider.setFileMetadata( path, metadata );
 
     ArgumentCaptor<List<StringKeyStringValueDto>> metadataCaptor = ArgumentCaptor.forClass( List.class );
     verify( fileServiceMock ).doSetMetadata( eq( encodeRepositoryPath( path.toString() ) ), metadataCaptor.capture() );
@@ -1885,10 +1888,9 @@ class RepositoryFileProviderTest {
   @Test
   void testSetFileMetadataGeneralSecurityException() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
-    List<IGenericFileMetadata> metadata = List.of(
-      new BaseGenericFileMetadata( "key1", "value1" ),
-      new BaseGenericFileMetadata( "key2", "value2" )
-    );
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+    metadata.addMetadatum( "key1", "value1" );
+    metadata.addMetadatum( "key2", "value2" );
 
     FileService fileServiceMock = mock( FileService.class );
     doThrow( GeneralSecurityException.class ).when( fileServiceMock ).doSetMetadata( any(), any() );
@@ -1901,10 +1903,9 @@ class RepositoryFileProviderTest {
   @Test
   void testSetFileMetadataOperationFailed() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
-    List<IGenericFileMetadata> metadata = List.of(
-      new BaseGenericFileMetadata( "key1", "value1" ),
-      new BaseGenericFileMetadata( "key2", "value2" )
-    );
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+    metadata.addMetadatum( "key1", "value1" );
+    metadata.addMetadatum( "key2", "value2" );
 
     FileService fileServiceMock = mock( FileService.class );
     doThrow( new RuntimeException( "set metadata failed" ) ).when( fileServiceMock ).doSetMetadata( any(), any() );

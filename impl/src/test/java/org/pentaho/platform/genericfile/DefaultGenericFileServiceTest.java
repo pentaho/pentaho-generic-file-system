@@ -944,8 +944,8 @@ class DefaultGenericFileServiceTest {
   @Test
   void testGetFileMetadataSuccess() throws Exception {
     FileMetadataMultipleProviderUseCase useCase = new FileMetadataMultipleProviderUseCase();
-    List<IGenericFileMetadata> metadata1 = List.of( mock( IGenericFileMetadata.class ) );
-    List<IGenericFileMetadata> metadata2 = List.of( mock( IGenericFileMetadata.class ) );
+    IGenericFileMetadata metadata1 = mock( IGenericFileMetadata.class );
+    IGenericFileMetadata metadata2 = mock( IGenericFileMetadata.class );
 
     doReturn( metadata1 ).when( useCase.provider1Mock ).getFileMetadata( useCase.path1 );
     doReturn( metadata2 ).when( useCase.provider2Mock ).getFileMetadata( useCase.path2 );
@@ -986,8 +986,8 @@ class DefaultGenericFileServiceTest {
   @Test
   void testSetFileMetadataSuccess() throws Exception {
     FileMetadataMultipleProviderUseCase useCase = new FileMetadataMultipleProviderUseCase();
-    List<IGenericFileMetadata> metadata1 = List.of( mock( IGenericFileMetadata.class ) );
-    List<IGenericFileMetadata> metadata2 = List.of( mock( IGenericFileMetadata.class ) );
+    IGenericFileMetadata metadata1 = mock( IGenericFileMetadata.class );
+    IGenericFileMetadata metadata2 = mock( IGenericFileMetadata.class );
 
     useCase.service.setFileMetadata( useCase.path1, metadata1 );
     useCase.service.setFileMetadata( useCase.path2, metadata2 );
@@ -999,7 +999,7 @@ class DefaultGenericFileServiceTest {
   @Test
   void testSetFileMetadataPathNotFound() throws Exception {
     FileMetadataMultipleProviderUseCase useCase = new FileMetadataMultipleProviderUseCase();
-    List<IGenericFileMetadata> metadata = List.of( mock( IGenericFileMetadata.class ) );
+    IGenericFileMetadata metadata = mock( IGenericFileMetadata.class );
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
 
@@ -1013,7 +1013,7 @@ class DefaultGenericFileServiceTest {
   @Test
   void testSetFileMetadataException() throws Exception {
     FileMetadataMultipleProviderUseCase useCase = new FileMetadataMultipleProviderUseCase();
-    List<IGenericFileMetadata> metadata = List.of( mock( IGenericFileMetadata.class ) );
+    IGenericFileMetadata metadata = mock( IGenericFileMetadata.class );
 
     doThrow( new OperationFailedException( "Set metadata failed." ) ).when( useCase.provider1Mock )
       .setFileMetadata( useCase.path1, metadata );

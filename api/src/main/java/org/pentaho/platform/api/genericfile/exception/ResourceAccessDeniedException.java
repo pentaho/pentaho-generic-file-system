@@ -2,7 +2,7 @@
  *
  * Pentaho
  *
- * Copyright (C) 2024 by Hitachi Vantara, LLC : http://www.pentaho.com
+ * Copyright (C) 2025 by Hitachi Vantara, LLC : http://www.pentaho.com
  *
  * Use of this software is governed by the Business Source License included
  * in the LICENSE.TXT file.
@@ -15,45 +15,43 @@ package org.pentaho.platform.api.genericfile.exception;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 
 /**
- * The exception class thrown when a generic file assumed to exist, does not or the user does not have READ/WRITE
- * access needed to perform some operation of the
- * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface},
- * to not allow a user without read permissions to even know if a file exists.
+ * The exception class thrown when the user of the current session does not have the correct role-based access
+ * security for some resource.
  */
-public class NotFoundException extends OperationFailedException {
+public class ResourceAccessDeniedException extends OperationFailedException {
   private final transient GenericFilePath path;
 
-  public NotFoundException() {
+  public ResourceAccessDeniedException() {
     super();
     this.path = null;
   }
 
-  public NotFoundException( String message ) {
+  public ResourceAccessDeniedException( String message ) {
     super( message );
     this.path = null;
   }
 
-  public NotFoundException( Throwable cause ) {
+  public ResourceAccessDeniedException( Throwable cause ) {
     super( cause );
     this.path = null;
   }
 
-  public NotFoundException( String message, Throwable cause ) {
+  public ResourceAccessDeniedException( String message, Throwable cause ) {
     super( message, cause );
     this.path = null;
   }
 
-  public NotFoundException( GenericFilePath path ) {
+  public ResourceAccessDeniedException( GenericFilePath path ) {
     super();
     this.path = path;
   }
 
-  public NotFoundException( String message, GenericFilePath path ) {
+  public ResourceAccessDeniedException( String message, GenericFilePath path ) {
     super( message );
     this.path = path;
   }
 
-  public NotFoundException( String message, GenericFilePath path, Throwable cause ) {
+  public ResourceAccessDeniedException( String message, GenericFilePath path, Throwable cause ) {
     super( message, cause );
     this.path = path;
   }
