@@ -227,7 +227,7 @@ class GetTreeOptionsTest {
 
     @ParameterizedTest
     @ValueSource( ints = { 0, 1, 2 } )
-    void testAcceptsBeingSet( int value ) {
+    void testAcceptsBeingSetExpandedMaxDepth( int value ) {
       GetTreeOptions options = new GetTreeOptions();
       options.setMaxDepth( value );
 
