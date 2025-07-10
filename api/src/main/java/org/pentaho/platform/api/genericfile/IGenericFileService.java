@@ -227,7 +227,7 @@ public interface IGenericFileService {
     throws OperationFailedException;
 
   /**
-   * Gets the content of a file, given its path's string representation.
+   * Gets the content of a file, given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileContent(GenericFilePath, boolean)} with
@@ -290,8 +290,8 @@ public interface IGenericFileService {
   }
 
   /**
-   * Gets the compressed content of a file, given its path's string representation. This method can be used to
-   * retrieve the compressed content of both files and folders.
+   * Gets the compressed content of a file, given its path. This method can be used to retrieve the compressed
+   * content of both files and folders.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileContent(GenericFilePath, boolean)} with
@@ -313,7 +313,7 @@ public interface IGenericFileService {
   }
 
   /**
-   * Gets a file given its path's string representation.
+   * Gets a file given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFile(GenericFilePath)} with the result.
@@ -358,8 +358,8 @@ public interface IGenericFileService {
   /**
    * Permanently deletes files, given their paths.
    *
-   * @param paths The list of file paths to be permanently deleted. These paths must correspond to files that are in
-   *              the trash/deleted.
+   * @param paths The list of file paths to be permanently deleted. These paths must refer to items that are in the
+   *              trash (deleted).
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -369,30 +369,30 @@ public interface IGenericFileService {
   /**
    * Permanently deletes a file, given its path.
    *
-   * @param path The file path to be permanently deleted. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to be permanently deleted. This path must refer to an item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Permanently deletes a file, given its path's string representation.
+   * Permanently deletes a file, given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #deleteFilePermanently(GenericFilePath)}
    * with the result.
    *
-   * @param path The string representation of the file's path to be permanently deleted. This path must
-   *             correspond to a file in the trash/deleted.
+   * @param path The string representation of the file's path to be permanently deleted. This path must refer to an
+   *             item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid, or if the specified path's string
    *                                  representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   default void deleteFilePermanently( @NonNull String path ) throws OperationFailedException {
@@ -403,8 +403,8 @@ public interface IGenericFileService {
    * Deletes files, given their paths, by sending them to the trash or permanently deleting them, depending on the
    * value of the {@code permanent} variable.
    *
-   * @param paths     The list of file paths to be deleted. These paths must not correspond to files that are in the
-   *                  trash/deleted.
+   * @param paths     The list of file paths to be deleted. These paths must not refer to items that are in the
+   *                  trash (deleted).
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
@@ -415,8 +415,8 @@ public interface IGenericFileService {
   /**
    * Deletes files, given their paths, by sending them to the trash.
    *
-   * @param paths The list of file paths to be deleted. These paths must not correspond to files that are in the
-   *              trash/deleted.
+   * @param paths The list of file paths to be deleted. These paths must not refer to items that are in the trash
+   *              (deleted).
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -429,11 +429,11 @@ public interface IGenericFileService {
    * Deletes a file, given its path, by sending it to the trash or permanently deleting it, depending on the value of
    * the {@code permanent} variable.
    *
-   * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @param path      The file path to be deleted. This path must not refer to an item in the trash (deleted).
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException;
@@ -441,7 +441,7 @@ public interface IGenericFileService {
   /**
    * Deletes a file, given its path, by sending it to the trash.
    *
-   * @param path The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @param path The file path to be deleted. This path must not refer to an item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws NotFoundException        If the specified path does not exist, or the current user is not allowed to
    *                                  access it.
@@ -452,15 +452,15 @@ public interface IGenericFileService {
   }
 
   /**
-   * Deletes a file, given its path's string representation, by sending it to the trash or permanently deleting it,
-   * depending on the value of the {@code permanent} variable.
+   * Deletes a file, given its path, by sending it to the trash or permanently deleting it, depending on the value of
+   * the {@code permanent} variable.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #deleteFile(GenericFilePath, boolean)}
    * with the result.
    *
-   * @param path      The string representation of the file's path to be deleted. This path must not correspond
-   *                  to a file in the trash/deleted.
+   * @param path      The string representation of the file's path to be deleted. This path must not refer to an item
+   *                  in the trash (deleted).
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
@@ -474,14 +474,14 @@ public interface IGenericFileService {
   }
 
   /**
-   * Deletes a file, given its path's string representation, by sending it to the trash.
+   * Deletes a file, given its path, by sending it to the trash.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #deleteFile(String, boolean)}
    * with the result.
    *
-   * @param path The string representation of the file's path to be deleted. This path must not correspond to a
-   *             file in the trash/deleted.
+   * @param path The string representation of the file's path to be deleted. This path must not refer to an item in
+   *             the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
@@ -496,8 +496,8 @@ public interface IGenericFileService {
   /**
    * Restores files, given their paths.
    *
-   * @param paths The list of file paths to be restored. These paths must correspond to files that are in the
-   *              trash/deleted.
+   * @param paths The list of file paths to be restored. These paths must refer to items that are in the trash
+   *              (deleted).
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -507,30 +507,30 @@ public interface IGenericFileService {
   /**
    * Restores a file, given its path.
    *
-   * @param path The file path to be restored. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to be restored. This path must refer to an item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the
+   *                                  trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Restores a file, given its path's string representation.
+   * Restores a file, given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #restoreFile(GenericFilePath)}
    * with the result.
    *
-   * @param path The string representation of the file's path to be restored. This path must correspond to a
-   *             file in the trash/deleted.
+   * @param path The string representation of the file's path to be restored. This path must refer to an item in the
+   *             trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid, or if the specified path's string
    *                                  representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the
+   *                                  trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   default void restoreFile( @NonNull String path ) throws OperationFailedException {
@@ -538,42 +538,45 @@ public interface IGenericFileService {
   }
 
   /**
-   * Renames a file/folder, given its path and the new name. If it's a file, this method does not change its extension.
+   * Renames a file or folder, given its path and the new name. If it's a file, this method does not change its
+   * extension.
    *
-   * @param path    The file/folder path to be renamed. This path must not correspond to a file/folder in the
-   *                trash/deleted.
-   * @param newName The new name of the file/folder. If it's a file, the new name must not have its extension.
+   * @param path    The path of the file or folder to be renamed. This path must not refer to an item in the trash
+   *                (deleted).
+   * @param newName The new name of the file or folder. If it's a file, the new name must not have its extension.
    *                This name must not be empty, and must not contain any control characters.
-   * @return {@code true} if the file/folder was renamed, {@code false} otherwise.
-   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file/folder.
+   * @return {@code true} if the file or folder was renamed, {@code false} otherwise.
+   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file or
+   *                                       folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code newName} is not valid.
-   * @throws NotFoundException             If the specified path does not exist, or does correspond to a file/folder
-   *                                       in the trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder with the new name already exists.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder with the new name already exists.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
 
   /**
-   * Renames a file/folder, given its path's string representation and the new name. If it's a file, this method does
-   * not change its extension.
+   * Renames a file or folder, given its path and the new name. If it's a file, this method does not change its
+   * extension.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #renameFile(GenericFilePath, String)}
    * with the result.
    *
-   * @param path    The string representation of the file/folder's path to be renamed. This path must not correspond
-   *                to a file/folder in the trash/deleted.
-   * @param newName The new name of the file/folder. If it's a file, the new name must not have its extension.
+   * @param path    The string representation of the file or folder's path to be renamed. This path must not refer to
+   *                an item in the trash (deleted).
+   * @param newName The new name of the file or folder. If it's a file, the new name must not have its extension.
    *                This name must not be empty, and must not contain any control characters.
-   * @return {@code true} if the file/folder was renamed, {@code false} otherwise.
-   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file/folder.
+   * @return {@code true} if the file or folder was renamed, {@code false} otherwise.
+   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file or
+   *                                       folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code newName} is not valid.
-   * @throws NotFoundException             If the specified path does not exist, or does correspond to a file/folder
-   *                                       in the trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder with the new name already exists.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item or folder
+   *                                       in the trash (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder with the new name already exists.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   default boolean renameFile( @NonNull String path, @NonNull String newName ) throws OperationFailedException {
@@ -581,12 +584,12 @@ public interface IGenericFileService {
   }
 
   /**
-   * Copies files/folders, given their paths, to a destination folder, given its path.
+   * Copies files or folders from a given path to a destination folder.
    *
-   * @param paths             The list of file/folder paths to be copied. These paths must not correspond to a
-   *                          file/folder in the trash/deleted.
-   * @param destinationFolder The folder path to copy the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param paths             The list of file or folder paths to be copied. These paths must not refer to an item in
+   *                          the trash (deleted).
+   * @param destinationFolder The folder path to copy the files to. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -595,41 +598,40 @@ public interface IGenericFileService {
     throws OperationFailedException;
 
   /**
-   * Copies a file/folder, given its path, to a destination folder, given its path.
+   * Copies a file or folder from a given path to a destination folder.
    *
-   * @param path              The file/folder path to be copied. This path must not correspond to a file/folder in
-   *                          the trash/deleted.
-   * @param destinationFolder The folder path to copy the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param path              The path of the file or folder to be copied. This path must not refer to an item in the
+   *                          trash (deleted).
+   * @param destinationFolder The path of the destination folder. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file/folder in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder to be copied already exists on the destination folder.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder to be copied already exists on the destination folder.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException;
 
   /**
-   * Copies a file/folder, given its path's string representation, to a destination folder, given its path's string
-   * representation.
+   * Copies a file or folder from a given path to a destination folder.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #copyFile(GenericFilePath, GenericFilePath)}
    * with the result.
    *
-   * @param path              The string representation of the file's path to be copied. This path must not
-   *                          correspond to a file in the trash/deleted.
+   * @param path              The string representation of the file's path to be copied. This path must not refer to
+   *                          an item in the trash (deleted).
    * @param destinationFolder The string representation of the folder's path to copy the files to. This path must not
-   *                          correspond to a file in the trash/deleted.
+   *                          refer to a folder in the trash (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   default void copyFile( @NonNull String path, @NonNull String destinationFolder ) throws OperationFailedException {
@@ -637,12 +639,12 @@ public interface IGenericFileService {
   }
 
   /**
-   * Moves files/folders, given their paths, to a destination folder, given its path.
+   * Moves files or folders from a given path to a destination folder.
    *
-   * @param paths             The list of file/folder paths to be moved. These paths must not correspond to a
-   *                          file/folder in the trash/deleted.
-   * @param destinationFolder The folder path to move the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param paths             The list of file or folder paths to be moved. These paths must not refer to an item in
+   *                          the trash (deleted).
+   * @param destinationFolder The folder path to move the files to. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws BatchOperationFailedException If the batch operation fails for some reason.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -651,41 +653,40 @@ public interface IGenericFileService {
     throws OperationFailedException;
 
   /**
-   * Moves a file/folder, given its path, to a destination folder, given its path.
+   * Moves a file or folder from a given path to a destination folder.
    *
-   * @param path              The file/folder path to be moved. This path must not correspond to a file/folder in the
-   *                          trash/deleted.
-   * @param destinationFolder The folder path to move the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param path              The path of the file or folder to be moved. This path must not refer to an item in the
+   *                          trash (deleted).
+   * @param destinationFolder The path of the destination folder. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file/folder in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder to be moved already exists on the destination folder.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder to be moved already exists on the destination folder.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException;
 
   /**
-   * Moves a file/folder, given its path's string representation, to a destination folder, given its path's string
-   * representation.
+   * Moves a file or folder from a given path to a destination folder.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #moveFile(GenericFilePath, GenericFilePath)}
    * with the result.
    *
    * @param path              The string representation of the file's path to be moved. This path must not
-   *                          correspond to a file in the trash/deleted.
+   *                          refer to an item in the trash (deleted).
    * @param destinationFolder The string representation of the folder's path to move the files to. This path must not
-   *                          correspond to a file in the trash/deleted.
+   *                          refer to a folder in the trash (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   default void moveFile( @NonNull String path, @NonNull String destinationFolder ) throws OperationFailedException {
@@ -695,31 +696,31 @@ public interface IGenericFileService {
   /**
    * Gets the file metadata, given its path.
    *
-   * @param path The file path to get the metadata from. This path must not correspond to a file in the trash/deleted.
+   * @param path The file path to get the metadata from. This path must not refer to an item in the trash (deleted).
    * @return The file metadata.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
   IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Gets the file metadata, given its path's string representation.
+   * Gets the file metadata, given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileMetadata(GenericFilePath)}
    * with the result.
    *
-   * @param path The string representation of the file's path to get the metadata from. This path must not
-   *             correspond to a file in the trash/deleted.
+   * @param path The string representation of the file's path to get the metadata from. This path must not refer to
+   *             an item in the trash (deleted).
    * @return The file metadata.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
@@ -730,32 +731,31 @@ public interface IGenericFileService {
   /**
    * Sets the file metadata, given its path and the metadata to set.
    *
-   * @param path     The file path to set the metadata for. This path must not correspond to a file in the
-   *                 trash/deleted.
+   * @param path     The file path to set the metadata for. This path must not refer to an item in the trash (deleted).
    * @param metadata The metadata to set. If empty, all existing metadata is removed.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException;
 
   /**
-   * Sets the file metadata, given its path's string representation and the metadata to set.
+   * Sets the file metadata, given its path and the metadata to set.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls
    * {@link #setFileMetadata(GenericFilePath, IGenericFileMetadata)} with the result.
    *
-   * @param path     The string representation of the file's path to set the metadata for. This path must not
-   *                 correspond to a file in the trash/deleted.
+   * @param path     The string representation of the file's path to set the metadata for. This path must not refer
+   *                 to an item in the trash (deleted).
    * @param metadata The metadata to set. If empty, all existing metadata is removed.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the
+   *                                  trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileMetadata(GenericFilePath, IGenericFileMetadata)
    */

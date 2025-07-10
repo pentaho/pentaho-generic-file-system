@@ -219,11 +219,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Permanently deletes a file, given its path.
    *
-   * @param path The file path to be permanently deleted. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to be permanently deleted. This path must refer to an item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#deleteFilePermanently(GenericFilePath)
    */
@@ -233,11 +233,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Deletes a file, given its path, by sending it to the trash or permanently deleting it, depending on the value of
    * the {@code permanent} variable.
    *
-   * @param path      The file path to be deleted. This path must not correspond to a file in the trash/deleted.
+   * @param path      The file path to be deleted. This path must not refer to an item in the trash (deleted).
    * @param permanent If {@code true}, the file is permanently deleted; if {@code false}, the file is sent to the trash.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#deleteFile(GenericFilePath, boolean)
    */
@@ -246,47 +246,49 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Restores a file, given its path.
    *
-   * @param path The file path to be restored. This path must correspond to a file in the trash/deleted.
+   * @param path The file path to be restored. This path must refer to an item in the trash (deleted).
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws InvalidPathException     If the specified path is not valid.
-   * @throws NotFoundException        If the specified path does not exist, or does not correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does not refer to an item in the
+   *                                  trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#restoreFile(GenericFilePath)
    */
   void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
-   * Renames a file/folder, given its path and the new name. If it's a file, this method does not change its extension.
+   * Renames a file or folder, given its path and the new name. If it's a file, this method does not change its
+   * extension.
    *
-   * @param path    The file/folder path to be renamed. This path must not correspond to a file/folder in the
-   *                trash/deleted.
-   * @param newName The new name of the file/folder. If it's a file, the new name must not have its extension.
+   * @param path    The path of the file or folder to be renamed. This path must not refer to an item in the trash
+   *                (deleted).
+   * @param newName The new name of the file or folder. If it's a file, the new name must not have its extension.
    *                This name must not be empty, and must not contain any control characters.
-   * @return {@code true} if the file/folder was renamed, {@code false} otherwise.
-   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file/folder.
+   * @return {@code true} if the file or folder was renamed, {@code false} otherwise.
+   * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file or
+   *                                       folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code newName} is not valid.
-   * @throws NotFoundException             If the specified path does not exist, or does correspond to a file/folder
-   *                                       in the trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder with the new name already exists.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder with the new name already exists.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    * @see IGenericFileService#renameFile(GenericFilePath, String)
    */
   boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException;
 
   /**
-   * Copies a file/folder, given its path, to a destination folder, given its path.
+   * Copies a file or folder from a given path to a destination folder.
    *
-   * @param path              The file/folder path to be copied. This path must not correspond to a file/folder in
-   *                          the trash/deleted.
-   * @param destinationFolder The folder path to copy the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param path              The path of the file or folder to be copied. This path must not refer to an item in the
+   *                          trash (deleted).
+   * @param destinationFolder The path of the destination folder. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file/folder in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder to be copied already exists on the destination folder.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder to be copied already exists on the destination folder.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    * @see IGenericFileService#copyFile(GenericFilePath, GenericFilePath)
    */
@@ -294,17 +296,17 @@ public interface IGenericFileProvider<T extends IGenericFile> {
     throws OperationFailedException;
 
   /**
-   * Moves a file/folder, given its path, to a destination folder, given its path.
+   * Moves a file or folder from a given path to a destination folder.
    *
-   * @param path              The file/folder path to be moved. This path must not correspond to a file/folder in the
-   *                          trash/deleted.
-   * @param destinationFolder The folder path to move the files to. This path must not correspond to a folder in the
-   *                          trash/deleted.
+   * @param path              The path of the file or folder to be moved. This path must not refer to an item in the
+   *                          trash (deleted).
+   * @param destinationFolder The path of the destination folder. This path must not refer to a folder in the trash
+   *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws NotFoundException             If either path does not exist or does correspond to a file/folder in the
-   *                                       trash/deleted, or the current user is not allowed to access it.
-   * @throws ConflictException             If the file/folder to be moved already exists on the destination folder.
+   * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws ConflictException             If the file or folder to be moved already exists on the destination folder.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    * @see IGenericFileService#moveFile(GenericFilePath, GenericFilePath)
    */
@@ -314,11 +316,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Gets the file metadata, given its path.
    *
-   * @param path The file path to get the metadata from. This path must not correspond to a file in the trash/deleted.
+   * @param path The file path to get the metadata from. This path must not refer to an item in the trash (deleted).
    * @return The file metadata.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getFileMetadata(GenericFilePath)
    */
@@ -328,12 +330,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Sets the file metadata, given its path and the metadata to set.
    *
-   * @param path     The file path to set the metadata for. This path must not correspond to a file in the
-   *                 trash/deleted.
+   * @param path     The file path to set the metadata for. This path must not refer to an item in the trash (deleted).
    * @param metadata The metadata to set. If empty, all existing metadata is removed.
    * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does correspond to a file in the
-   *                                  trash/deleted, or the current user is not allowed to access it.
+   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
+   *                                  (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileMetadata(GenericFilePath, IGenericFileMetadata)
    */
