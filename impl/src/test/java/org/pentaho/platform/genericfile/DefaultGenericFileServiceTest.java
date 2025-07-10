@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -782,20 +783,30 @@ class DefaultGenericFileServiceTest {
 
   // region copyFile
   private static class CopyFilesMultipleProviderUseCase extends MultipleProviderUseCase {
-    public final GenericFilePath path1;
-    public final GenericFilePath path2;
+    public final GenericFilePath path11;
+    public final GenericFilePath path12;
+    public final GenericFilePath path21;
+    public final GenericFilePath path22;
     public final GenericFilePath destPath;
 
     public CopyFilesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
-      path1 = mock( GenericFilePath.class );
-      path2 = mock( GenericFilePath.class );
+      path11 = mock( GenericFilePath.class );
+      path12 = mock( GenericFilePath.class );
+      path21 = mock( GenericFilePath.class );
+      path22 = mock( GenericFilePath.class );
       destPath = mock( GenericFilePath.class );
 
-      doReturn( true ).when( provider1Mock ).owns( path1 );
-      doReturn( false ).when( provider1Mock ).owns( path2 );
+      doReturn( true ).when( provider1Mock ).owns( path11 );
+      doReturn( true ).when( provider1Mock ).owns( path12 );
+      doReturn( false ).when( provider1Mock ).owns( path21 );
+      doReturn( false ).when( provider1Mock ).owns( path22 );
+      doReturn( true ).when( provider1Mock ).owns( destPath );
 
-      doReturn( false ).when( provider2Mock ).owns( path1 );
-      doReturn( true ).when( provider2Mock ).owns( path2 );
+      doReturn( false ).when( provider2Mock ).owns( path11 );
+      doReturn( false ).when( provider2Mock ).owns( path12 );
+      doReturn( true ).when( provider2Mock ).owns( path21 );
+      doReturn( true ).when( provider2Mock ).owns( path22 );
+      doReturn( false ).when( provider2Mock ).owns( destPath );
     }
   }
 
@@ -803,20 +814,20 @@ class DefaultGenericFileServiceTest {
   void testCopyFilesSuccess() throws Exception {
     CopyFilesMultipleProviderUseCase useCase = new CopyFilesMultipleProviderUseCase();
 
-    useCase.service.copyFiles( Arrays.asList( useCase.path1, useCase.path2 ), useCase.destPath );
+    useCase.service.copyFiles( Arrays.asList( useCase.path11, useCase.path12 ), useCase.destPath );
 
-    verify( useCase.provider1Mock ).copyFile( useCase.path1, useCase.destPath );
-    verify( useCase.provider2Mock ).copyFile( useCase.path2, useCase.destPath );
+    verify( useCase.provider1Mock, times( 2 ) ).copyFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).copyFile( any(), any() );
   }
 
   @Test
   void testCopyFilePathNotFound() throws Exception {
     CopyFilesMultipleProviderUseCase useCase = new CopyFilesMultipleProviderUseCase();
 
-    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path11 );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
-      () -> useCase.service.copyFiles( Collections.singletonList( useCase.path1 ), useCase.destPath ) );
+      () -> useCase.service.copyFiles( Collections.singletonList( useCase.path11 ), useCase.destPath ) );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
 
@@ -824,9 +835,9 @@ class DefaultGenericFileServiceTest {
     assertNotNull( failedFiles );
     assertFalse( failedFiles.isEmpty() );
     assertEquals( 1, failedFiles.size() );
-    assertTrue( failedFiles.containsKey( useCase.path1 ) );
-    assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock, never() ).copyFile( any( GenericFilePath.class ), any( GenericFilePath.class ) );
+    assertTrue( failedFiles.containsKey( useCase.path11 ) );
+    assertEquals( "Path not found '" + useCase.path11 + "'.", failedFiles.get( useCase.path11 ).getMessage() );
+    verify( useCase.provider1Mock, never() ).copyFile( any(), any() );
   }
 
   @Test
@@ -834,10 +845,10 @@ class DefaultGenericFileServiceTest {
     CopyFilesMultipleProviderUseCase useCase = new CopyFilesMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Copy failed." ) ).when( useCase.provider1Mock )
-      .copyFile( useCase.path1, useCase.destPath );
+      .copyFile( useCase.path11, useCase.destPath );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
-      () -> useCase.service.copyFiles( Arrays.asList( useCase.path1, useCase.path2 ), useCase.destPath ) );
+      () -> useCase.service.copyFiles( Arrays.asList( useCase.path11, useCase.path12 ), useCase.destPath ) );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
 
@@ -845,29 +856,53 @@ class DefaultGenericFileServiceTest {
     assertNotNull( failedFiles );
     assertFalse( failedFiles.isEmpty() );
     assertEquals( 1, failedFiles.size() );
-    assertTrue( failedFiles.containsKey( useCase.path1 ) );
-    assertEquals( "Copy failed.", exception.getFailedFiles().get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock ).copyFile( useCase.path1, useCase.destPath );
-    verify( useCase.provider2Mock ).copyFile( useCase.path2, useCase.destPath );
+    assertTrue( failedFiles.containsKey( useCase.path11 ) );
+    assertEquals( "Copy failed.", exception.getFailedFiles().get( useCase.path11 ).getMessage() );
+    verify( useCase.provider1Mock, times( 2 ) ).copyFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).copyFile( any(), any() );
+  }
+
+  @Test
+  void testCopyFilesUnsupportedOperationException() throws Exception {
+    CopyFilesMultipleProviderUseCase useCase = new CopyFilesMultipleProviderUseCase();
+
+    doNothing().when( useCase.provider1Mock ).copyFile( any(), any() );
+    doNothing().when( useCase.provider2Mock ).copyFile( any(), any() );
+
+    List<GenericFilePath> files = Arrays.asList( useCase.path11, useCase.path21 );
+    assertThrows( UnsupportedOperationException.class, () -> useCase.service.copyFiles( files, useCase.destPath ) );
+
+    verify( useCase.provider1Mock ).copyFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).copyFile( any(), any() );
   }
   // endregion
 
   // region moveFile
   private static class MoveFilesMultipleProviderUseCase extends MultipleProviderUseCase {
-    public final GenericFilePath path1;
-    public final GenericFilePath path2;
+    public final GenericFilePath path11;
+    public final GenericFilePath path12;
+    public final GenericFilePath path21;
+    public final GenericFilePath path22;
     public final GenericFilePath destPath;
 
     public MoveFilesMultipleProviderUseCase() throws InvalidGenericFileProviderException {
-      path1 = mock( GenericFilePath.class );
-      path2 = mock( GenericFilePath.class );
+      path11 = mock( GenericFilePath.class );
+      path12 = mock( GenericFilePath.class );
+      path21 = mock( GenericFilePath.class );
+      path22 = mock( GenericFilePath.class );
       destPath = mock( GenericFilePath.class );
 
-      doReturn( true ).when( provider1Mock ).owns( path1 );
-      doReturn( false ).when( provider1Mock ).owns( path2 );
+      doReturn( true ).when( provider1Mock ).owns( path11 );
+      doReturn( true ).when( provider1Mock ).owns( path12 );
+      doReturn( false ).when( provider1Mock ).owns( path21 );
+      doReturn( false ).when( provider1Mock ).owns( path22 );
+      doReturn( true ).when( provider1Mock ).owns( destPath );
 
-      doReturn( false ).when( provider2Mock ).owns( path1 );
-      doReturn( true ).when( provider2Mock ).owns( path2 );
+      doReturn( false ).when( provider2Mock ).owns( path11 );
+      doReturn( false ).when( provider2Mock ).owns( path12 );
+      doReturn( true ).when( provider2Mock ).owns( path21 );
+      doReturn( true ).when( provider2Mock ).owns( path22 );
+      doReturn( false ).when( provider2Mock ).owns( destPath );
     }
   }
 
@@ -875,20 +910,20 @@ class DefaultGenericFileServiceTest {
   void testMoveFilesSuccess() throws Exception {
     MoveFilesMultipleProviderUseCase useCase = new MoveFilesMultipleProviderUseCase();
 
-    useCase.service.moveFiles( Arrays.asList( useCase.path1, useCase.path2 ), useCase.destPath );
+    useCase.service.moveFiles( Arrays.asList( useCase.path11, useCase.path12 ), useCase.destPath );
 
-    verify( useCase.provider1Mock ).moveFile( useCase.path1, useCase.destPath );
-    verify( useCase.provider2Mock ).moveFile( useCase.path2, useCase.destPath );
+    verify( useCase.provider1Mock, times( 2 ) ).moveFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).moveFile( any(), any() );
   }
 
   @Test
   void testMoveFilePathNotFound() throws Exception {
     MoveFilesMultipleProviderUseCase useCase = new MoveFilesMultipleProviderUseCase();
 
-    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path11 );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
-      () -> useCase.service.moveFiles( Collections.singletonList( useCase.path1 ), useCase.destPath ) );
+      () -> useCase.service.moveFiles( Collections.singletonList( useCase.path11 ), useCase.destPath ) );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
 
@@ -896,9 +931,9 @@ class DefaultGenericFileServiceTest {
     assertNotNull( failedFiles );
     assertFalse( failedFiles.isEmpty() );
     assertEquals( 1, failedFiles.size() );
-    assertTrue( failedFiles.containsKey( useCase.path1 ) );
-    assertEquals( "Path not found '" + useCase.path1 + "'.", failedFiles.get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock, never() ).moveFile( any( GenericFilePath.class ), any( GenericFilePath.class ) );
+    assertTrue( failedFiles.containsKey( useCase.path11 ) );
+    assertEquals( "Path not found '" + useCase.path11 + "'.", failedFiles.get( useCase.path11 ).getMessage() );
+    verify( useCase.provider1Mock, never() ).moveFile( any(), any() );
   }
 
   @Test
@@ -906,10 +941,10 @@ class DefaultGenericFileServiceTest {
     MoveFilesMultipleProviderUseCase useCase = new MoveFilesMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "Move failed." ) ).when( useCase.provider1Mock )
-      .moveFile( useCase.path1, useCase.destPath );
+      .moveFile( useCase.path11, useCase.destPath );
 
     BatchOperationFailedException exception = assertThrows( BatchOperationFailedException.class,
-      () -> useCase.service.moveFiles( Arrays.asList( useCase.path1, useCase.path2 ), useCase.destPath ) );
+      () -> useCase.service.moveFiles( Arrays.asList( useCase.path11, useCase.path12 ), useCase.destPath ) );
 
     Map<GenericFilePath, Exception> failedFiles = exception.getFailedFiles();
 
@@ -917,10 +952,24 @@ class DefaultGenericFileServiceTest {
     assertNotNull( failedFiles );
     assertFalse( failedFiles.isEmpty() );
     assertEquals( 1, failedFiles.size() );
-    assertTrue( failedFiles.containsKey( useCase.path1 ) );
-    assertEquals( "Move failed.", exception.getFailedFiles().get( useCase.path1 ).getMessage() );
-    verify( useCase.provider1Mock ).moveFile( useCase.path1, useCase.destPath );
-    verify( useCase.provider2Mock ).moveFile( useCase.path2, useCase.destPath );
+    assertTrue( failedFiles.containsKey( useCase.path11 ) );
+    assertEquals( "Move failed.", exception.getFailedFiles().get( useCase.path11 ).getMessage() );
+    verify( useCase.provider1Mock, times( 2 ) ).moveFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).moveFile( any(), any() );
+  }
+
+  @Test
+  void testMoveFilesUnsupportedOperationException() throws Exception {
+    MoveFilesMultipleProviderUseCase useCase = new MoveFilesMultipleProviderUseCase();
+
+    doNothing().when( useCase.provider1Mock ).moveFile( any(), any() );
+    doNothing().when( useCase.provider2Mock ).moveFile( any(), any() );
+
+    List<GenericFilePath> files = Arrays.asList( useCase.path11, useCase.path21 );
+    assertThrows( UnsupportedOperationException.class, () -> useCase.service.moveFiles( files, useCase.destPath ) );
+
+    verify( useCase.provider1Mock ).moveFile( any(), any() );
+    verify( useCase.provider2Mock, never() ).moveFile( any(), any() );
   }
   // endregion
 

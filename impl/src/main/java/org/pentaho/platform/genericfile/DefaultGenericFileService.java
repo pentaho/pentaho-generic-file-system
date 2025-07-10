@@ -318,11 +318,12 @@ public class DefaultGenericFileService implements IGenericFileService {
     return getOwnerFileProvider( path ).renameFile( path, newName );
   }
 
-  protected boolean isDifferentProvider( @NonNull GenericFilePath path1, @NonNull GenericFilePath path2 ) {
+  protected boolean isDifferentProvider( @NonNull GenericFilePath path1, @NonNull GenericFilePath path2 )
+    throws NotFoundException {
     Objects.requireNonNull( path1 );
     Objects.requireNonNull( path2 );
 
-    return !getFirstOwnerFileProvider( path1 ).equals( getFirstOwnerFileProvider( path2 ) );
+    return !getOwnerFileProvider( path1 ).equals( getOwnerFileProvider( path2 ) );
   }
 
   @Override
