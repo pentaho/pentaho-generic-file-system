@@ -1518,13 +1518,15 @@ class RepositoryFileProviderTest {
     String newName = "renamed.xanalyzer";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    GenericFilePath newPath = repositoryProvider.getNewPath( path, newName );
+    GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
     assertEquals( GenericFilePath.parse( "/home/admin/" + fileId + "/" + newName ), newPath );
 
     boolean result = repositoryProvider.renameFile( path, newName );
@@ -1537,15 +1539,19 @@ class RepositoryFileProviderTest {
   void testRenameFileErrorThrowsException() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    String newName = "renamed.xanalyzer";
+    String newName = "renamed";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doThrow( new IllegalArgumentException( "rename failed" ) ).when( fileServiceMock )
       .doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName + ".xanalyzer" );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     OperationFailedException exception =
       assertThrows( OperationFailedException.class, () -> repositoryProvider.renameFile( path, newName ) );
@@ -1558,19 +1564,38 @@ class RepositoryFileProviderTest {
   void testRenameFileOperationFailed() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    String newName = "renamed.xanalyzer";
+    String newName = "renamed";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( false ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
+    GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName + ".xanalyzer" );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
+
     boolean result = repositoryProvider.renameFile( path, newName );
 
     assertFalse( result );
     verify( fileServiceMock, times( 1 ) ).doRename( encodeRepositoryPath( path.toString() ), newName );
+  }
+
+  @Test
+  void testRenameFileNotFoundException() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
+    String newName = "renamed";
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertThrows( NotFoundException.class, () -> repositoryProvider.renameFile( path, newName ) );
+    verify( fileServiceMock, never() ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
 
   @Test
@@ -1580,6 +1605,7 @@ class RepositoryFileProviderTest {
     String newName = "bad/name";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( false ).when( fileServiceMock ).isValidFileName( newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
@@ -1589,34 +1615,13 @@ class RepositoryFileProviderTest {
   }
 
   @Test
-  void testRenameNewFileExists() throws Exception {
-    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
-    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    String newName = "bad/name";
-
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
-    doThrow( UnifiedRepositoryException.class ).when( fileServiceMock )
-      .doRename( encodeRepositoryPath( path.toString() ), newName );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    ConflictException exception =
-      assertThrows( ConflictException.class, () -> repositoryProvider.renameFile( path, newName ) );
-
-    assertEquals( String.format( "File to be renamed already exists on the destination folder: '%s'.", newName ),
-      exception.getMessage() );
-    verify( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
-  }
-
-  @Test
   void testRenameAccessControlException() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    String newName = "renamed.xanalyzer";
+    String newName = "renamed";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
     doReturn( "false" ).when( fileServiceMock ).doGetCanCreate();
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -1627,18 +1632,46 @@ class RepositoryFileProviderTest {
   }
 
   @Test
+  void testRenameNewFileExists() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
+    String newName = "renamed";
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName + ".xanalyzer" );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
+
+    ConflictException exception =
+      assertThrows( ConflictException.class, () -> repositoryProvider.renameFile( path, newName ) );
+
+    assertEquals( String.format( "Item to be renamed already exists on the destination folder: '%s'.", newName ),
+      exception.getMessage() );
+    verify( fileServiceMock, never() ).doRename( encodeRepositoryPath( path.toString() ), newName );
+  }
+
+  @Test
   void testRenameFileResourceAccessDeniedException() throws Exception {
     String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
     GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
     String newName = "renamed.xanalyzer";
 
     FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
     doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doThrow( new DataRetrievalFailureException( "Not Authorized" ) ).when( fileServiceMock )
       .doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName + ".xanalyzer" );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     ResourceAccessDeniedException exception =
       assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.renameFile( path, newName ) );
@@ -1816,10 +1849,30 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     repositoryProvider.moveFile( path, destPath );
 
     verify( fileServiceMock, times( 1 ) ).doMoveFiles( any(), any() );
+  }
+
+  @Test
+  void testMoveFilesConflictException() throws Exception {
+    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
+    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
+    GenericFilePath destPath = GenericFilePath.parse( "/archive/" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doThrow( new UnifiedRepositoryException() ).when( fileServiceMock ).doMoveFiles( any(), any() );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
+
+    assertThrows( ConflictException.class, () -> repositoryProvider.moveFile( path, destPath ) );
+    verify( fileServiceMock, never() ).doMoveFiles( any(), any() );
   }
 
   @Test
@@ -1832,6 +1885,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( null ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( NotFoundException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock, never() ).doMoveFiles( any(), any() );
@@ -1848,6 +1903,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock ).doMoveFiles( any(), any() );
@@ -1864,6 +1921,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( NotFoundException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock ).doMoveFiles( any(), any() );
@@ -1880,24 +1939,10 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( AccessControlException.class, () -> repositoryProvider.moveFile( path, destPath ) );
-    verify( fileServiceMock ).doMoveFiles( any(), any() );
-  }
-
-  @Test
-  void testMoveFilesConflictException() throws Exception {
-    String fileId = "8b69da2b-2a10-4a82-89bc-a376e52d5482";
-    GenericFilePath path = GenericFilePath.parse( "/home/admin/" + fileId + "/PAZReport.xanalyzer" );
-    GenericFilePath destPath = GenericFilePath.parse( "/archive/" );
-
-    FileService fileServiceMock = mock( FileService.class );
-    doThrow( new UnifiedRepositoryException() ).when( fileServiceMock ).doMoveFiles( any(), any() );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
-
-    assertThrows( ConflictException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock ).doMoveFiles( any(), any() );
   }
 
@@ -1912,6 +1957,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( OperationFailedException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock ).doMoveFiles( any(), any() );
@@ -1928,6 +1975,8 @@ class RepositoryFileProviderTest {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     doReturn( createNativeFile( fileId, path, false ) ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GenericFilePath newPath = repositoryProvider.getNewPath( destPath, path.getLastSegment() );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
     assertThrows( RuntimeException.class, () -> repositoryProvider.moveFile( path, destPath ) );
     verify( fileServiceMock ).doMoveFiles( any(), any() );

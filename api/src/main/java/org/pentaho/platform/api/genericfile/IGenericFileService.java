@@ -549,6 +549,7 @@ public interface IGenericFileService {
    * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file or
    *                                       folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidPathException          If the new path is not valid.
    * @throws InvalidOperationException     If the {@code newName} is not valid.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the
    *                                       trash (deleted), or the current user is not allowed to access it.
@@ -573,6 +574,9 @@ public interface IGenericFileService {
    * @throws ResourceAccessDeniedException If the current user cannot access the content of the specified file or
    *                                       folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidPathException          If either path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}, or if the new path is not
+   *                                       valid.
    * @throws InvalidOperationException     If the {@code newName} is not valid.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item or folder
    *                                       in the trash (deleted), or the current user is not allowed to access it.
@@ -606,6 +610,7 @@ public interface IGenericFileService {
    *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidPathException          If the destination path is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
    *                                       (deleted), or the current user is not allowed to access it.
    * @throws ConflictException             If the file or folder to be copied already exists on the destination folder.
@@ -629,7 +634,8 @@ public interface IGenericFileService {
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
-   *                                       {@link GenericFilePath#parseRequired(String)}.
+   *                                       {@link GenericFilePath#parseRequired(String)}, or if the destination path
+   *                                       is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the
    *                                       trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -661,6 +667,7 @@ public interface IGenericFileService {
    *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot access the content of either specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidPathException          If the destination path is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
    *                                       (deleted), or the current user is not allowed to access it.
    * @throws ConflictException             If the file or folder to be moved already exists on the destination folder.
@@ -684,7 +691,8 @@ public interface IGenericFileService {
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
-   *                                       {@link GenericFilePath#parseRequired(String)}.
+   *                                       {@link GenericFilePath#parseRequired(String)}, or if the destination path
+   *                                       is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the
    *                                       trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.

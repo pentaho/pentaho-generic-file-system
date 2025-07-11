@@ -18,45 +18,32 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
  * The exception class thrown when the user of the current session does not have the correct role-based access
  * security for some resource.
  */
-public class ResourceAccessDeniedException extends OperationFailedException {
-  private final transient GenericFilePath path;
-
+public class ResourceAccessDeniedException extends OperationWithPathFailedException {
   public ResourceAccessDeniedException() {
     super();
-    this.path = null;
   }
 
   public ResourceAccessDeniedException( String message ) {
     super( message );
-    this.path = null;
   }
 
   public ResourceAccessDeniedException( Throwable cause ) {
     super( cause );
-    this.path = null;
   }
 
   public ResourceAccessDeniedException( String message, Throwable cause ) {
     super( message, cause );
-    this.path = null;
   }
 
   public ResourceAccessDeniedException( GenericFilePath path ) {
-    super();
-    this.path = path;
+    super( path );
   }
 
   public ResourceAccessDeniedException( String message, GenericFilePath path ) {
-    super( message );
-    this.path = path;
+    super( message, path );
   }
 
   public ResourceAccessDeniedException( String message, GenericFilePath path, Throwable cause ) {
-    super( message, cause );
-    this.path = path;
-  }
-
-  public GenericFilePath getPath() {
-    return path;
+    super( message, path, cause );
   }
 }

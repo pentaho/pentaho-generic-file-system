@@ -16,6 +16,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
@@ -34,7 +35,6 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
-import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
@@ -621,30 +621,35 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
     throws OperationFailedException {
+    String pathString = pathToString( path );
+
+    if ( !fileService.doesExist( pathString ) ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
+    }
+
     if ( !fileService.isValidFileName( newName ) ) {
-      throw new InvalidOperationException(
-        String.format( "Invalid name to rename the file/folder: '%s'.", newName ) );
+      throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", newName ) );
     }
 
     if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
       throw new AccessControlException();
     }
 
-    /*GenericFilePath newPath = getNewPath( path, newName );
+    String pathExtension = FilenameUtils.getExtension( path.getLastSegment() );
+    String fullNewName =
+      StringUtil.isEmpty( pathExtension ) ? newName : String.format( "%s.%s", newName, pathExtension );
+
+    GenericFilePath newPath = getNewPath( Objects.requireNonNull( path.getParent() ), fullNewName );
 
     if ( fileService.doesExist( pathToString( newPath ) ) ) {
-      throw new ConflictException( "File with the given path already exists: " + newPath );
-    }*/
+      throw new ConflictException(
+        String.format( "Item to be renamed already exists on the destination folder: '%s'.", newName ) );
+    }
 
     try {
-      return fileService.doRename( pathToString( path ), newName );
-    } catch ( DataRetrievalFailureException e ) { //TODO verify this
-      throw new ResourceAccessDeniedException( "User is not authorized to rename this path.",
-        path );
-    } catch ( UnifiedRepositoryException e ) {
-      throw new ConflictException(
-        String.format( "File to be renamed already exists on the destination folder: '%s'.", newName ),
-        e );
+      return fileService.doRename( pathString, newName );
+    } catch ( DataRetrievalFailureException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to rename this path.", path );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -676,9 +681,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       fileService.doCopyFiles( destinationFolderString, FileService.MODE_RENAME, fileId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException(
-        "User is not authorized to copy this path.", destinationFolder );
-      //TODO test this exception
+      throw new ResourceAccessDeniedException( "User is not authorized to copy this path.", destinationFolder );
     } catch ( IllegalArgumentException e ) {
       throw new OperationFailedException( e );
     }
@@ -687,29 +690,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
-    /*String destinationPathString = pathToString( destinationPath );
+    GenericFilePath newPath = getNewPath( destinationFolder, path.getLastSegment() );
 
-    if ( !fileService.doesExist( destinationPathString ) ) {
-      throw new InvalidOperationException( "Destination path does not exist: " + destinationPath );
-    }*/
-    //TODO test if this is necessary
+    if ( fileService.doesExist( pathToString( newPath ) ) ) {
+      throw new ConflictException(
+        String.format( "File to be moved already exists on the destination folder: '%s'.", path ) );
+    }
 
     String fileId = getFileId( path );
 
     try {
       fileService.doMoveFiles( pathToString( destinationFolder ), fileId );
     } catch ( DataRetrievalFailureException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to move this path.",
-        path ); //TODO test this exception
+      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", path );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new AccessControlException( e );
-    } catch ( UnifiedRepositoryException e ) {
-      throw new ConflictException(
-        String.format( "File to be moved already exists on the destination folder: '%s'.", path ),
-        e );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
@@ -745,10 +743,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     Objects.requireNonNull( path );
     Objects.requireNonNull( newName );
 
-    GenericFilePath parent = path.getParent();
-    Objects.requireNonNull( parent );
-
-    return parent.child( newName );
+    return path.child( newName );
   }
 
   protected FileInputStream getFileContentCompressedStream(

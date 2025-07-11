@@ -20,45 +20,32 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
  * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface},
  * to not allow a user without read permissions to even know if a file exists.
  */
-public class NotFoundException extends OperationFailedException {
-  private final transient GenericFilePath path;
-
+public class NotFoundException extends OperationWithPathFailedException {
   public NotFoundException() {
     super();
-    this.path = null;
   }
 
   public NotFoundException( String message ) {
     super( message );
-    this.path = null;
   }
 
   public NotFoundException( Throwable cause ) {
     super( cause );
-    this.path = null;
   }
 
   public NotFoundException( String message, Throwable cause ) {
     super( message, cause );
-    this.path = null;
   }
 
   public NotFoundException( GenericFilePath path ) {
-    super();
-    this.path = path;
+    super( path );
   }
 
   public NotFoundException( String message, GenericFilePath path ) {
-    super( message );
-    this.path = path;
+    super( message, path );
   }
 
   public NotFoundException( String message, GenericFilePath path, Throwable cause ) {
-    super( message, cause );
-    this.path = path;
-  }
-
-  public GenericFilePath getPath() {
-    return path;
+    super( message, path, cause );
   }
 }
