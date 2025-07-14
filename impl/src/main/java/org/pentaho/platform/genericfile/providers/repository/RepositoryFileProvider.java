@@ -35,6 +35,7 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
@@ -57,11 +58,9 @@ import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
-import org.pentaho.platform.security.policy.rolebased.actions.PublishAction;
 import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
-import org.springframework.dao.DataRetrievalFailureException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -260,15 +259,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           throw new InvalidOperationException( String.format( "Invalid path: '%s'.", path ) );
         }
 
-        // This is called twice to validate the operation itself and the operation on the specific resource.
-
-        if ( !SystemUtils.canDownload( null ) ) {
-          throw new AccessControlException( "User is not authorized to perform this operation." );
-        }
-
         if ( !SystemUtils.canDownload( path.toString() ) ) {
-          throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.",
-            path );
+          throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.", path );
         }
 
         FileInputStream inputStream = getFileContentCompressedStream( repositoryFile );
@@ -276,12 +268,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           MediaType.ZIP.toString() );
       }
 
-      if ( !fileService.getWhitelist().accept( repositoryFile.getName() ) && !fileService.getPolicy()
-        .isAllowed( PublishAction.NAME ) ) {
-        //TODO change this to the commented version
-        //if ( !fileService.canGetFileContent( repositoryFile ) ) {
-        throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.",
-          path );
+      if ( !fileService.doGetCanGetFileContent( repositoryFile.getName() ) ) {
+        throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.", path );
       }
 
       RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
@@ -306,7 +294,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = null;
 
     if ( owns( path ) ) {
-      repositoryFile = unifiedRepository.getFile( path.toString() );
+      try {
+        repositoryFile = unifiedRepository.getFile( path.toString() );
+      } catch ( UnifiedRepositoryAccessDeniedException e ) {
+        throw new ResourceAccessDeniedException( "User is not authorized to access this path.", path );
+      } catch ( UnifiedRepositoryException e ) {
+        throw new OperationFailedException( e );
+      }
     }
 
     if ( repositoryFile == null ) {
@@ -621,6 +615,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
     throws OperationFailedException {
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
+    }
+
     String pathString = pathToString( path );
 
     if ( !fileService.doesExist( pathString ) ) {
@@ -629,10 +627,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     if ( !fileService.isValidFileName( newName ) ) {
       throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", newName ) );
-    }
-
-    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
-      throw new AccessControlException();
     }
 
     String pathExtension = FilenameUtils.getExtension( path.getLastSegment() );
@@ -648,7 +642,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       return fileService.doRename( pathString, newName );
-    } catch ( DataRetrievalFailureException e ) {
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new ResourceAccessDeniedException( "User is not authorized to rename this path.", path );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
@@ -658,6 +652,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
+    }
+
     String destinationFolderString = pathToString( destinationFolder );
 
     if ( !fileService.doesExist( destinationFolderString ) ) {
@@ -670,10 +668,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     if ( fileService.doesExist( pathToString( newPath ) ) ) {
       throw new ConflictException(
         String.format( "File to be copied already exists on the destination folder: '%s'.", path ) );
-    }
-
-    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
-      throw new AccessControlException();
     }
 
     String fileId = getFileId( path );
@@ -690,6 +684,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
     throws OperationFailedException {
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
+    }
+
     GenericFilePath newPath = getNewPath( destinationFolder, path.getLastSegment() );
 
     if ( fileService.doesExist( pathToString( newPath ) ) ) {
@@ -701,13 +699,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       fileService.doMoveFiles( pathToString( destinationFolder ), fileId );
-    } catch ( DataRetrievalFailureException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", path );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new AccessControlException( e );
+      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", path );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
@@ -718,6 +714,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
     try {
       return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+    } catch ( UnifiedRepositoryException e ) {
+      throw new OperationFailedException( e );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     }
