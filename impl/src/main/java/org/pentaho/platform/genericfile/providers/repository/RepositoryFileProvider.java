@@ -259,7 +259,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           throw new InvalidOperationException( String.format( "Invalid path: '%s'.", path ) );
         }
 
+        // This is called twice to validate the operation itself and the operation on the specific resource.
         if ( !SystemUtils.canDownload( path.toString() ) ) {
+          if ( !SystemUtils.canDownload( null ) ) {
+            throw new AccessControlException( "User is not authorized to perform this operation." );
+          }
+
           throw new ResourceAccessDeniedException( "User is not authorized to get the content of this path.", path );
         }
 

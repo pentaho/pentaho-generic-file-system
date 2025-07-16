@@ -18,40 +18,40 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
  * The exception class thrown when an Operation has failed, and we need to have a path to give more context of the
  * error.
  */
-public class OperationWithPathFailedException extends OperationFailedException {
+public abstract class OperationWithPathFailedException extends OperationFailedException {
   private final transient GenericFilePath path;
 
-  public OperationWithPathFailedException() {
+  protected OperationWithPathFailedException() {
     super();
     this.path = null;
   }
 
-  public OperationWithPathFailedException( String message ) {
+  protected OperationWithPathFailedException( String message ) {
     super( message );
     this.path = null;
   }
 
-  public OperationWithPathFailedException( Throwable cause ) {
+  protected OperationWithPathFailedException( Throwable cause ) {
     super( cause );
     this.path = null;
   }
 
-  public OperationWithPathFailedException( String message, Throwable cause ) {
+  protected OperationWithPathFailedException( String message, Throwable cause ) {
     super( message, cause );
     this.path = null;
   }
 
-  public OperationWithPathFailedException( GenericFilePath path ) {
+  protected OperationWithPathFailedException( GenericFilePath path ) {
     super();
     this.path = path;
   }
 
-  public OperationWithPathFailedException( String message, GenericFilePath path ) {
+  protected OperationWithPathFailedException( String message, GenericFilePath path ) {
     super( message );
     this.path = path;
   }
 
-  public OperationWithPathFailedException( String message, GenericFilePath path, Throwable cause ) {
+  protected OperationWithPathFailedException( String message, GenericFilePath path, Throwable cause ) {
     super( message, cause );
     this.path = path;
   }

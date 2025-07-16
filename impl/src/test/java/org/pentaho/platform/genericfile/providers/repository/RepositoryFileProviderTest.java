@@ -1044,6 +1044,7 @@ class RepositoryFileProviderTest {
 
     try ( var mocked = mockStatic( SystemUtils.class ) ) {
       mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( true );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( true );
       IGenericFileContent content = repositoryProvider.getFileContent( path, true );
 
       assertNotNull( content );
@@ -1067,6 +1068,7 @@ class RepositoryFileProviderTest {
 
     try ( var mocked = mockStatic( SystemUtils.class ) ) {
       mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( true );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( true );
 
       assertThrows( InvalidOperationException.class, () -> repositoryProvider.getFileContent( path, true ) );
     }
@@ -1086,8 +1088,29 @@ class RepositoryFileProviderTest {
 
     try ( var mocked = mockStatic( SystemUtils.class ) ) {
       mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( false );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( true );
 
       assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFileContent( path, true ) );
+    }
+  }
+
+  @Test
+  void testGetFileContentCompressedAccessControlException() throws Exception {
+    String fileId = "file-123";
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    RepositoryFile nativeFile = createNativeFile( fileId, path, false );
+
+    FileService fileServiceMock = mock( FileService.class );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( nativeFile ).when( repositoryMock ).getFile( path.toString() );
+    doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+
+    try ( var mocked = mockStatic( SystemUtils.class ) ) {
+      mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( false );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( false );
+
+      assertThrows( AccessControlException.class, () -> repositoryProvider.getFileContent( path, true ) );
     }
   }
 
@@ -1106,6 +1129,7 @@ class RepositoryFileProviderTest {
 
     try ( var mocked = mockStatic( SystemUtils.class ) ) {
       mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( true );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( true );
 
       assertThrows( RuntimeException.class, () -> repositoryProvider.getFileContent( path, true ) );
     }
@@ -1126,6 +1150,7 @@ class RepositoryFileProviderTest {
 
     try ( var mocked = mockStatic( SystemUtils.class ) ) {
       mocked.when( () -> SystemUtils.canDownload( path.toString() ) ).thenReturn( true );
+      mocked.when( () -> SystemUtils.canDownload( null ) ).thenReturn( true );
 
       assertThrows( OperationFailedException.class, () -> repositoryProvider.getFileContent( path, true ) );
     }
