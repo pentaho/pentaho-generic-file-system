@@ -15,13 +15,13 @@ package org.pentaho.platform.api.genericfile.model;
 import java.io.InputStream;
 
 // NOTE: Designed after the class
-// {@code org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper}.
+// {@code org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStream}.
 
 /**
- * The {@code IGenericFileContentWrapper} interface contains the necessary information for returning a
+ * The {@code IGenericFileContent} interface contains the necessary information for returning a
  * {@code IGenericFile}'s content.
  */
-public interface IGenericFileContentWrapper {
+public interface IGenericFileContent {
   /**
    * Gets the file's content InputStream.
    */

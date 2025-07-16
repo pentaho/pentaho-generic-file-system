@@ -34,6 +34,9 @@ public class BaseGenericFile implements IGenericFile {
   private String title;
   private String description;
   private String owner;
+  private Date createdDate;
+  private String creatorId;
+  private long fileSize;
 
   @NonNull
   @Override
@@ -160,5 +163,32 @@ public class BaseGenericFile implements IGenericFile {
 
   public void setOwner( String owner ) {
     this.owner = owner;
+  }
+
+  @Override
+  public Date getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate( Date createdDate ) {
+    this.createdDate = createdDate;
+  }
+
+  @Override
+  public String getCreatorId() {
+    return creatorId;
+  }
+
+  public void setCreatorId( String creatorId ) {
+    this.creatorId = creatorId;
+  }
+
+  @Override
+  public long getFileSize() {
+    return fileSize;
+  }
+
+  public void setFileSize( long fileSize ) {
+    this.fileSize = fileSize;
   }
 }

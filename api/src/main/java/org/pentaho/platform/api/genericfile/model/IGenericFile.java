@@ -135,11 +135,11 @@ public interface IGenericFile extends IProviderable {
   /**
    * Gets the title of the file.
    * <p>
-   * The title of a file is a localized, human-readable version of its {@link #getNameDecoded()} non-encoded name}.
+   * The title of a file is a localized, human-readable version of its {@link #getNameDecoded()} non-encoded name.
    * <p>
    * Unlike the name of a file, the title may not be unique amongst siblings.
    * <p>
-   * When title of a file is unspecified, the name of a file can be used in its place.
+   * When the title of a file is unspecified, the name of a file can be used in its place.
    *
    * @see #getName()
    * @see #getNameDecoded()
@@ -162,4 +162,19 @@ public interface IGenericFile extends IProviderable {
    * Gets the owner of the generic file.
    */
   String getOwner();
+
+  /**
+   * Gets the creation date of the generic file.
+   */
+  Date getCreatedDate();
+
+  /**
+   * Gets the user ID that created the generic file.
+   */
+  String getCreatorId();
+
+  /**
+   * Gets the file size in bytes.
+   */
+  long getFileSize();
 }

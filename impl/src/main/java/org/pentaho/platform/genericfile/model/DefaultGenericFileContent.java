@@ -13,17 +13,17 @@
 
 package org.pentaho.platform.genericfile.model;
 
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 
 import java.io.InputStream;
 
-public class DefaultGenericFileContentWrapper implements IGenericFileContentWrapper {
+public class DefaultGenericFileContent implements IGenericFileContent {
 
   private final InputStream inputStream;
   private final String fileName;
   private final String mimeType;
 
-  public DefaultGenericFileContentWrapper( InputStream inputStream, String fileName, String mimeType ) {
+  public DefaultGenericFileContent( InputStream inputStream, String fileName, String mimeType ) {
     this.inputStream = inputStream;
     this.fileName = fileName;
     this.mimeType = mimeType;

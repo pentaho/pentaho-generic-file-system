@@ -10,8 +10,9 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.exception;
+
+import org.pentaho.platform.api.genericfile.GenericFilePath;
 
 /**
  * The exception class thrown when a generic file assumed to exist, does not or the user does not have READ/WRITE
@@ -19,7 +20,7 @@ package org.pentaho.platform.api.genericfile.exception;
  * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface},
  * to not allow a user without read permissions to even know if a file exists.
  */
-public class NotFoundException extends OperationFailedException {
+public class NotFoundException extends OperationWithPathFailedException {
   public NotFoundException() {
     super();
   }
@@ -34,5 +35,17 @@ public class NotFoundException extends OperationFailedException {
 
   public NotFoundException( String message, Throwable cause ) {
     super( message, cause );
+  }
+
+  public NotFoundException( GenericFilePath path ) {
+    super( path );
+  }
+
+  public NotFoundException( String message, GenericFilePath path ) {
+    super( message, path );
+  }
+
+  public NotFoundException( String message, GenericFilePath path, Throwable cause ) {
+    super( message, path, cause );
   }
 }

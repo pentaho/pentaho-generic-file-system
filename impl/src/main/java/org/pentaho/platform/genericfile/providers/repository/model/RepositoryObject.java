@@ -22,7 +22,6 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
   private String objectId;
   private String extension;
   private String repository;
-  private boolean hidden;
 
   @NonNull
   @Override
@@ -52,13 +51,5 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
 
   public void setRepository( String repository ) {
     this.repository = repository;
-  }
-
-  public boolean isHidden() {
-    return hidden;
-  }
-
-  public void setHidden( boolean hidden ) {
-    this.hidden = hidden;
   }
 }

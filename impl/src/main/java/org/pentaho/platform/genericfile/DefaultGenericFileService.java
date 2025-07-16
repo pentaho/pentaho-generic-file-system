@@ -25,10 +25,12 @@ import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProvider
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
+import org.pentaho.platform.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -37,7 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class DefaultGenericFileService implements IGenericFileService {
-
   @VisibleForTesting
   static final String MULTIPLE_PROVIDER_ROOT_PROVIDER = "combined";
   @VisibleForTesting
@@ -47,7 +48,6 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   public DefaultGenericFileService( @NonNull List<IGenericFileProvider<?>> fileProviders )
     throws InvalidGenericFileProviderException {
-
     Objects.requireNonNull( fileProviders );
 
     if ( fileProviders.isEmpty() ) {
@@ -58,13 +58,14 @@ public class DefaultGenericFileService implements IGenericFileService {
     this.fileProviders = new ArrayList<>( fileProviders );
   }
 
+  @Override
   public void clearTreeCache() {
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         fileProvider.clearTreeCache();
       } catch ( OperationFailedException e ) {
         // Clear as many as possible. Still, log each failure.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error clearing tree cache.", e );
       }
     }
   }
@@ -87,7 +88,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting root trees.", e );
       }
     }
 
@@ -100,8 +101,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
+  @Override
   public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
-
     Objects.requireNonNull( options );
 
     if ( isSingleProviderMode() ) {
@@ -119,12 +120,10 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options )
-    throws OperationFailedException {
-
+  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options ) throws OperationFailedException {
     BaseGenericFileTree rootTree = createMultipleProviderTreeRoot();
-
     OperationFailedException firstProviderException = null;
+
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
         rootTree.addChild( fileProvider.getTree( options ) );
@@ -134,7 +133,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting tree from root.", e );
       }
     }
 
@@ -160,50 +159,49 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
-
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
-    return getOwnerFileProvider( basePath )
-      .orElseThrow( () -> new NotFoundException( String.format( "Base path not found '%s'.", basePath ) ) )
-      .getTree( options );
+    return getOwnerFileProvider( basePath ).getTree( options );
   }
 
+  @Override
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
-
+    Optional<IGenericFileProvider<?>> fileProvider = getFirstOwnerFileProvider( path );
     return fileProvider.isPresent() && fileProvider.get().doesFolderExist( path );
   }
 
+  @Override
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path )
-      .orElseThrow( NotFoundException::new )
-      .createFolder( path );
+    return getOwnerFileProvider( path ).createFolder( path );
   }
 
-  @Override
   @NonNull
-  public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
-    throws OperationFailedException {
-    return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFileContentWrapper( path );
-  }
-
   @Override
-  @NonNull
-  public IGenericFile getFile( @NonNull GenericFilePath path )
+  public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFile( path );
+    return getOwnerFileProvider( path ).getFileContent( path, compressed );
   }
 
-  private Optional<IGenericFileProvider<?>> getOwnerFileProvider( @NonNull GenericFilePath path ) {
+  @NonNull
+  @Override
+  public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFile( path );
+  }
+
+  private Optional<IGenericFileProvider<?>> getFirstOwnerFileProvider( @NonNull GenericFilePath path ) {
     return fileProviders.stream()
       .filter( fileProvider -> fileProvider.owns( path ) )
       .findFirst();
   }
 
+  private IGenericFileProvider<?> getOwnerFileProvider( @NonNull GenericFilePath path ) throws NotFoundException {
+    return getFirstOwnerFileProvider( path ).orElseThrow(
+      () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) );
+  }
+
   @Override
   public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
     throws OperationFailedException {
-    Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
-
+    Optional<IGenericFileProvider<?>> fileProvider = getFirstOwnerFileProvider( path );
     return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );
   }
 
@@ -225,7 +223,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
 
         // Continue, collecting providers that work. But still log failed ones, JIC.
-        e.printStackTrace();
+        Logger.error( this.getClass().getName(), "Error getting deleted files.", e );
       }
     }
 
@@ -246,8 +244,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         deleteFilePermanently( path );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred during permanent deletion." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred during permanent deletion." );
         }
 
         batchException.addFailedPath( path, e );
@@ -261,9 +258,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void deleteFilePermanently( @NonNull GenericFilePath path ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .deleteFilePermanently( path );
+    getOwnerFileProvider( path ).deleteFilePermanently( path );
   }
 
   @Override
@@ -275,8 +270,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         deleteFile( path, permanent );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred during deletion." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred during deletion." );
         }
 
         batchException.addFailedPath( path, e );
@@ -290,9 +284,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void deleteFile( @NonNull GenericFilePath path, boolean permanent ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .deleteFile( path, permanent );
+    getOwnerFileProvider( path ).deleteFile( path, permanent );
   }
 
   @Override
@@ -304,8 +296,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         restoreFile( path );
       } catch ( OperationFailedException e ) {
         if ( batchException == null ) {
-          batchException =
-            new BatchOperationFailedException( "Error(s) occurred while attempting to restore." );
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to restore files." );
         }
 
         batchException.addFailedPath( path, e );
@@ -319,8 +310,95 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @Override
   public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    getOwnerFileProvider( path )
-      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) )
-      .restoreFile( path );
+    getOwnerFileProvider( path ).restoreFile( path );
+  }
+
+  @Override
+  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).renameFile( path, newName );
+  }
+
+  protected boolean isDifferentProvider( @NonNull GenericFilePath path1, @NonNull GenericFilePath path2 )
+    throws NotFoundException {
+    Objects.requireNonNull( path1 );
+    Objects.requireNonNull( path2 );
+
+    return !getOwnerFileProvider( path1 ).equals( getOwnerFileProvider( path2 ) );
+  }
+
+  @Override
+  public void copyFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationFolder )
+    throws OperationFailedException {
+    BatchOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        copyFile( path, destinationFolder );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to copy files." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
+  }
+
+  @Override
+  public void copyFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
+    throws OperationFailedException {
+    if ( isDifferentProvider( path, destinationFolder ) ) {
+      throw new UnsupportedOperationException( "Cannot copy files to different providers." );
+    }
+
+    getOwnerFileProvider( path ).copyFile( path, destinationFolder );
+  }
+
+  @Override
+  public void moveFiles( @NonNull List<GenericFilePath> paths, @NonNull GenericFilePath destinationFolder )
+    throws OperationFailedException {
+    BatchOperationFailedException batchException = null;
+
+    for ( GenericFilePath path : paths ) {
+      try {
+        moveFile( path, destinationFolder );
+      } catch ( OperationFailedException e ) {
+        if ( batchException == null ) {
+          batchException = new BatchOperationFailedException( "Error(s) occurred while attempting to move files." );
+        }
+
+        batchException.addFailedPath( path, e );
+      }
+    }
+
+    if ( batchException != null ) {
+      throw batchException;
+    }
+  }
+
+  @Override
+  public void moveFile( @NonNull GenericFilePath path, @NonNull GenericFilePath destinationFolder )
+    throws OperationFailedException {
+    if ( isDifferentProvider( path, destinationFolder ) ) {
+      throw new UnsupportedOperationException( "Cannot move files to different providers." );
+    }
+
+    getOwnerFileProvider( path ).moveFile( path, destinationFolder );
+  }
+
+  @NonNull
+  @Override
+  public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFileMetadata( path );
+  }
+
+  @Override
+  public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
+    throws OperationFailedException {
+    getOwnerFileProvider( path ).setFileMetadata( path, metadata );
   }
 }

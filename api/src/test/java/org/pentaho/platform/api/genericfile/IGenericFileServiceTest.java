@@ -19,7 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -39,42 +40,44 @@ import static org.mockito.Mockito.verify;
  * Tests the default methods of the {@link IGenericFileService} interface.
  */
 class IGenericFileServiceTest {
-
   static class GenericFileServiceForTesting implements IGenericFileService {
     @Override
     public void clearTreeCache() {
+      // this is empty on purpose
     }
 
     @NonNull
     @Override
-    public IGenericFileTree getTree( @NonNull GetTreeOptions options ) {
-      throw new UnsupportedOperationException();
-    }
-
-    @NonNull
-    @Override
-    public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean doesFolderExist( @NonNull GenericFilePath path ) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean createFolder( @NonNull GenericFilePath path ) {
+    public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @NonNull
     @Override
-    public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
+    public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -86,7 +89,7 @@ class IGenericFileServiceTest {
 
     @NonNull
     @Override
-    public List<IGenericFile> getDeletedFiles() {
+    public List<IGenericFile> getDeletedFiles() throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -117,6 +120,48 @@ class IGenericFileServiceTest {
 
     @Override
     public void restoreFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationFolder )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void copyFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationFolder )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void moveFiles( @NonNull List<GenericFilePath> files, @NonNull GenericFilePath destinationFolder )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void moveFile( @NonNull GenericFilePath file, @NonNull GenericFilePath destinationFolder )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
   }

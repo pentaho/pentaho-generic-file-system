@@ -14,6 +14,8 @@ package org.pentaho.platform.api.genericfile;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
 import java.util.List;
@@ -223,39 +225,19 @@ class GetTreeOptionsTest {
       assertNull( options.getMaxDepth() );
     }
 
-    @Test
-    void testAcceptsBeingSetToZero() {
+    @ParameterizedTest
+    @ValueSource( ints = { 0, 1, 2 } )
+    void testAcceptsBeingSetExpandedMaxDepth( int value ) {
       GetTreeOptions options = new GetTreeOptions();
+      options.setMaxDepth( value );
 
-      options.setMaxDepth( 0 );
-
-      assertEquals( 0, options.getMaxDepth() );
-    }
-
-    @Test
-    void testAcceptsBeingSetToOne() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setMaxDepth( 1 );
-
-      assertEquals( 1, options.getMaxDepth() );
-    }
-
-    @Test
-    void testAcceptsBeingSetToTwo() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setMaxDepth( 2 );
-
-      assertEquals( 2, options.getMaxDepth() );
+      assertEquals( value, options.getMaxDepth() );
     }
 
     @Test
     void testAcceptsBeingResetToNullInteger() {
       GetTreeOptions options = new GetTreeOptions();
-
       options.setMaxDepth( 1 );
-
       options.setMaxDepth( null );
 
       assertNull( options.getMaxDepth() );
@@ -264,7 +246,6 @@ class GetTreeOptionsTest {
     @Test
     void testNormalizesNegativeToNull() {
       GetTreeOptions options = new GetTreeOptions();
-
       options.setMaxDepth( -1 );
 
       assertNull( options.getMaxDepth() );
@@ -283,31 +264,13 @@ class GetTreeOptionsTest {
       assertNull( options.getExpandedMaxDepth() );
     }
 
-    @Test
-    void testAcceptsBeingSetToZero() {
+    @ParameterizedTest
+    @ValueSource( ints = { 0, 1, 2 } )
+    void testAcceptsBeingSet( int value ) {
       GetTreeOptions options = new GetTreeOptions();
+      options.setExpandedMaxDepth( value );
 
-      options.setExpandedMaxDepth( 0 );
-
-      assertEquals( 0, options.getExpandedMaxDepth() );
-    }
-
-    @Test
-    void testAcceptsBeingSetToOne() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setExpandedMaxDepth( 1 );
-
-      assertEquals( 1, options.getExpandedMaxDepth() );
-    }
-
-    @Test
-    void testAcceptsBeingSetToTwo() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setExpandedMaxDepth( 2 );
-
-      assertEquals( 2, options.getExpandedMaxDepth() );
+      assertEquals( value, options.getExpandedMaxDepth() );
     }
 
     @Test
@@ -375,7 +338,6 @@ class GetTreeOptionsTest {
     @Test
     void testAcceptsBeingSetToTrue() {
       GetTreeOptions options = new GetTreeOptions();
-
       options.setIncludeHidden( true );
 
       assertTrue( options.isIncludeHidden() );
@@ -384,7 +346,6 @@ class GetTreeOptionsTest {
     @Test
     void testAcceptsBeingSetToFalse() {
       GetTreeOptions options = new GetTreeOptions();
-
       options.setIncludeHidden( false );
 
       assertFalse( options.isIncludeHidden() );
@@ -399,15 +360,13 @@ class GetTreeOptionsTest {
     @Test
     void testEqualsItself() {
       GetTreeOptions options = new GetTreeOptions();
-
-      // Sonar issue: Want to directly test the #equals(.) method.
-      assertTrue( options.equals( options ) );
+      assertEquals( options, options );
     }
 
     @Test
     void testDoesNotEqualNull() {
       GetTreeOptions options = new GetTreeOptions();
-      assertFalse( options.equals( null ) );
+      assertNotEquals( null, options );
     }
 
     @Test
@@ -503,7 +462,7 @@ class GetTreeOptionsTest {
       options1.setIncludeHidden( true );
       options2.setIncludeHidden( false );
 
-      assertFalse( options1.equals( options2 ) );
+      assertNotEquals( options1, options2 );
       assertNotEquals( options1.hashCode(), options2.hashCode() );
     }
 
@@ -514,7 +473,7 @@ class GetTreeOptionsTest {
       options1.setBypassCache( true );
       options2.setBypassCache( false );
 
-      assertFalse( options1.equals( options2 ) );
+      assertNotEquals( options1, options2 );
       assertNotEquals( options1.hashCode(), options2.hashCode() );
     }
 
@@ -523,7 +482,7 @@ class GetTreeOptionsTest {
       GetTreeOptions options = new GetTreeOptions();
       Object other = new Object();
 
-      assertFalse( options.equals( other ) );
+      assertNotEquals( options, other );
     }
   }
 }
