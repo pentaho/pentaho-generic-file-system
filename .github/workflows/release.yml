@@ -6,12 +6,16 @@ on:
         type: boolean
         default: true
         description: "Dry run. No real changes should occur."
+      base_version:
+        required: true
+        description: "The base version to use for the merge."
+        default: "11.0.0.0-24"
 
 jobs:
   reusable-merge-workflow:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
-      base_version: "10.2.0.1-255"
+      base_version: ${{ inputs.base_version }}
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: "."
@@ -22,7 +26,7 @@ jobs:
     secrets: inherit
 
   release:
-    needs: [reusable-merge-workflow]
+    needs: [ reusable-merge-workflow ]
     uses: pentaho/actions-common/.github/workflows/release.yml@stable
     with:
       release_version: ${{ needs.reusable-merge-workflow.outputs.current-version }}
@@ -30,7 +34,7 @@ jobs:
     secrets: inherit
 
   update-version:
-    needs: [release]
+    needs: [ release ]
     uses: ./.github/workflows/update-version.yml
     with:
       dry_run: ${{ inputs.dry_run }}
