@@ -1,7 +1,7 @@
 name: pentaho-generic-file-system merge workflow
 on:
   push:
-    branches: # Specify branches so that it doesn't get executed when a tag is pushed
+    branches:
       - master
     paths-ignore:
       - .github/**
@@ -13,15 +13,14 @@ on:
         description: "The modules to build when running from the root of the project. Defaults to everything ('.')"
         default: "."
       base_version:
-        required: true
+        required: false
         description: "The base version to use for the merge."
-        default: "11.0.0.0-24"
 
 jobs:
   reusable-merge-workflow:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
-      base_version: ${{ inputs.base_version }}
+      base_version: ${{ inputs.base_version != '' && inputs.base_version || '11.0.0.0-24' }}
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: ${{ inputs.modules_to_build }}
