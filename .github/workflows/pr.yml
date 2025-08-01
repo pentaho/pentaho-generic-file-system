@@ -1,11 +1,22 @@
 name: pentaho-generic-file-system pull request workflow
-on: pull_request
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - ".github/**"
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   reusable-pr-workflow:
     uses: pentaho/actions-common/.github/workflows/pr.yml@stable
     with:
-      slack_channels: ""
+      slack_channels: "milf_builds"
       sonar_project_key: "pentaho-generic-file-system"
       additional_mvn_directives: "-am -DrunITs -Drelease"
     secrets: inherit

@@ -1,4 +1,5 @@
 name: Pentaho update version workflow
+
 on:
   workflow_call:
     inputs:
@@ -6,6 +7,7 @@ on:
         type: boolean
         default: true
         description: "Dry run. No real changes should occur."
+
 jobs:
   bump-version:
     runs-on: [ k8s ]
@@ -45,14 +47,16 @@ jobs:
           # Remove the -SNAPSHOT suffix if present
           base_version=${current_version%-SNAPSHOT}
 
-          version_parts=$(echo $base_version | tr '.' ' ')
-          version_major=$(echo $version_parts | awk '{print $1}')
-          version_minor=$(echo $version_parts | awk '{print $2}')
-          version_patch=$(echo $version_parts | awk '{print $3 + 1}')
-          new_version="${version_major}.${version_minor}.${version_patch}"
+          # Split into array
+          IFS='.' read -r -a parts <<< "$base_version"
+          last_index=$((${#parts[@]} - 1))
+          parts[$last_index]=$((parts[$last_index] + 1))
+
+          # Reconstruct version, joining the parts by dots
+          new_version=$(IFS='.'; echo "${parts[*]}")
 
           # Reattach the -SNAPSHOT suffix if it was present
-          if [[ "$current_version" == *"-SNAPSHOT" ]]; then
+          if [[ "$current_version" == *-SNAPSHOT ]]; then
             new_version="$new_version-SNAPSHOT"
           fi
 
@@ -64,12 +68,13 @@ jobs:
 
       - name: Commit changes
         if: ${{ inputs.dry_run == false }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIR: ${{ github.event.repository.name }}
         run: |
-          git config --global --add safe.directory /__w/pentaho-generic-file-system/pentaho-generic-file-system
+          git config --global --add safe.directory /__w/${{ env.DIR }}/${{ env.DIR }}
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add 'pom.xml' '**/pom.xml'
           git commit -m "Update version to ${{ steps.increment-version.outputs.new_version }}"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
