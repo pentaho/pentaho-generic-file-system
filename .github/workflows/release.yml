@@ -1,4 +1,5 @@
 name: pentaho-generic-file-system release workflow
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +15,7 @@ jobs:
   reusable-merge-workflow:
     uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
-      base_version: ${{ inputs.base_version != '' && inputs.base_version || '11.0.0.0-24' }}
+      base_version: ${{ inputs.base_version || '10.2.0.4-354' }}
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: "."
@@ -25,7 +26,7 @@ jobs:
     secrets: inherit
 
   release:
-    needs: [ reusable-merge-workflow ]
+    needs: reusable-merge-workflow
     uses: pentaho/actions-common/.github/workflows/release.yml@stable
     with:
       release_version: ${{ needs.reusable-merge-workflow.outputs.current-version }}
@@ -33,7 +34,7 @@ jobs:
     secrets: inherit
 
   update-version:
-    needs: [ release ]
+    needs: release
     uses: ./.github/workflows/update-version.yml
     with:
       dry_run: ${{ inputs.dry_run }}
