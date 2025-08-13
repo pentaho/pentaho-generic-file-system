@@ -16,15 +16,26 @@
   <packaging>pom</packaging>
 
   <properties>
+    <!-- region Project Dependencies -->
+    <!-- @Null @Nullable annotations -->
+    <com.github.spotbugs.annotations.version>4.9.3</com.github.spotbugs.annotations.version>
+    <!-- endregion Project Dependencies -->
+
+    <!-- region Platform Dependencies -->
     <platform.version>11.0.0.0-SNAPSHOT</platform.version>
-    <junit-jupiter.version>5.10.0</junit-jupiter.version>
-    <mockito.version>5.10.0</mockito.version>
-    <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
-    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-    <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
-    <artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
-    <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
+    <!-- endregion Platform Dependencies -->
+
+    <!-- region Test Dependencies -->
+    <junit-bom.version>5.12.2</junit-bom.version>
+    <mockito.version>5.11.0</mockito.version>
+    <!-- endregion Test Dependencies -->
+
+    <!-- region Maven Plugins, add version property to activate -->
+    <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
+    <artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
+    <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
+    <!-- endregion Maven Plugins -->
   </properties>
 
   <dependencyManagement>
@@ -36,6 +47,13 @@
         <version>${com.github.spotbugs.annotations.version}</version>
         <scope>provided</scope>
         <optional>true</optional>
+        <exclusions>
+          <!-- This is provided by the Pentaho server -->
+          <exclusion>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <!-- endregion Project Dependencies -->
 
@@ -74,34 +92,16 @@
 
       <!-- region Test Dependencies -->
       <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-api</artifactId>
-        <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-params</artifactId>
-        <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
-        <version>${junit-jupiter.version}</version>
-        <scope>test</scope>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
-        <scope>test</scope>
       </dependency>
       <!-- endregion Test Dependencies -->
     </dependencies>
@@ -116,14 +116,25 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <configuration>
+            <!-- exclude generated sources -->
+            <sourceDirectories>${project.build.sourceDirectory}</sourceDirectories>
+            <configLocation>
+              https://raw.githubusercontent.com/pentaho/pentaho-coding-standards/master/checkstyle/pentaho_checks.xml
+            </configLocation>
+            <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+            <violationSeverity>info</violationSeverity>
+            <consoleOutput>true</consoleOutput>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <linkXRef>false</linkXRef>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>com.mycila</groupId>
           <artifactId>license-maven-plugin</artifactId>
           <version>${license-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven-surefire-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
