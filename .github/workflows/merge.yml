@@ -19,9 +19,10 @@ concurrency:
 
 jobs:
   reusable-merge-workflow:
-    uses: pentaho/actions-common/.github/workflows/merge.yml@stable
+    uses: pentaho/actions-common/.github/workflows/merge.yml@PAS
     with:
-      base_version: ${{ inputs.base_version || '10.2.0.4-354' }}
+      base_version: ${{ inputs.base_version }}
+      base_build_name: "pdia-master"
       slack_channels: "milf_builds"
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: "."
