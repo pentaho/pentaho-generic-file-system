@@ -13,29 +13,24 @@ on:
 
 jobs:
   reusable-merge-workflow:
-    uses: pentaho/actions-common/.github/workflows/merge.yml@stable
+    uses: pentaho/actions-common/.github/workflows/merge.yml@PAS
     with:
-      base_version: ${{ inputs.base_version || '10.2.0.4-354' }}
+      base_version: ${{ inputs.base_version }}
+      base_build_name: "pdia-master"
       slack_channels: ""
       sonar_project_key: "pentaho-generic-file-system"
       modules_to_build: "."
-      run_release_candidate: true
       run_snapshot: false
+      run_release_candidate: true
       add_github_run_number: false
       use_semver_release_candidate: false
     secrets: inherit
 
   release:
     needs: reusable-merge-workflow
-    uses: pentaho/actions-common/.github/workflows/release.yml@stable
+    uses: pentaho/actions-common/.github/workflows/release.yml@PAS
     with:
       release_version: ${{ needs.reusable-merge-workflow.outputs.current-version }}
       dry_run: ${{ inputs.dry_run }}
-    secrets: inherit
-
-  update-version:
-    needs: release
-    uses: ./.github/workflows/update-version.yml
-    with:
-      dry_run: ${{ inputs.dry_run }}
+      update_version: true
     secrets: inherit
