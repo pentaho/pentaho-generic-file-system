@@ -132,6 +132,14 @@ class GenericFilePathTest {
       assertArrayEquals( new String[] { "scheme://", "my", "folder" }, path.getSegments().toArray() );
       assertEquals( "scheme://my/folder", path.toString() );
     }
+
+    @Test
+    void testTrailingSlash() throws InvalidPathException {
+      GenericFilePath path = GenericFilePath.parseRequired( "scheme://my/folder/" );
+      assertNotNull( path );
+      assertArrayEquals( new String[] { "scheme://", "my", "folder" }, path.getSegments().toArray() );
+      assertEquals( "scheme://my/folder", path.toString() );
+    }
   }
 
   /**
