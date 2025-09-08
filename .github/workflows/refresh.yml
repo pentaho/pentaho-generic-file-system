@@ -6,7 +6,7 @@ on:
 
 jobs:
   reusable-merge-workflow:
-    uses: pentaho/actions-common/.github/workflows/merge.yml@PAS
+    uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
       base_version: ""
       base_build_name: "pdia-master"
