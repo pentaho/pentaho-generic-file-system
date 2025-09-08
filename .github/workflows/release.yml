@@ -13,7 +13,7 @@ on:
 
 jobs:
   reusable-merge-workflow:
-    uses: pentaho/actions-common/.github/workflows/merge.yml@PAS
+    uses: pentaho/actions-common/.github/workflows/merge.yml@stable
     with:
       base_version: ${{ inputs.base_version }}
       base_build_name: "pdia-master"
@@ -28,7 +28,7 @@ jobs:
 
   release:
     needs: reusable-merge-workflow
-    uses: pentaho/actions-common/.github/workflows/release.yml@PAS
+    uses: pentaho/actions-common/.github/workflows/release.yml@stable
     with:
       release_version: ${{ needs.reusable-merge-workflow.outputs.current-version }}
       dry_run: ${{ inputs.dry_run }}

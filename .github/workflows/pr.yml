@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   reusable-pr-workflow:
-    uses: pentaho/actions-common/.github/workflows/pr.yml@PAS
+    uses: pentaho/actions-common/.github/workflows/pr.yml@stable
     with:
       slack_channels: "milf_builds"
       sonar_project_key: "pentaho-generic-file-system"
