@@ -113,7 +113,6 @@ public interface IGenericFileService {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
-   * @throws NotFoundException             If the specified base file does not exist or is not a folder.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -131,7 +130,6 @@ public interface IGenericFileService {
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
    * @throws InvalidPathException          If the specified path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException             If the specified base file does not exist or is not a folder.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.

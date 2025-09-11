@@ -2283,7 +2283,7 @@ class RepositoryFileProviderTest {
     doReturn( null ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( NotFoundException.class, () -> repositoryProvider.doesFolderExist( path ) );
+    assertFalse( repositoryProvider.doesFolderExist( path ) );
     verify( repositoryMock ).getFile( anyString() );
   }
 
