@@ -332,8 +332,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @Override
   public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    org.pentaho.platform.api.repository2.unified.RepositoryFile file = getNativeFile( path );
-    return file != null && file.isFolder();
+    try {
+      return getNativeFile( path ).isFolder();
+    } catch ( NotFoundException e ) {
+      return false;
+    }
   }
 
   // region Conversion

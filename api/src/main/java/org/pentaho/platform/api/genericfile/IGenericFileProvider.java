@@ -114,7 +114,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the conditions are met; {@code false}, otherwise.
-   * @throws NotFoundException             If the specified base file does not exist or is not a folder.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
