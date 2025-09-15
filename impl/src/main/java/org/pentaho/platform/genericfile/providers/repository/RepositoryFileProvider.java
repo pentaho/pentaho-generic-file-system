@@ -633,7 +633,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
     }
 
-    if ( !fileService.isValidFileName( newName ) ) {
+    if ( !fileService.isValidFileName( newName, true ) ) {
       throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", newName ) );
     }
 
