@@ -1554,7 +1554,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName, true );
     doReturn( true ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
@@ -1578,7 +1578,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName, true );
     doThrow( new IllegalArgumentException( "rename failed" ) ).when( fileServiceMock )
       .doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -1603,7 +1603,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName, true );
     doReturn( false ).when( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
@@ -1657,7 +1657,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( false ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( false ).when( fileServiceMock ).isValidFileName( newName, true );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -1674,7 +1674,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName, true );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
@@ -1698,7 +1698,7 @@ class RepositoryFileProviderTest {
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
-    doReturn( true ).when( fileServiceMock ).isValidFileName( newName );
+    doReturn( true ).when( fileServiceMock ).isValidFileName( newName, true );
     doThrow( new UnifiedRepositoryAccessDeniedException( "Not Authorized" ) ).when( fileServiceMock )
       .doRename( encodeRepositoryPath( path.toString() ), newName );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
