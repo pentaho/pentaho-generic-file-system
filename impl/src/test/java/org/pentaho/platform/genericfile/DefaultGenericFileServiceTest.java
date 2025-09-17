@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
@@ -290,10 +291,10 @@ class DefaultGenericFileServiceTest {
 
     public GetFileMultipleProviderUseCase() throws Exception {
       file1Mock = mock( IGenericFile.class );
-      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ) );
+      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
 
       file2Mock = mock( IGenericFile.class );
-      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ) );
+      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
     }
   }
 
@@ -307,8 +308,40 @@ class DefaultGenericFileServiceTest {
     IGenericFile resultFile = useCase.service.getFile( mock( GenericFilePath.class ) );
 
     assertSame( useCase.file2Mock, resultFile );
-    verify( useCase.provider2Mock, times( 1 ) ).getFile( any() );
-    verify( useCase.provider1Mock, never() ).getFile( any() );
+    verify( useCase.provider2Mock, times( 1 ) ).getFile( any(), any() );
+    verify( useCase.provider1Mock, never() ).getFile( any(), any() );
+  }
+
+  private static class GetFileWithOptionsMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final IGenericFile file1Mock;
+    public final IGenericFile file2Mock;
+    public final GetFileOptions optionsMock;
+
+    public GetFileWithOptionsMultipleProviderUseCase() throws Exception {
+      file1Mock = mock( IGenericFile.class );
+      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
+
+      file2Mock = mock( IGenericFile.class );
+      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
+
+      optionsMock = mock( GetFileOptions.class );
+    }
+  }
+
+  @Test
+  void testGetFileWithOptions() throws Exception {
+    GetFileWithOptionsMultipleProviderUseCase useCase = new GetFileWithOptionsMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
+    doReturn( true ).when( useCase.provider2Mock ).owns( any( GenericFilePath.class ) );
+
+    GenericFilePath pathMock = mock( GenericFilePath.class );
+
+    IGenericFile resultFile = useCase.service.getFile( pathMock, useCase.optionsMock );
+
+    assertSame( useCase.file2Mock, resultFile );
+    verify( useCase.provider2Mock, times( 1 ) ).getFile( pathMock, useCase.optionsMock );
+    verify( useCase.provider1Mock, never() ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
   }
   // endregion
 

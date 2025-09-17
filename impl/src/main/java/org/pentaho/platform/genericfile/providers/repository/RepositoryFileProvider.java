@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.ConflictException;
@@ -30,6 +31,7 @@ import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedExcept
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
@@ -139,6 +141,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @SuppressWarnings( "unused" )
   public RepositoryFileProvider() {
     this( PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() ) );
   }
@@ -193,14 +196,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  protected RepositoryFileTree getTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
+  protected RepositoryFileTree getTreeCore( @NonNull GetTreeOptions options ) throws OperationFailedException {
     return getTreeCore( options.getBasePath(), options );
   }
 
   @NonNull
   protected RepositoryFileTree getTreeCore( @Nullable GenericFilePath basePath, @NonNull GetTreeOptions options )
-    throws NotFoundException {
-
+    throws OperationFailedException {
     // Get the whole tree under the provider root (VFS connections)?
     if ( basePath == null ) {
       basePath = ROOT_GENERIC_PATH;
@@ -239,7 +241,33 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     // The parent path of the base path.
     String parentPathString = getParentPath( basePath );
 
-    return convertFromNativeFileTreeDto( nativeTree, parentPathString );
+    RepositoryFileTree tree = convertFromNativeFileTreeDto( nativeTree, parentPathString );
+
+    if ( options.isIncludeMetadata() ) {
+      setMetadataRecursively( tree );
+    }
+
+    return tree;
+  }
+
+  private void setMetadataRecursively( IGenericFileTree tree ) throws OperationFailedException {
+    if ( tree == null ) {
+      return;
+    }
+
+    if ( tree.getFile() instanceof RepositoryObject node ) {
+      try {
+        node.setMetadata( getFileMetadata( GenericFilePath.parseRequired( node.getPath() ) ) );
+      } catch ( InvalidPathException e ) {
+        // noop
+      }
+    }
+
+    if ( tree.getChildren() != null ) {
+      for ( IGenericFileTree child : tree.getChildren() ) {
+        setMetadataRecursively( child );
+      }
+    }
   }
 
   @NonNull
@@ -288,8 +316,15 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return convertFromNativeFile( getNativeFile( path ), getParentPath( path ) );
+  public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
+    throws OperationFailedException {
+    RepositoryObject file = convertFromNativeFile( getNativeFile( path ), getParentPath( path ) );
+
+    if ( options.isIncludeMetadata() ) {
+      file.setMetadata( getFileMetadata( path ) );
+    }
+
+    return file;
   }
 
   protected org.pentaho.platform.api.repository2.unified.RepositoryFile getNativeFile( @NonNull GenericFilePath path )
@@ -823,7 +858,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       IGenericFile folder;
 
       try {
-        folder = getFile( locationPath );
+        folder = getFile( locationPath, new GetFileOptions() );
       } catch ( OperationFailedException e ) {
         // The Folder wasn't found, most likely because it was deleted.
         String parentPath = getParentPath( locationPath );
