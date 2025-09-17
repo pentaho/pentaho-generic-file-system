@@ -683,7 +683,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       fileService.doCopyFiles( destinationFolderString, FileService.MODE_RENAME, fileId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to copy this path.", destinationFolder );
+      throw new ResourceAccessDeniedException( "User is not authorized to copy to this path.", destinationFolder );
     } catch ( IllegalArgumentException e ) {
       throw new OperationFailedException( e );
     }
@@ -711,7 +711,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", destinationFolder );
+      throw new ResourceAccessDeniedException( "User is not authorized to move to this path.", destinationFolder );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
