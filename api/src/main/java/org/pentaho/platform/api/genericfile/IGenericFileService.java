@@ -72,7 +72,7 @@ public interface IGenericFileService {
    * In any case, the root tree folder returned by a provider is considered to have a depth of {@code 0}.
    * <p>
    * For a more regular and predictable interface to obtaining actually addressable generic file system root folders,
-   * see {@link #getRootTrees(GetTreeOptions)}.
+   * see {@link #getRootTrees(GetTreeOptions)} or {@link #getRootTrees()}.
    *
    * <h3>Obtaining a subtree</h3>
    * When {@link GetTreeOptions#getBasePath() base path} is specified, the returned tree is rooted at the specified
@@ -89,12 +89,50 @@ public interface IGenericFileService {
   IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
   /**
+   * Gets a tree of files.
+   *
+   * <p>
+   * The results of this method are cached. To ensure fresh results, call {@link #clearTreeCache()} beforehand.
+   *
+   * <h3>Obtaining the root tree</h3>
+   * This method provides an umbrella view of the generic file system, by using an <i>abstract</i> root tree folder.
+   * It is abstract in the sense that the folder cannot be addressed for any actual file operations and serves only a
+   * grouping purpose. Moreover, the children of this root folder may themselves be <i>umbrella</i> root tree
+   * folders, one per generic file system provider backing the service. The exact structure of these provider
+   * umbrella trees is determined by the providers themselves. While some providers may represent and expose a
+   * single, addressable file system, and opt to directly return that file system's real root tree folder, others may
+   * represent several file systems, in which case these are exposed under an abstract, umbrella provider root tree
+   * folder.
+   * <p>
+   * Implementations may directly return the tree result of a provider, when there is only one registered provider,
+   * bypassing the abstract root tree folder.
+   * <p>
+   * In any case, the root tree folder returned by a provider is considered to have a depth of {@code 0}.
+   * <p>
+   * For a more regular and predictable interface to obtaining actually addressable generic file system root folders,
+   * see {@link #getRootTrees(GetTreeOptions)} or {@link #getRootTrees()}.
+   *
+   * <h3>Obtaining a subtree</h3>
+   * The <i>base</i> folder is considered to have a depth of {@code 0}.
+   *
+   * @return The file tree.
+   * @throws NotFoundException        If the specified base file does not exist, is not a folder, or the current user
+   *                                  is not allowed to read it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  default IGenericFileTree getTree() throws OperationFailedException {
+    return getTree( new GetTreeOptions() );
+  }
+
+  /**
    * Gets a list of the real root trees of the generic file system.
    * <p>
    * This method returns the real root trees that compose the generic file system.
    * Contrast with the method {@link #getTree(GetTreeOptions)}, when called with a {@code null}
-   * {@link GetTreeOptions#getBasePath() base path option}, which instead offers an umbrella view of the generic file
-   * system.
+   * {@link GetTreeOptions#getBasePath() base path option} or {@link #getTree()}, which instead offers an umbrella
+   * view of the generic file system.
    * <p>
    * Each returned root folder is considered to have a depth of {@code 0}.
    * <p>
@@ -107,6 +145,27 @@ public interface IGenericFileService {
    */
   @NonNull
   List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException;
+
+  /**
+   * Gets a list of the real root trees of the generic file system.
+   * <p>
+   * This method returns the real root trees that compose the generic file system.
+   * Contrast with the method {@link #getTree(GetTreeOptions)}, when called with a {@code null}
+   * {@link GetTreeOptions#getBasePath() base path option} or {@link #getTree()}, which instead offers an umbrella
+   * view of the generic file system.
+   * <p>
+   * Each returned root folder is considered to have a depth of {@code 0}.
+   * <p>
+   * The results of this method are not cached, and so {@link GetTreeOptions#isBypassCache()} is ignored.
+   *
+   * @return A list of the real root trees.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  default List<IGenericFileTree> getRootTrees() throws OperationFailedException {
+    return getRootTrees( new GetTreeOptions() );
+  }
 
   /**
    * Checks whether a generic file exists, is a folder and the current user can read it, given its path.
@@ -336,6 +395,29 @@ public interface IGenericFileService {
 
   /**
    * Gets a file given its path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFile(GenericFilePath)} with the result.
+   *
+   * @param path    The string representation of the path of the file.
+   * @param options The operation options.
+   * @return The file.
+   * @throws InvalidPathException          If the specified path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException             If the specified file does not exist.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getFile(GenericFilePath)
+   */
+  @NonNull
+  default IGenericFile getFile( @NonNull String path, @NonNull GetFileOptions options )
+    throws OperationFailedException {
+    return getFile( GenericFilePath.parseRequired( path ), options );
+  }
+
+  /**
+   * Gets a file given its path.
    *
    * @param path The path of the file.
    * @return The file.
@@ -346,6 +428,21 @@ public interface IGenericFileService {
    */
   @NonNull
   IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets a file given its path.
+   *
+   * @param path    The path of the file.
+   * @param options The operation options.
+   * @return The file.
+   * @throws NotFoundException             If the specified file does not exist.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
+    throws OperationFailedException;
 
   /**
    * Gets a list of deleted files which are still available in the trash folder.

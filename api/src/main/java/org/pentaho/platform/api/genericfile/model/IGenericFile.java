@@ -177,4 +177,9 @@ public interface IGenericFile extends IProviderable {
    * Gets the file size in bytes.
    */
   long getFileSize();
+
+  /**
+   * Gets the metadata of the generic file.
+   */
+  IGenericFileMetadata getMetadata();
 }

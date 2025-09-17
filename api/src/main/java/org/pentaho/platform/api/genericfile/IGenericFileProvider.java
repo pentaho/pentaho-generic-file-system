@@ -202,6 +202,22 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
+   * Gets a file given its path.
+   *
+   * @param path    The path of the file.
+   * @param options The operation options.
+   * @return The file.
+   * @throws NotFoundException             If the specified file does not exist.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getFile(GenericFilePath)
+   */
+  @NonNull
+  IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
+    throws OperationFailedException;
+
+  /**
    * Gets a list of deleted files which are still available in the trash folder.
    *
    * @return The list of deleted files.
