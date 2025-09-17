@@ -711,7 +711,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", path );
+      throw new ResourceAccessDeniedException( "User is not authorized to move this path.", destinationFolder );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
