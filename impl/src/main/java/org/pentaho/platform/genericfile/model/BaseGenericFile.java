@@ -15,6 +15,7 @@ package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 
 import java.util.Date;
 import java.util.List;
@@ -37,6 +38,7 @@ public class BaseGenericFile implements IGenericFile {
   private Date createdDate;
   private String creatorId;
   private long fileSize;
+  private IGenericFileMetadata metadata;
 
   @NonNull
   @Override
@@ -186,6 +188,15 @@ public class BaseGenericFile implements IGenericFile {
   @Override
   public long getFileSize() {
     return fileSize;
+  }
+
+  @Override
+  public IGenericFileMetadata getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata( IGenericFileMetadata metadata ) {
+    this.metadata = metadata;
   }
 
   public void setFileSize( long fileSize ) {

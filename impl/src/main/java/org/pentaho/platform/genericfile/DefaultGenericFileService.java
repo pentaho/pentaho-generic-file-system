@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
@@ -185,6 +186,13 @@ public class DefaultGenericFileService implements IGenericFileService {
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).getFile( path );
+  }
+
+  @NonNull
+  @Override
+  public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFile( path, options );
   }
 
   private Optional<IGenericFileProvider<?>> getFirstOwnerFileProvider( @NonNull GenericFilePath path ) {
