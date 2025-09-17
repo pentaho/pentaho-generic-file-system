@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -82,7 +83,8 @@ class BaseGenericFileProviderTest {
 
     @NonNull
     @Override
-    public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+    public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

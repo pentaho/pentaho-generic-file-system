@@ -48,6 +48,7 @@ class GetTreeOptionsTest {
       options1.setFilter( GetTreeOptions.TreeFilter.FILES );
       options1.setBypassCache( true );
       options1.setIncludeHidden( true );
+      options1.setIncludeMetadata( true );
 
       // ---
 
@@ -60,6 +61,7 @@ class GetTreeOptionsTest {
       assertEquals( options1.getFilter(), options2.getFilter() );
       assertEquals( options1.isBypassCache(), options2.isBypassCache() );
       assertEquals( options1.isIncludeHidden(), options2.isIncludeHidden() );
+      assertEquals( options1.isIncludeMetadata(), options2.isIncludeMetadata() );
     }
 
     @Test
@@ -353,6 +355,35 @@ class GetTreeOptionsTest {
   }
 
   /**
+   * Tests the {@link GetTreeOptions#isIncludeMetadata()} and {@link GetTreeOptions#setIncludeMetadata(boolean)}
+   * methods.
+   */
+  @Nested
+  class IncludeMetadataTests {
+    @Test
+    void testDefaultsToFalse() {
+      GetTreeOptions options = new GetTreeOptions();
+      assertFalse( options.isIncludeMetadata() );
+    }
+
+    @Test
+    void testAcceptsBeingSetToTrue() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setIncludeMetadata( true );
+
+      assertTrue( options.isIncludeMetadata() );
+    }
+
+    @Test
+    void testAcceptsBeingSetToFalse() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setIncludeMetadata( false );
+
+      assertFalse( options.isIncludeMetadata() );
+    }
+  }
+
+  /**
    * Tests the {@link GetTreeOptions#equals(Object)} and {@link GetTreeOptions#hashCode()} methods.
    */
   @Nested
@@ -386,6 +417,7 @@ class GetTreeOptionsTest {
       options1.setExpandedMaxDepth( 2 );
       options1.setFilter( GetTreeOptions.TreeFilter.FILES );
       options1.setIncludeHidden( true );
+      options1.setIncludeMetadata( true );
       options1.setBypassCache( true );
 
       return options1;
@@ -461,6 +493,17 @@ class GetTreeOptionsTest {
       GetTreeOptions options2 = createSampleGetTreeOptions();
       options1.setIncludeHidden( true );
       options2.setIncludeHidden( false );
+
+      assertNotEquals( options1, options2 );
+      assertNotEquals( options1.hashCode(), options2.hashCode() );
+    }
+
+    @Test
+    void testDoesNotEqualAnotherWithDifferentIncludeMetadata() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setIncludeMetadata( true );
+      options2.setIncludeMetadata( false );
 
       assertNotEquals( options1, options2 );
       assertNotEquals( options1.hashCode(), options2.hashCode() );

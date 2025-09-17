@@ -37,6 +37,8 @@ public class GetTreeOptions {
 
   private boolean includeHidden;
 
+  private boolean includeMetadata;
+
   private boolean bypassCache;
 
   /**
@@ -98,6 +100,7 @@ public class GetTreeOptions {
     this.expandedPaths = other.expandedPaths != null ? List.copyOf( other.expandedPaths ) : null;
     this.expandedMaxDepth = other.expandedMaxDepth;
     this.includeHidden = other.includeHidden;
+    this.includeMetadata = other.includeMetadata;
     this.bypassCache = other.bypassCache;
     this.filter = other.filter;
   }
@@ -313,6 +316,26 @@ public class GetTreeOptions {
   }
 
   /**
+   * Gets a value that indicates whether metadata for files is included in the result.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @return {@code true} to include metadata; {@code false}, otherwise.
+   */
+  public boolean isIncludeMetadata() {
+    return includeMetadata;
+  }
+
+  /**
+   * Sets the include metadata value.
+   *
+   * @param includeMetadata {@code true} to include metadata; {@code false}, otherwise.
+   */
+  public void setIncludeMetadata( boolean includeMetadata ) {
+    this.includeMetadata = includeMetadata;
+  }
+
+  /**
    * Gets a value that indicates if the cache is to be bypassed.
    *
    * @return {@code true} to bypass the cache; {@code false}, otherwise.
@@ -350,11 +373,13 @@ public class GetTreeOptions {
       && Objects.equals( expandedMaxDepth, that.expandedMaxDepth )
       && Objects.equals( filter, that.filter )
       && Objects.equals( includeHidden, that.includeHidden )
+      && Objects.equals( includeMetadata, that.includeMetadata )
       && Objects.equals( bypassCache, that.bypassCache );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, bypassCache );
+    return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, includeMetadata,
+      bypassCache );
   }
 }
