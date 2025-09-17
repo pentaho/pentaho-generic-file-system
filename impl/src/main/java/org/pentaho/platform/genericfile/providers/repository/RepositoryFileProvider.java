@@ -319,15 +319,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
    * Get the tree filter's corresponding repository filter
    */
   protected String getRepositoryFilter( GetTreeOptions.TreeFilter treeFilter ) {
-    switch ( treeFilter ) {
-      case FOLDERS:
-        return "*|FOLDERS";
-      case FILES:
-        return "*|FILES";
-      case ALL:
-      default:
-        return "*";
-    }
+    return switch ( treeFilter ) {
+      case FOLDERS -> "*|FOLDERS";
+      case FILES -> "*|FILES";
+      default -> "*";
+    };
   }
 
   @Override
@@ -525,7 +521,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     return fileMetadata.entrySet().stream()
       .map( fileMetadatum -> new StringKeyStringValueDto( fileMetadatum.getKey(), fileMetadatum.getValue() ) )
-      .collect( Collectors.toList() );
+      .toList();
   }
   // endregion
 

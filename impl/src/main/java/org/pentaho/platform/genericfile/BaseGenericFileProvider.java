@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public abstract class BaseGenericFileProvider<T extends IGenericFile> implements IGenericFileProvider<T> {
   @NonNull
@@ -66,7 +65,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
       expandPathsInTrees( rootTrees, options );
     }
 
-    return rootTrees.stream().map( IGenericFileTree.class::cast ).collect( Collectors.toList() );
+    return rootTrees.stream().map( IGenericFileTree.class::cast ).toList();
   }
 
   @NonNull
