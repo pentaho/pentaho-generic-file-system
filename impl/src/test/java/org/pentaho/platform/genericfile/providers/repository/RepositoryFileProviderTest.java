@@ -20,6 +20,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.ConflictException;
@@ -64,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -553,6 +555,76 @@ class RepositoryFileProviderTest {
 
     assertPublicTree( tree );
   }
+
+  @Test
+  void testGetTreeIncludesMetadataWhenEnabled() throws Exception {
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( scenario.rootTree )
+      .when( fileServiceMock )
+      .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
+    doReturn( List.of( new StringKeyStringValueDto( "key", "value" ) ) )
+      .when( fileServiceMock ).doGetMetadata( any() );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( ROOT_PATH );
+    options.setMaxDepth( 1 );
+    options.setIncludeMetadata( true );
+
+    IGenericFileTree tree = repositoryProvider.getTree( options );
+
+    RepositoryValidatedScenario validatedScenario = assertRepositoryTree( tree );
+
+    RepositoryObject testFile1 = (RepositoryObject) validatedScenario.testFile1;
+    assertEquals( "/public/testFile1", testFile1.getPath() );
+    assertEquals( "/public", testFile1.getParentPath() );
+    assertEquals( "testFile1", testFile1.getName() );
+    assertEquals( "Test File 1 Id", testFile1.getObjectId() );
+    assertEquals( "Test File 1 title", testFile1.getTitle() );
+    assertEquals( "Test File 1 description", testFile1.getDescription() );
+    assertEquals( new Date( 100 ), testFile1.getModifiedDate() );
+    assertNotNull( tree.getFile().getMetadata() );
+    assertTrue( tree.getFile().getMetadata().getMetadata().containsKey( "key" ) );
+    assertEquals( "value", tree.getFile().getMetadata().getMetadata().get( "key" ) );
+  }
+
+  @Test
+  void testGetTreeCoreOmitsMetadataWhenDisabled() throws Exception {
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( scenario.rootTree )
+      .when( fileServiceMock )
+      .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
+    doReturn( List.of( new StringKeyStringValueDto( "key", "value" ) ) )
+      .when( fileServiceMock ).doGetMetadata( any() );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( ROOT_PATH );
+    options.setMaxDepth( 1 );
+
+    IGenericFileTree tree = repositoryProvider.getTree( options );
+
+    RepositoryValidatedScenario validatedScenario = assertRepositoryTree( tree );
+
+    RepositoryObject testFile1 = (RepositoryObject) validatedScenario.testFile1;
+    assertEquals( "/public/testFile1", testFile1.getPath() );
+    assertEquals( "/public", testFile1.getParentPath() );
+    assertEquals( "testFile1", testFile1.getName() );
+    assertEquals( "Test File 1 Id", testFile1.getObjectId() );
+    assertEquals( "Test File 1 title", testFile1.getTitle() );
+    assertEquals( "Test File 1 description", testFile1.getDescription() );
+    assertEquals( new Date( 100 ), testFile1.getModifiedDate() );
+    assertNull( tree.getFile().getMetadata() );
+    verify( fileServiceMock, never() ).doGetMetadata( any() );
+  }
   // endregion
 
   // region getRootTrees
@@ -594,7 +666,7 @@ class RepositoryFileProviderTest {
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
     assertThrows( NotFoundException.class,
-      () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) ) );
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -605,7 +677,8 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( NotFoundException.class, () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
+    assertThrows( NotFoundException.class,
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -619,7 +692,7 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile file = repositoryProvider.getFile( path );
+    IGenericFile file = repositoryProvider.getFile( path, new GetFileOptions() );
 
     assertRootFolder( file );
   }
@@ -635,7 +708,8 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ) );
+    IGenericFile file =
+      repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ), new GetFileOptions() );
 
     assertEquals( "/public/testFile1", file.getPath() );
     assertEquals( "/public", file.getParentPath() );
@@ -657,7 +731,7 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     assertThrows( ResourceAccessDeniedException.class,
-      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -669,7 +743,90 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     GenericFilePath path = GenericFilePath.parse( "/path" );
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
+  }
+
+  @Test
+  void testGetFileWithOptionsDoesNotFetchMetadataWhenDisabled() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    RepositoryFile nativeFile = createNativeFile( "12345", path, false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( nativeFile ).when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    GetFileOptions options = new GetFileOptions();
+    options.setIncludeMetadata( false );
+
+    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ), options );
+
+    assertNotNull( file );
+    assertInstanceOf( RepositoryObject.class, file );
+    RepositoryObject repoObj = (RepositoryObject) file;
+    assertNull( repoObj.getMetadata(), "Metadata must not be set when includeMetadata=false" );
+
+    verify( fileServiceMock, never() ).doGetMetadata( anyString() );
+  }
+
+  @Test
+  void testGetFileWithOptionsIncludesMetadataWhenEnabled() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    RepositoryFile nativeFile = createNativeFile( "12345", path, false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( nativeFile ).when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    StringKeyStringValueDto md1 = new StringKeyStringValueDto();
+    md1.setKey( "k1" );
+    md1.setValue( "v1" );
+    StringKeyStringValueDto md2 = new StringKeyStringValueDto();
+    md2.setKey( "k2" );
+    md2.setValue( "v2" );
+    doReturn( Arrays.asList( md1, md2 ) ).when( fileServiceMock )
+      .doGetMetadata( encodeRepositoryPath( path.toString() ) );
+
+    GetFileOptions options = new GetFileOptions();
+    options.setIncludeMetadata( true );
+
+    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ), options );
+
+    assertNotNull( file );
+    RepositoryObject repoObj = (RepositoryObject) file;
+    assertNotNull( repoObj.getMetadata() );
+    assertEquals( "v1", repoObj.getMetadata().getMetadata().get( "k1" ) );
+    assertEquals( "v2", repoObj.getMetadata().getMetadata().get( "k2" ) );
+
+    verify( fileServiceMock, times( 1 ) ).doGetMetadata( encodeRepositoryPath( path.toString() ) );
+  }
+
+  @Test
+  void testGetFileWithOptionsPropagatesMetadataFailure() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    RepositoryFile nativeFile = createNativeFile( "12345", path, false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( nativeFile ).when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+
+    OperationFailedException failure = new OperationFailedException( "md error" );
+    doThrow( failure ).when( repositoryProvider ).getFileMetadata( path );
+
+    GetFileOptions options = new GetFileOptions();
+    options.setIncludeMetadata( true );
+
+    OperationFailedException ex =
+      assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, options ) );
+    assertSame( failure, ex );
+
+    verify( repositoryProvider, times( 1 ) ).getFile( path, options );
+    verify( repositoryProvider, times( 1 ) ).getFileMetadata( path );
   }
   // endregion
 
@@ -2296,7 +2453,7 @@ class RepositoryFileProviderTest {
     doThrow( UnifiedRepositoryAccessDeniedException.class ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
     verify( repositoryMock ).getFile( anyString() );
   }
 
@@ -2309,7 +2466,7 @@ class RepositoryFileProviderTest {
     doThrow( UnifiedRepositoryException.class ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
     verify( repositoryMock ).getFile( anyString() );
   }
   // endregion

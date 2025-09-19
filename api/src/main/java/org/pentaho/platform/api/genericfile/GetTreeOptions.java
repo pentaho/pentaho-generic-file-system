@@ -37,6 +37,8 @@ public class GetTreeOptions {
 
   private boolean includeHidden;
 
+  private boolean includeMetadata;
+
   private boolean bypassCache;
 
   /**
@@ -63,20 +65,16 @@ public class GetTreeOptions {
     /**
      * Returns true if the file type passes the filter
      *
-     * @param isFolder
-     * @return
+     * @param isFolder True if the file is a folder, false if it is a file
+     * @return True if the file passes the filter, false otherwise
      */
     public boolean passesFilter( boolean isFolder ) {
-      switch ( this ) {
-        case FOLDERS:
-          return isFolder;
-        case FILES:
-          return !isFolder;
-        case ALL:
-          return true;
-        default:
-          throw new IllegalArgumentException( "This filter type has not been accounted for." );
-      }
+      return switch ( this ) {
+        case FOLDERS -> isFolder;
+        case FILES -> !isFolder;
+        case ALL -> true;
+        default -> throw new IllegalArgumentException( "This filter type has not been accounted for." );
+      };
     }
   }
 
@@ -102,6 +100,7 @@ public class GetTreeOptions {
     this.expandedPaths = other.expandedPaths != null ? List.copyOf( other.expandedPaths ) : null;
     this.expandedMaxDepth = other.expandedMaxDepth;
     this.includeHidden = other.includeHidden;
+    this.includeMetadata = other.includeMetadata;
     this.bypassCache = other.bypassCache;
     this.filter = other.filter;
   }
@@ -276,7 +275,7 @@ public class GetTreeOptions {
    * Sets the tree filter.
    * If a null value is passed, "ALL" filter will be used.
    *
-   * @param filter
+   * @param filter The tree filter.
    */
   public void setFilter( @Nullable TreeFilter filter ) {
     this.filter = ( filter == null ) ? TreeFilter.ALL : filter;
@@ -285,7 +284,8 @@ public class GetTreeOptions {
   /**
    * Sets the tree filter via parsing string value.
    *
-   * @param treeFilterString
+   * @param treeFilterString The tree filter as a string. If a null value is passed, "ALL" filter will be used.
+   * @throws IllegalArgumentException if the specified string does not match any of the enum values
    */
   public void setFilter( String treeFilterString ) throws IllegalArgumentException {
     if ( treeFilterString == null ) {
@@ -313,6 +313,26 @@ public class GetTreeOptions {
    */
   public void setIncludeHidden( boolean includeHidden ) {
     this.includeHidden = includeHidden;
+  }
+
+  /**
+   * Gets a value that indicates whether metadata for files is included in the result.
+   * <p>
+   * Defaults to {@code false}.
+   *
+   * @return {@code true} to include metadata; {@code false}, otherwise.
+   */
+  public boolean isIncludeMetadata() {
+    return includeMetadata;
+  }
+
+  /**
+   * Sets the include metadata value.
+   *
+   * @param includeMetadata {@code true} to include metadata; {@code false}, otherwise.
+   */
+  public void setIncludeMetadata( boolean includeMetadata ) {
+    this.includeMetadata = includeMetadata;
   }
 
   /**
@@ -346,17 +366,20 @@ public class GetTreeOptions {
     }
 
     GetTreeOptions that = (GetTreeOptions) other;
+
     return Objects.equals( basePath, that.basePath )
       && Objects.equals( maxDepth, that.maxDepth )
       && Objects.equals( expandedPaths, that.expandedPaths )
       && Objects.equals( expandedMaxDepth, that.expandedMaxDepth )
       && Objects.equals( filter, that.filter )
       && Objects.equals( includeHidden, that.includeHidden )
+      && Objects.equals( includeMetadata, that.includeMetadata )
       && Objects.equals( bypassCache, that.bypassCache );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, bypassCache );
+    return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, includeMetadata,
+      bypassCache );
   }
 }
