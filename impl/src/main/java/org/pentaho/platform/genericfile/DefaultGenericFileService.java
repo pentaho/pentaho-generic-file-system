@@ -185,7 +185,7 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFile( path );
+    return getOwnerFileProvider( path ).getFile( path, new GetFileOptions() );
   }
 
   @NonNull

@@ -666,7 +666,7 @@ class RepositoryFileProviderTest {
       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
     assertThrows( NotFoundException.class,
-      () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) ) );
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -677,7 +677,8 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( NotFoundException.class, () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
+    assertThrows( NotFoundException.class,
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -691,7 +692,7 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile file = repositoryProvider.getFile( path );
+    IGenericFile file = repositoryProvider.getFile( path, new GetFileOptions() );
 
     assertRootFolder( file );
   }
@@ -707,7 +708,8 @@ class RepositoryFileProviderTest {
 
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ) );
+    IGenericFile file =
+      repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ), new GetFileOptions() );
 
     assertEquals( "/public/testFile1", file.getPath() );
     assertEquals( "/public", file.getParentPath() );
@@ -729,7 +731,7 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     assertThrows( ResourceAccessDeniedException.class,
-      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ) ) );
+      () -> repositoryProvider.getFile( GenericFilePath.parse( "/path" ), new GetFileOptions() ) );
   }
 
   @Test
@@ -741,11 +743,9 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     GenericFilePath path = GenericFilePath.parse( "/path" );
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
   }
-  // endregion
 
-  // region getFile (with GetFileOptions)
   @Test
   void testGetFileWithOptionsDoesNotFetchMetadataWhenDisabled() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
@@ -825,7 +825,7 @@ class RepositoryFileProviderTest {
       assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, options ) );
     assertSame( failure, ex );
 
-    verify( repositoryProvider, times( 1 ) ).getFile( path );
+    verify( repositoryProvider, times( 1 ) ).getFile( path, options );
     verify( repositoryProvider, times( 1 ) ).getFileMetadata( path );
   }
   // endregion
@@ -2453,7 +2453,7 @@ class RepositoryFileProviderTest {
     doThrow( UnifiedRepositoryAccessDeniedException.class ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
     verify( repositoryMock ).getFile( anyString() );
   }
 
@@ -2466,7 +2466,7 @@ class RepositoryFileProviderTest {
     doThrow( UnifiedRepositoryException.class ).when( repositoryMock ).getFile( path.toString() );
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
-    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path ) );
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
     verify( repositoryMock ).getFile( anyString() );
   }
   // endregion

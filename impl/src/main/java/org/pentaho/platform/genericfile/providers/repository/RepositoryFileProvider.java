@@ -141,6 +141,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @SuppressWarnings( "unused" )
   public RepositoryFileProvider() {
     this( PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() ) );
   }
@@ -315,15 +316,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return convertFromNativeFile( getNativeFile( path ), getParentPath( path ) );
-  }
-
-  @NonNull
-  @Override
   public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
     throws OperationFailedException {
-    RepositoryObject file = (RepositoryObject) getFile( path );
+    RepositoryObject file = convertFromNativeFile( getNativeFile( path ), getParentPath( path ) );
 
     if ( options.isIncludeMetadata() ) {
       file.setMetadata( getFileMetadata( path ) );
@@ -863,7 +858,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       IGenericFile folder;
 
       try {
-        folder = getFile( locationPath );
+        folder = getFile( locationPath, new GetFileOptions() );
       } catch ( OperationFailedException e ) {
         // The Folder wasn't found, most likely because it was deleted.
         String parentPath = getParentPath( locationPath );

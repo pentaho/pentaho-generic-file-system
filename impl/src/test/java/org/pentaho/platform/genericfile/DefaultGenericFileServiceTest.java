@@ -291,10 +291,10 @@ class DefaultGenericFileServiceTest {
 
     public GetFileMultipleProviderUseCase() throws Exception {
       file1Mock = mock( IGenericFile.class );
-      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ) );
+      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
 
       file2Mock = mock( IGenericFile.class );
-      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ) );
+      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
     }
   }
 
@@ -308,8 +308,8 @@ class DefaultGenericFileServiceTest {
     IGenericFile resultFile = useCase.service.getFile( mock( GenericFilePath.class ) );
 
     assertSame( useCase.file2Mock, resultFile );
-    verify( useCase.provider2Mock, times( 1 ) ).getFile( any() );
-    verify( useCase.provider1Mock, never() ).getFile( any() );
+    verify( useCase.provider2Mock, times( 1 ) ).getFile( any(), any() );
+    verify( useCase.provider1Mock, never() ).getFile( any(), any() );
   }
 
   private static class GetFileWithOptionsMultipleProviderUseCase extends MultipleProviderUseCase {
