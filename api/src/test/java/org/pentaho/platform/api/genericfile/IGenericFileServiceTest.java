@@ -23,6 +23,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.io.InputStream;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -71,6 +72,12 @@ class IGenericFileServiceTest {
 
     @Override
     public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean createFile( @NonNull GenericFilePath path, boolean overwrite, @NonNull InputStream content )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
