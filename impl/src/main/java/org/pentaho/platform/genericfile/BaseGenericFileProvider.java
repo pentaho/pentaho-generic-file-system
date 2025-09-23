@@ -18,10 +18,12 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,28 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
 
   protected abstract boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException;
   // endregion
+
+  @Override
+  public boolean createFile( @NonNull GenericFilePath path,
+                             @NonNull InputStream content,
+                             @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException {
+    Objects.requireNonNull( path );
+    Objects.requireNonNull( content );
+
+    boolean fileCreated = createFileCore( path, content, createFileOptions );
+
+    if ( fileCreated ) {
+      clearTreeCache();
+    }
+
+    return fileCreated;
+  }
+
+  protected abstract boolean createFileCore( @NonNull GenericFilePath path,
+                                             @NonNull InputStream content,
+                                             @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException;
 
   // region Get Root Trees
   @NonNull

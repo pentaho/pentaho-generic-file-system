@@ -25,6 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedExcept
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
@@ -33,6 +34,7 @@ import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.util.logging.Logger;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -173,6 +175,14 @@ public class DefaultGenericFileService implements IGenericFileService {
   @Override
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).createFolder( path );
+  }
+
+  @Override
+  public boolean createFile( @NonNull GenericFilePath path,
+                             @NonNull InputStream content,
+                             @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).createFile( path, content, createFileOptions );
   }
 
   @NonNull

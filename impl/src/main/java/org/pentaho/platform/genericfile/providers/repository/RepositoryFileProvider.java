@@ -28,6 +28,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
@@ -67,6 +68,7 @@ import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -184,6 +186,15 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( FileService.InvalidNameException e ) {
       throw new InvalidPathException();
     }
+  }
+
+  @Override
+  protected boolean createFileCore( @NonNull GenericFilePath path,
+                                    @NonNull InputStream content,
+                                    @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException {
+    // Repository file provider does not support file creation
+    throw new UnsupportedOperationException( "File creation is not supported in the repository provider" );
   }
 
   @NonNull
