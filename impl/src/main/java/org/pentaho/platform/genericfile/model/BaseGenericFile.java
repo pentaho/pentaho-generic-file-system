@@ -46,6 +46,7 @@ public class BaseGenericFile implements IGenericFile {
     return provider;
   }
 
+  @Override
   public void setProvider( String provider ) {
     this.provider = provider;
   }

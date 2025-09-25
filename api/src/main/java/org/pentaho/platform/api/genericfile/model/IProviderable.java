@@ -16,6 +16,18 @@ package org.pentaho.platform.api.genericfile.model;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface IProviderable {
+  /**
+   * Gets the provider for this object. The provider is a string that identifies the source or type of the object.
+   *
+   * @return the provider string, never null
+   */
   @NonNull
   String getProvider();
+
+  /**
+   * Sets the provider for this object. The provider is a string that identifies the source or type of the object.
+   *
+   * @param provider the provider string to set, must not be null
+   */
+  void setProvider( String provider );
 }
