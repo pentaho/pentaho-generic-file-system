@@ -41,10 +41,6 @@ public class CompositeGenericFileDecorator implements IGenericFileDecorator {
   public CompositeGenericFileDecorator( List<IGenericFileDecorator> fileDecorators ) {
     Objects.requireNonNull( fileDecorators );
 
-    if ( fileDecorators.isEmpty() ) {
-      throw new IllegalArgumentException();
-    }
-
     this.fileDecorators = new ArrayList<>( fileDecorators );
   }
 
