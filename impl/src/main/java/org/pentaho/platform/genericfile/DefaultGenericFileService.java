@@ -19,6 +19,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.IGenericFileDecorator;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
@@ -29,6 +30,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+import org.pentaho.platform.genericfile.decorators.NullGenericFileDecorator;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.util.logging.Logger;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@SuppressWarnings( "unused" )
 public class DefaultGenericFileService implements IGenericFileService {
   @VisibleForTesting
   static final String MULTIPLE_PROVIDER_ROOT_PROVIDER = "combined";
@@ -46,10 +49,18 @@ public class DefaultGenericFileService implements IGenericFileService {
   static final String MULTIPLE_PROVIDER_ROOT_NAME = "root";
 
   private final List<IGenericFileProvider<?>> fileProviders;
+  private final IGenericFileDecorator fileDecorator;
 
   public DefaultGenericFileService( @NonNull List<IGenericFileProvider<?>> fileProviders )
     throws InvalidGenericFileProviderException {
+    this( fileProviders, new NullGenericFileDecorator() );
+  }
+
+  public DefaultGenericFileService( @NonNull List<IGenericFileProvider<?>> fileProviders,
+                                    @NonNull IGenericFileDecorator fileDecorator )
+    throws InvalidGenericFileProviderException {
     Objects.requireNonNull( fileProviders );
+    Objects.requireNonNull( fileDecorator );
 
     if ( fileProviders.isEmpty() ) {
       throw new InvalidGenericFileProviderException();
@@ -57,6 +68,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     // Create defensive copy to disallow external modification (and be sure there's always >= 1 provider).
     this.fileProviders = new ArrayList<>( fileProviders );
+    this.fileDecorator = fileDecorator;
   }
 
   @Override
@@ -98,6 +110,10 @@ public class DefaultGenericFileService implements IGenericFileService {
       throw firstProviderException;
     }
 
+    for ( IGenericFileTree rootTree : rootTrees ) {
+      fileDecorator.decorateTree( rootTree, this, options );
+    }
+
     return rootTrees;
   }
 
@@ -107,7 +123,9 @@ public class DefaultGenericFileService implements IGenericFileService {
     Objects.requireNonNull( options );
 
     if ( isSingleProviderMode() ) {
-      return fileProviders.get( 0 ).getTree( options );
+      IGenericFileTree tree = fileProviders.get( 0 ).getTree( options );
+      fileDecorator.decorateTree( tree, this, options );
+      return tree;
     }
 
     return options.getBasePath() == null
@@ -143,6 +161,8 @@ public class DefaultGenericFileService implements IGenericFileService {
       throw firstProviderException;
     }
 
+    fileDecorator.decorateTree( rootTree, this, options );
+
     return rootTree;
   }
 
@@ -161,7 +181,9 @@ public class DefaultGenericFileService implements IGenericFileService {
   private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
-    return getOwnerFileProvider( basePath ).getTree( options );
+    IGenericFileTree tree = getOwnerFileProvider( basePath ).getTree( options );
+    fileDecorator.decorateTree( tree, this, options );
+    return tree;
   }
 
   @Override
@@ -185,14 +207,16 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFile( path, new GetFileOptions() );
+    return getFile( path, new GetFileOptions() );
   }
 
   @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
     throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFile( path, options );
+    IGenericFile file = getOwnerFileProvider( path ).getFile( path, options );
+    fileDecorator.decorateFile( file, this, options );
+    return file;
   }
 
   private Optional<IGenericFileProvider<?>> getFirstOwnerFileProvider( @NonNull GenericFilePath path ) {
@@ -401,7 +425,9 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   @Override
   public IGenericFileMetadata getFileMetadata( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileMetadata( path );
+    IGenericFileMetadata metadata = getOwnerFileProvider( path ).getFileMetadata( path );
+    fileDecorator.decorateFileMetadata( metadata, path, this );
+    return metadata;
   }
 
   @Override
