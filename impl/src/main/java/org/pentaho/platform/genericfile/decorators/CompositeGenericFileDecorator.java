@@ -55,12 +55,16 @@ public class CompositeGenericFileDecorator implements IGenericFileDecorator {
   public void decorateFileMetadata( @NonNull IGenericFileMetadata fileMetadata,
                                     @NonNull GenericFilePath path,
                                     @NonNull IGenericFileService service ) throws OperationFailedException {
-    try {
-      for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+    Objects.requireNonNull( fileMetadata );
+    Objects.requireNonNull( path );
+    Objects.requireNonNull( service );
+
+    for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+      try {
         fileDecorator.decorateFileMetadata( fileMetadata, path, service );
+      } catch ( OperationFailedException e ) {
+        Logger.error( this.getClass().getName(), "Error decorating a file metadata.", e );
       }
-    } catch ( OperationFailedException e ) {
-      Logger.error( this.getClass().getName(), "Error decorating a file metadata.", e );
     }
   }
 
@@ -71,12 +75,16 @@ public class CompositeGenericFileDecorator implements IGenericFileDecorator {
   public void decorateFile( @NonNull IGenericFile file,
                             @NonNull IGenericFileService service,
                             @NonNull GetFileOptions options ) throws OperationFailedException {
-    try {
-      for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+    Objects.requireNonNull( file );
+    Objects.requireNonNull( service );
+    Objects.requireNonNull( options );
+
+    for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+      try {
         fileDecorator.decorateFile( file, service, options );
+      } catch ( OperationFailedException e ) {
+        Logger.error( this.getClass().getName(), "Error decorating a file.", e );
       }
-    } catch ( OperationFailedException e ) {
-      Logger.error( this.getClass().getName(), "Error decorating a file.", e );
     }
   }
 
@@ -87,12 +95,16 @@ public class CompositeGenericFileDecorator implements IGenericFileDecorator {
   public void decorateTree( @NonNull IGenericFileTree fileTree,
                             @NonNull IGenericFileService service,
                             @NonNull GetTreeOptions options ) throws OperationFailedException {
-    try {
-      for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+    Objects.requireNonNull( fileTree );
+    Objects.requireNonNull( service );
+    Objects.requireNonNull( options );
+
+    for ( IGenericFileDecorator fileDecorator : fileDecorators ) {
+      try {
         fileDecorator.decorateTree( fileTree, service, options );
+      } catch ( OperationFailedException e ) {
+        Logger.error( this.getClass().getName(), "Error decorating a tree.", e );
       }
-    } catch ( OperationFailedException e ) {
-      Logger.error( this.getClass().getName(), "Error decorating a tree.", e );
     }
   }
 }

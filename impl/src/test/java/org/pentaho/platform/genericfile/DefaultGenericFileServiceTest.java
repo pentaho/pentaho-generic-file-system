@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.IGenericFileDecorator;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
@@ -28,7 +29,10 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+import org.pentaho.platform.genericfile.decorators.CompositeGenericFileDecorator;
+import org.pentaho.platform.genericfile.decorators.NullGenericFileDecorator;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +41,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -64,6 +69,20 @@ class DefaultGenericFileServiceTest {
   }
 
   @Test
+  void testCanBeCreatedWithNoDecorator()
+    throws InvalidGenericFileProviderException, NoSuchFieldException, IllegalAccessException {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+
+    DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
+
+    Field decoratorField = DefaultGenericFileService.class.getDeclaredField( "fileDecorator" );
+    decoratorField.setAccessible( true );
+    Object actualDecorator = decoratorField.get( service );
+
+    assertInstanceOf( NullGenericFileDecorator.class, actualDecorator );
+  }
+
+  @Test
   void testCanBeCreatedWithASingleProvider() throws InvalidGenericFileProviderException {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
 
@@ -73,12 +92,50 @@ class DefaultGenericFileServiceTest {
   }
 
   @Test
+  void testCanBeCreatedWithASingleDecorator()
+    throws InvalidGenericFileProviderException, NoSuchFieldException, IllegalAccessException {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
+
+    DefaultGenericFileService service =
+      new DefaultGenericFileService( Collections.singletonList( providerMock ), decoratorMock );
+
+    Field decoratorField = DefaultGenericFileService.class.getDeclaredField( "fileDecorator" );
+    decoratorField.setAccessible( true );
+    Object actualDecorator = decoratorField.get( service );
+
+    assertSame( decoratorMock, actualDecorator );
+    assertInstanceOf( IGenericFileDecorator.class, actualDecorator );
+  }
+
+  @Test
   void testCanBeCreatedWithTwoProviders() throws InvalidGenericFileProviderException {
     IGenericFileProvider<?> provider1Mock = mock( IGenericFileProvider.class );
     IGenericFileProvider<?> provider2Mock = mock( IGenericFileProvider.class );
 
     DefaultGenericFileService service = new DefaultGenericFileService( Arrays.asList( provider1Mock, provider2Mock ) );
     assertFalse( service.isSingleProviderMode() );
+  }
+
+  @Test
+  void testCanBeCreatedWithTwoDecorators()
+    throws InvalidGenericFileProviderException, NoSuchFieldException, IllegalAccessException {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decorator1Mock = mock( IGenericFileDecorator.class );
+    IGenericFileDecorator decorator2Mock = mock( IGenericFileDecorator.class );
+
+    CompositeGenericFileDecorator compositeGenericFileDecorator =
+      new CompositeGenericFileDecorator( Arrays.asList( decorator1Mock, decorator2Mock ) );
+
+    DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ),
+      compositeGenericFileDecorator );
+
+    Field decoratorField = DefaultGenericFileService.class.getDeclaredField( "fileDecorator" );
+    decoratorField.setAccessible( true );
+    Object actualDecorator = decoratorField.get( service );
+
+    assertSame( compositeGenericFileDecorator, actualDecorator );
+    assertInstanceOf( CompositeGenericFileDecorator.class, actualDecorator );
   }
   // endregion
 
@@ -222,6 +279,23 @@ class DefaultGenericFileServiceTest {
     verify( useCase.provider2Mock, times( 1 ) ).getTree( useCase.optionsMock );
     verify( useCase.provider1Mock, never() ).getTree( useCase.optionsMock );
   }
+
+  @Test
+  void testGetTreeCallsDecorateTree() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
+    IGenericFileTree treeMock = mock( IGenericFileTree.class );
+    GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+
+    when( providerMock.getTree( optionsMock ) ).thenReturn( treeMock );
+
+    DefaultGenericFileService service = new DefaultGenericFileService(
+      Collections.singletonList( providerMock ), decoratorMock );
+
+    service.getTree( optionsMock );
+
+    verify( decoratorMock ).decorateTree( treeMock, service, optionsMock );
+  }
   // endregion
 
   // region getRootTrees()
@@ -281,6 +355,25 @@ class DefaultGenericFileServiceTest {
     assertEquals( 2, rootTrees.size() );
     assertSame( useCase.tree3Mock, rootTrees.get( 0 ) );
     assertSame( useCase.tree4Mock, rootTrees.get( 1 ) );
+  }
+
+  @Test
+  void testGetRootTreesCallsDecorateTreeForEachTree() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
+    IGenericFileTree tree1Mock = mock( IGenericFileTree.class );
+    IGenericFileTree tree2Mock = mock( IGenericFileTree.class );
+    GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+
+    when( providerMock.getRootTrees( optionsMock ) ).thenReturn( List.of( tree1Mock, tree2Mock ) );
+
+    DefaultGenericFileService service =
+      new DefaultGenericFileService( Collections.singletonList( providerMock ), decoratorMock );
+
+    service.getRootTrees( optionsMock );
+
+    verify( decoratorMock ).decorateTree( tree1Mock, service, optionsMock );
+    verify( decoratorMock ).decorateTree( tree2Mock, service, optionsMock );
   }
   // endregion
 
@@ -342,6 +435,25 @@ class DefaultGenericFileServiceTest {
     assertSame( useCase.file2Mock, resultFile );
     verify( useCase.provider2Mock, times( 1 ) ).getFile( pathMock, useCase.optionsMock );
     verify( useCase.provider1Mock, never() ).getFile( any( GenericFilePath.class ), any( GetFileOptions.class ) );
+  }
+
+  @Test
+  void testGetFileCallsDecorateFile() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
+    IGenericFile fileMock = mock( IGenericFile.class );
+    GetFileOptions optionsMock = mock( GetFileOptions.class );
+    GenericFilePath pathMock = mock( GenericFilePath.class );
+
+    doReturn( true ).when( providerMock ).owns( any( GenericFilePath.class ) );
+    when( providerMock.getFile( pathMock, optionsMock ) ).thenReturn( fileMock );
+
+    DefaultGenericFileService service = new DefaultGenericFileService(
+      Collections.singletonList( providerMock ), decoratorMock );
+
+    service.getFile( pathMock, optionsMock );
+
+    verify( decoratorMock ).decorateFile( fileMock, service, optionsMock );
   }
   // endregion
 
@@ -1105,6 +1217,24 @@ class DefaultGenericFileServiceTest {
 
     assertEquals( "Set metadata failed.", exception.getMessage() );
     verify( useCase.provider1Mock ).setFileMetadata( useCase.path1, metadata );
+  }
+
+  @Test
+  void testGetFileMetadataCallsDecorateFileMetadata() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
+    IGenericFileMetadata fileMetadataMock = mock( IGenericFileMetadata.class );
+    GenericFilePath pathMock = mock( GenericFilePath.class );
+
+    doReturn( true ).when( providerMock ).owns( any( GenericFilePath.class ) );
+    when( providerMock.getFileMetadata( pathMock ) ).thenReturn( fileMetadataMock );
+
+    DefaultGenericFileService service = new DefaultGenericFileService(
+      Collections.singletonList( providerMock ), decoratorMock );
+
+    service.getFileMetadata( pathMock );
+
+    verify( decoratorMock ).decorateFileMetadata( fileMetadataMock, pathMock, service );
   }
   // endregion
 }

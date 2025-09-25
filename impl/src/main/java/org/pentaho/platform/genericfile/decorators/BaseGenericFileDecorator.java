@@ -54,7 +54,7 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
     try {
       decorateFileMetadataCore( fileMetadata, path, service );
     } catch ( OperationFailedException e ) {
-      Logger.error( getClass().getName(), "Error decorating file metadata at path=" + path + ". Decoration skipped.",
+      Logger.error( getClass().getName(), "Error decorating file metadata at path=" + path + ".",
         e );
     }
   }
@@ -113,13 +113,13 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
       }
     } catch ( OperationFailedException e ) {
       Logger.error( getClass().getName(),
-        "Error decorating file metadata at path=" + file.getPath() + ". Decoration skipped.", e );
+        "Error decorating file metadata at path=" + file.getPath() + ".", e );
     }
 
     try {
       decorateFileCore( file, service, options );
     } catch ( OperationFailedException e ) {
-      Logger.error( getClass().getName(), "Error decorating file at path=" + file.getPath() + ". Decoration skipped.",
+      Logger.error( getClass().getName(), "Error decorating file at path=" + file.getPath() + ".",
         e );
     }
   }
