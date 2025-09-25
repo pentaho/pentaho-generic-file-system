@@ -23,6 +23,7 @@ public abstract class BaseGenericFolder extends BaseGenericFile implements IGene
     setType( TYPE_FOLDER );
   }
 
+  @Override
   public boolean isHasChildren() {
     return hasChildren;
   }

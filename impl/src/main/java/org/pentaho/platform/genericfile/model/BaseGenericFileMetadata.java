@@ -25,10 +25,12 @@ public class BaseGenericFileMetadata implements IGenericFileMetadata {
     return metadata;
   }
 
+  @Override
   public void setMetadata( Map<String, String> metadata ) {
     this.metadata = metadata;
   }
 
+  @Override
   public void addMetadatum( String key, String value ) {
     metadata.put( key, value );
   }

@@ -19,5 +19,25 @@ import java.util.Map;
  * {@code IGenericFile}'s metadata.
  */
 public interface IGenericFileMetadata {
+  /**
+   * Gets the metadata map.
+   *
+   * @return the metadata map
+   */
   Map<String, String> getMetadata();
+
+  /**
+   * Sets the metadata map. Any existing metadata is replaced.
+   *
+   * @param metadata the metadata map to set
+   */
+  void setMetadata( Map<String, String> metadata );
+
+  /**
+   * Adds a single metadatum to the metadata map.
+   *
+   * @param key   the metadata key
+   * @param value the metadata value
+   */
+  void addMetadatum( String key, String value );
 }

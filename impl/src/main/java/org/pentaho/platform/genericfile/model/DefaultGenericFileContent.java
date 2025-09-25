@@ -18,7 +18,6 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import java.io.InputStream;
 
 public class DefaultGenericFileContent implements IGenericFileContent {
-
   private final InputStream inputStream;
   private final String fileName;
   private final String mimeType;
@@ -29,15 +28,18 @@ public class DefaultGenericFileContent implements IGenericFileContent {
     this.mimeType = mimeType;
   }
 
-  @Override public InputStream getInputStream() {
+  @Override
+  public InputStream getInputStream() {
     return inputStream;
   }
 
-  @Override public String getFileName() {
+  @Override
+  public String getFileName() {
     return fileName;
   }
 
-  @Override public String getMimeType() {
+  @Override
+  public String getMimeType() {
     return mimeType;
   }
 }

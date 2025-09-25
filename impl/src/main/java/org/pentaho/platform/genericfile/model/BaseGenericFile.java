@@ -55,6 +55,7 @@ public class BaseGenericFile implements IGenericFile {
     return name;
   }
 
+  @Override
   public void setName( String name ) {
     this.name = name;
   }
@@ -64,6 +65,7 @@ public class BaseGenericFile implements IGenericFile {
     return path;
   }
 
+  @Override
   public void setPath( String path ) {
     this.path = path;
   }
@@ -73,6 +75,7 @@ public class BaseGenericFile implements IGenericFile {
     return parentPath;
   }
 
+  @Override
   public void setParentPath( String parentPath ) {
     this.parentPath = parentPath;
   }
@@ -82,6 +85,7 @@ public class BaseGenericFile implements IGenericFile {
     return type;
   }
 
+  @Override
   public void setType( String type ) {
     this.type = type;
   }
@@ -91,6 +95,7 @@ public class BaseGenericFile implements IGenericFile {
     return modifiedDate;
   }
 
+  @Override
   public void setModifiedDate( Date modifiedDate ) {
     this.modifiedDate = modifiedDate;
   }
@@ -100,6 +105,7 @@ public class BaseGenericFile implements IGenericFile {
     return canEdit;
   }
 
+  @Override
   public void setCanEdit( boolean canEdit ) {
     this.canEdit = canEdit;
   }
@@ -109,6 +115,7 @@ public class BaseGenericFile implements IGenericFile {
     return originalLocation;
   }
 
+  @Override
   public void setOriginalLocation( List<IGenericFile> originalLocation ) {
     this.originalLocation = originalLocation;
   }
@@ -118,6 +125,7 @@ public class BaseGenericFile implements IGenericFile {
     return deletedDate;
   }
 
+  @Override
   public void setDeletedDate( Date deletedDate ) {
     this.deletedDate = deletedDate;
   }
@@ -127,6 +135,7 @@ public class BaseGenericFile implements IGenericFile {
     return deletedBy;
   }
 
+  @Override
   public void setDeletedBy( String deletedBy ) {
     this.deletedBy = deletedBy;
   }
@@ -136,6 +145,7 @@ public class BaseGenericFile implements IGenericFile {
     return canDelete;
   }
 
+  @Override
   public void setCanDelete( boolean canDelete ) {
     this.canDelete = canDelete;
   }
@@ -145,6 +155,7 @@ public class BaseGenericFile implements IGenericFile {
     return title;
   }
 
+  @Override
   public void setTitle( String title ) {
     this.title = title;
   }
@@ -154,6 +165,7 @@ public class BaseGenericFile implements IGenericFile {
     return description;
   }
 
+  @Override
   public void setDescription( String description ) {
     this.description = description;
   }
@@ -163,6 +175,7 @@ public class BaseGenericFile implements IGenericFile {
     return owner;
   }
 
+  @Override
   public void setOwner( String owner ) {
     this.owner = owner;
   }
@@ -172,6 +185,7 @@ public class BaseGenericFile implements IGenericFile {
     return createdDate;
   }
 
+  @Override
   public void setCreatedDate( Date createdDate ) {
     this.createdDate = createdDate;
   }
@@ -181,6 +195,7 @@ public class BaseGenericFile implements IGenericFile {
     return creatorId;
   }
 
+  @Override
   public void setCreatorId( String creatorId ) {
     this.creatorId = creatorId;
   }
@@ -191,15 +206,17 @@ public class BaseGenericFile implements IGenericFile {
   }
 
   @Override
+  public void setFileSize( long fileSize ) {
+    this.fileSize = fileSize;
+  }
+
+  @Override
   public IGenericFileMetadata getMetadata() {
     return metadata;
   }
 
+  @Override
   public void setMetadata( IGenericFileMetadata metadata ) {
     this.metadata = metadata;
-  }
-
-  public void setFileSize( long fileSize ) {
-    this.fileSize = fileSize;
   }
 }

@@ -49,6 +49,18 @@ public interface IGenericFile extends IProviderable {
   String getName();
 
   /**
+   * Sets the physical name of the file.
+   * <p>
+   * Generally, the physical name of a file is the last segment of its {@link #getPath() path}.
+   * <p>
+   * A valid generic file instance must have a non-null name.
+   *
+   * @param name the physical name of the file; must not be null.
+   * @see #getName()
+   */
+  void setName( String name );
+
+  /**
    * Gets the physical, non-encoded name of the file.
    * <p>
    * The same as {@link #getName()} but without any encoding.
@@ -70,6 +82,17 @@ public interface IGenericFile extends IProviderable {
   String getPath();
 
   /**
+   * Sets the path of the file, as a string.
+   * <p>
+   * A valid generic file instance must have a non-null path.
+   *
+   * @param path the path of the file; must not be null.
+   * @see #getName()
+   * @see org.pentaho.platform.api.genericfile.GenericFilePath
+   */
+  void setPath( String path );
+
+  /**
    * Gets the path of the parent folder, as a string, if any.
    * <p>
    * The provider root folders do not have a parent.
@@ -80,11 +103,30 @@ public interface IGenericFile extends IProviderable {
   String getParentPath();
 
   /**
+   * Sets the path of the parent folder, as a string, if any.
+   * <p>
+   * The provider root folders do not have a parent.
+   * Otherwise, a valid generic file instance must have a non-null parent path.
+   *
+   * @param parentPath the path of the parent folder; may be null for provider root folders.
+   * @see #getPath()
+   */
+  void setParentPath( String parentPath );
+
+  /**
    * Gets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
    *
    * @see #isFolder()
    */
   String getType();
+
+  /**
+   * Sets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
+   *
+   * @param type the type of generic file; must be one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
+   * @see #isFolder()
+   */
+  void setType( String type );
 
   /**
    * Determines if a generic file is a folder.
@@ -103,9 +145,23 @@ public interface IGenericFile extends IProviderable {
   Date getModifiedDate();
 
   /**
+   * Sets the modified date of the generic file.
+   *
+   * @param modifiedDate the modified date to set.
+   */
+  void setModifiedDate( Date modifiedDate );
+
+  /**
    * Gets whether the generic file can be edited.
    */
   boolean isCanEdit();
+
+  /**
+   * Sets whether the generic file can be edited.
+   *
+   * @param canEdit {@code true} if the generic file can be edited; {@code false} otherwise.
+   */
+  void setCanEdit( boolean canEdit );
 
   /**
    * Gets the original location of the generic file before it was deleted.
@@ -118,9 +174,28 @@ public interface IGenericFile extends IProviderable {
   List<IGenericFile> getOriginalLocation();
 
   /**
+   * Sets the original location of the generic file before it was deleted.
+   * <p>
+   * Each `IGenericFile` in the list corresponds to a folder in the path hierarchy
+   * from the root to the original parent folder of the deleted file.
+   * <p>
+   * Note: Some folders in the original location may not exist anymore.
+   *
+   * @param originalLocation the original location to set.
+   */
+  void setOriginalLocation( List<IGenericFile> originalLocation );
+
+  /**
    * Gets the deleted date of the generic file.
    */
   Date getDeletedDate();
+
+  /**
+   * Sets the deleted date of the generic file.
+   *
+   * @param deletedDate the deleted date to set.
+   */
+  void setDeletedDate( Date deletedDate );
 
   /**
    * Gets the user that deleted the generic file.
@@ -128,9 +203,23 @@ public interface IGenericFile extends IProviderable {
   String getDeletedBy();
 
   /**
+   * Sets the user that deleted the generic file.
+   *
+   * @param deletedBy the user that deleted the generic file.
+   */
+  void setDeletedBy( String deletedBy );
+
+  /**
    * Gets whether the generic file can be deleted.
    */
   boolean isCanDelete();
+
+  /**
+   * Sets whether the generic file can be deleted.
+   *
+   * @param canDelete {@code true} if the generic file can be deleted; {@code false} otherwise.
+   */
+  void setCanDelete( boolean canDelete );
 
   /**
    * Gets the title of the file.
@@ -148,6 +237,22 @@ public interface IGenericFile extends IProviderable {
   String getTitle();
 
   /**
+   * Sets the title of the file.
+   * <p>
+   * The title of a file is a localized, human-readable version of its {@link #getNameDecoded()} non-encoded name.
+   * <p>
+   * Unlike the name of a file, the title may not be unique amongst siblings.
+   * <p>
+   * When the title of a file is unspecified, the name of a file can be used in its place.
+   *
+   * @param title the title to set.
+   * @see #getName()
+   * @see #getNameDecoded()
+   * @see #getDescription()
+   */
+  void setTitle( String title );
+
+  /**
    * Gets the description of the file.
    * <p>
    * The description of a file is a localized, human-readable description of a file. Typically, displayed in a tooltip
@@ -159,9 +264,28 @@ public interface IGenericFile extends IProviderable {
   String getDescription();
 
   /**
+   * Sets the description of the file.
+   * <p>
+   * The description of a file is a localized, human-readable description of a file. Typically, displayed in a tooltip
+   * in a user interface.
+   *
+   * @param description the description to set.
+   * @see #getName()
+   * @see #getTitle()
+   */
+  void setDescription( String description );
+
+  /**
    * Gets the owner of the generic file.
    */
   String getOwner();
+
+  /**
+   * Sets the owner of the generic file.
+   *
+   * @param owner the owner to set.
+   */
+  void setOwner( String owner );
 
   /**
    * Gets the creation date of the generic file.
@@ -169,9 +293,23 @@ public interface IGenericFile extends IProviderable {
   Date getCreatedDate();
 
   /**
+   * Sets the creation date of the generic file.
+   *
+   * @param createdDate the creation date to set.
+   */
+  void setCreatedDate( Date createdDate );
+
+  /**
    * Gets the user ID that created the generic file.
    */
   String getCreatorId();
+
+  /**
+   * Sets the user ID that created the generic file.
+   *
+   * @param creatorId the user ID to set.
+   */
+  void setCreatorId( String creatorId );
 
   /**
    * Gets the file size in bytes.
@@ -179,7 +317,21 @@ public interface IGenericFile extends IProviderable {
   long getFileSize();
 
   /**
+   * Sets the file size in bytes.
+   *
+   * @param fileSize the file size to set.
+   */
+  void setFileSize( long fileSize );
+
+  /**
    * Gets the metadata of the generic file.
    */
   IGenericFileMetadata getMetadata();
+
+  /**
+   * Sets the metadata of the generic file.
+   *
+   * @param metadata the metadata to set.
+   */
+  void setMetadata( IGenericFileMetadata metadata );
 }
