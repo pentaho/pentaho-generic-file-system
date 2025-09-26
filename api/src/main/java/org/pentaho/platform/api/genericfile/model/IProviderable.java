@@ -18,7 +18,7 @@ public interface IProviderable {
   /**
    * Gets the provider for this object. The provider is a string that identifies the source or type of the object.
    *
-   * @return the provider string, never {@code null}
+   * @return the provider string, never {@code null}.
    */
   @NonNull
   String getProvider();
@@ -26,7 +26,7 @@ public interface IProviderable {
   /**
    * Sets the provider for this object. The provider is a string that identifies the source or type of the object.
    *
-   * @param provider the provider string to set, must not be {@code null}
+   * @param provider the provider string to set, must not be {@code null}.
    */
   void setProvider( @NonNull String provider );
 }

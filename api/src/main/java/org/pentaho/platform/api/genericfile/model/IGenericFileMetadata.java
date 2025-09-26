@@ -30,7 +30,7 @@ public interface IGenericFileMetadata {
   /**
    * Sets the metadata map. Any existing metadata is replaced.
    *
-   * @param metadata the metadata map to set
+   * @param metadata the metadata map to set.
    */
   void setMetadata( Map<String, String> metadata );
 
@@ -40,8 +40,8 @@ public interface IGenericFileMetadata {
    * If this file metadata has a {@code null} {@link #getMetadata() metadata map} before this call, one will be
    * instantiated to hold the new metadatum.
    *
-   * @param key   the metadata key
-   * @param value the metadata value
+   * @param key   the metadata key.
+   * @param value the metadata value.
    */
   default void addMetadatum( String key, String value ) {
     Map<String, String> metadata = getMetadata();
