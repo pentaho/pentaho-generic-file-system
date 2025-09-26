@@ -40,6 +40,7 @@ public interface IGenericFileTree {
    * list.
    * When {@code null}, then the tree's file may or may not have child files. This will typically happen when a depth
    * cut-off is reached during a tree loading operation, deferring getting the children of a folder for a later request.
+   * The returned list, when not {@code null}, can be modified.
    */
   @Nullable
   List<IGenericFileTree> getChildren();
@@ -50,14 +51,4 @@ public interface IGenericFileTree {
    * @param children The child trees list. May be {@code null}.
    */
   void setChildren( @Nullable List<IGenericFileTree> children );
-
-  /**
-   * Adds a child tree to this file tree.
-   * <p>
-   * If this file tree has a {@code null} {@link #getChildren() child trees list} before this call, one will be
-   * instantiated to hold the new child tree.
-   *
-   * @param childTree The child tree.
-   */
-  void addChild( @NonNull IGenericFileTree childTree );
 }

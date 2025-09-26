@@ -21,6 +21,7 @@ import java.io.InputStream;
  * The {@code IGenericFileContent} interface contains the necessary information for returning a
  * {@code IGenericFile}'s content.
  */
+@SuppressWarnings( "unused" )
 public interface IGenericFileContent {
   /**
    * Gets the file's content InputStream.

@@ -22,7 +22,7 @@ public interface IGenericFileMetadata {
   /**
    * Gets the metadata map.
    *
-   * @return the metadata map
+   * @return the metadata map. The map can be modified directly.
    */
   Map<String, String> getMetadata();
 
@@ -32,12 +32,4 @@ public interface IGenericFileMetadata {
    * @param metadata the metadata map to set
    */
   void setMetadata( Map<String, String> metadata );
-
-  /**
-   * Adds a single metadatum to the metadata map.
-   *
-   * @param key   the metadata key
-   * @param value the metadata value
-   */
-  void addMetadatum( String key, String value );
 }

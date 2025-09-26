@@ -47,7 +47,7 @@ public class BaseGenericFile implements IGenericFile {
   }
 
   @Override
-  public void setProvider( String provider ) {
+  public void setProvider( @NonNull String provider ) {
     this.provider = provider;
   }
 
@@ -211,13 +211,14 @@ public class BaseGenericFile implements IGenericFile {
     this.fileSize = fileSize;
   }
 
+  @NonNull
   @Override
   public IGenericFileMetadata getMetadata() {
     return metadata;
   }
 
   @Override
-  public void setMetadata( IGenericFileMetadata metadata ) {
+  public void setMetadata( @NonNull IGenericFileMetadata metadata ) {
     this.metadata = metadata;
   }
 }

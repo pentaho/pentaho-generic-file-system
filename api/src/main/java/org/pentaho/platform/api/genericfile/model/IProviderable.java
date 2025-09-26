@@ -10,7 +10,6 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -29,5 +28,5 @@ public interface IProviderable {
    *
    * @param provider the provider string to set, must not be null
    */
-  void setProvider( String provider );
+  void setProvider( @NonNull String provider );
 }

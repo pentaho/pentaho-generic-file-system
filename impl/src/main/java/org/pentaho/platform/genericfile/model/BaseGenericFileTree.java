@@ -49,7 +49,6 @@ public class BaseGenericFileTree implements IGenericFileTree {
     this.children = children;
   }
 
-  @Override
   public void addChild( @NonNull IGenericFileTree childTree ) {
     Objects.requireNonNull( childTree );
 

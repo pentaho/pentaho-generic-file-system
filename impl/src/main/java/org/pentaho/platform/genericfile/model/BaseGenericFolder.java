@@ -15,12 +15,19 @@ package org.pentaho.platform.genericfile.model;
 
 import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 
+@SuppressWarnings( "unused" )
 public abstract class BaseGenericFolder extends BaseGenericFile implements IGenericFolder {
   private boolean hasChildren;
   private boolean canAddChildren;
 
   protected BaseGenericFolder() {
     setType( TYPE_FOLDER );
+  }
+
+  @Override
+  public void setType( String type ) {
+    // Ensure type is always folder
+    super.setType( TYPE_FOLDER );
   }
 
   @Override
@@ -31,7 +38,6 @@ public abstract class BaseGenericFolder extends BaseGenericFile implements IGene
   public void setHasChildren( boolean hasChildren ) {
     this.hasChildren = hasChildren;
   }
-
 
   @Override
   public boolean isCanAddChildren() {

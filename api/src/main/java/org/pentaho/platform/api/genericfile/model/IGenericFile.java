@@ -10,8 +10,9 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.model;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.List;
  * <p>
  * To know the name or the path of a file, use {@link #getName()} and {@link #getPath()}, respectively.
  */
+@SuppressWarnings( "unused" )
 public interface IGenericFile extends IProviderable {
   /**
    * The {@link #getType() type} value for a folder generic file.
@@ -41,7 +43,7 @@ public interface IGenericFile extends IProviderable {
    * <p>
    * Generally, the physical name of a file is the last segment of its {@link #getPath() path}.
    * <p>
-   * A valid generic file instance must have a non-null name.
+   * A valid generic file instance must not have a {@code null} name.
    *
    * @see #getNameDecoded()
    * @see #getTitle()
@@ -53,9 +55,9 @@ public interface IGenericFile extends IProviderable {
    * <p>
    * Generally, the physical name of a file is the last segment of its {@link #getPath() path}.
    * <p>
-   * A valid generic file instance must have a non-null name.
+   * A valid generic file instance must not have a {@code null} name.
    *
-   * @param name the physical name of the file; must not be null.
+   * @param name the physical name of the file; must not be {@code null}.
    * @see #getName()
    */
   void setName( String name );
@@ -74,7 +76,7 @@ public interface IGenericFile extends IProviderable {
   /**
    * Gets the path of the file, as a string.
    * <p>
-   * A valid generic file instance must have a non-null path.
+   * A valid generic file instance must not have a {@code null} path.
    *
    * @see #getName()
    * @see org.pentaho.platform.api.genericfile.GenericFilePath
@@ -84,9 +86,9 @@ public interface IGenericFile extends IProviderable {
   /**
    * Sets the path of the file, as a string.
    * <p>
-   * A valid generic file instance must have a non-null path.
+   * A valid generic file instance must not have a {@code null} path.
    *
-   * @param path the path of the file; must not be null.
+   * @param path the path of the file; must not be {@code null}.
    * @see #getName()
    * @see org.pentaho.platform.api.genericfile.GenericFilePath
    */
@@ -96,7 +98,7 @@ public interface IGenericFile extends IProviderable {
    * Gets the path of the parent folder, as a string, if any.
    * <p>
    * The provider root folders do not have a parent.
-   * Otherwise, a valid generic file instance must have a non-null parent path.
+   * Otherwise, a valid generic file instance must not have a {@code null} parent path.
    *
    * @see #getPath()
    */
@@ -106,22 +108,24 @@ public interface IGenericFile extends IProviderable {
    * Sets the path of the parent folder, as a string, if any.
    * <p>
    * The provider root folders do not have a parent.
-   * Otherwise, a valid generic file instance must have a non-null parent path.
+   * Otherwise, a valid generic file instance must not have a {@code null} parent path.
    *
-   * @param parentPath the path of the parent folder; may be null for provider root folders.
+   * @param parentPath the path of the parent folder; may be {@code null} for provider root folders.
    * @see #getPath()
    */
   void setParentPath( String parentPath );
 
   /**
-   * Gets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
+   * Gets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}. For the
+   * {@link IGenericFolder} the type is always {@link #TYPE_FOLDER}.
    *
    * @see #isFolder()
    */
   String getType();
 
   /**
-   * Sets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
+   * Sets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}. For the
+   * {@link IGenericFolder} the type is always {@link #TYPE_FOLDER}.
    *
    * @param type the type of generic file; must be one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
    * @see #isFolder()
@@ -324,14 +328,15 @@ public interface IGenericFile extends IProviderable {
   void setFileSize( long fileSize );
 
   /**
-   * Gets the metadata of the generic file.
+   * Gets the metadata of the generic file. The result is never {@code null}.
    */
+  @NonNull
   IGenericFileMetadata getMetadata();
 
   /**
    * Sets the metadata of the generic file.
    *
-   * @param metadata the metadata to set.
+   * @param metadata the metadata to set. Must not be {@code null}.
    */
-  void setMetadata( IGenericFileMetadata metadata );
+  void setMetadata( @NonNull IGenericFileMetadata metadata );
 }
