@@ -36,6 +36,9 @@ public interface IGenericFileMetadata {
 
   /**
    * Adds a single metadatum to the metadata map.
+   * <p>
+   * If this file metadata has a {@code null} {@link #getMetadata() metadata map} before this call, one will be
+   * instantiated to hold the new metadatum.
    *
    * @param key   the metadata key
    * @param value the metadata value
