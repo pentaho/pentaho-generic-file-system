@@ -10,12 +10,23 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface IProviderable {
+  /**
+   * Gets the provider for this object. The provider is a string that identifies the source or type of the object.
+   *
+   * @return the provider string, never {@code null}.
+   */
   @NonNull
   String getProvider();
+
+  /**
+   * Sets the provider for this object. The provider is a string that identifies the source or type of the object.
+   *
+   * @param provider the provider string to set, must not be {@code null}.
+   */
+  void setProvider( @NonNull String provider );
 }

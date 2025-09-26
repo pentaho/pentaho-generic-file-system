@@ -10,10 +10,15 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.model;
 
+@SuppressWarnings( "unused" )
 public interface IGenericFolder extends IGenericFile {
+  /**
+   * Gets the type of generic file. For this specific case, always returns {@code TYPE_FOLDER}.
+   *
+   * @return {@code TYPE_FOLDER}
+   */
   @Override
   default String getType() {
     return TYPE_FOLDER;
