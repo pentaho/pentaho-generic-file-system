@@ -41,7 +41,7 @@ class CompositeGenericFileDecoratorTest {
   void testCanBeCreatedWithEmptyDecoratorList() {
     List<IGenericFileDecorator> decoratorList = Collections.emptyList();
 
-    assertThrows( IllegalArgumentException.class, () -> new CompositeGenericFileDecorator( decoratorList ) );
+    new CompositeGenericFileDecorator( decoratorList );
   }
 
   @Test
