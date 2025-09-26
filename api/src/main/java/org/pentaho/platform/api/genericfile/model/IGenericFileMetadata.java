@@ -12,6 +12,7 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,4 +33,21 @@ public interface IGenericFileMetadata {
    * @param metadata the metadata map to set
    */
   void setMetadata( Map<String, String> metadata );
+
+  /**
+   * Adds a single metadatum to the metadata map.
+   *
+   * @param key   the metadata key
+   * @param value the metadata value
+   */
+  default void addMetadatum( String key, String value ) {
+    Map<String, String> metadata = getMetadata();
+
+    if ( metadata == null ) {
+      metadata = new HashMap<>();
+      setMetadata( metadata );
+    }
+
+    metadata.put( key, value );
+  }
 }

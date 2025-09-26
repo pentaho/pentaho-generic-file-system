@@ -15,7 +15,9 @@ package org.pentaho.platform.api.genericfile.model;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The {@code IGenericFileTree} interface unites a file with its child files, if any.
@@ -51,4 +53,25 @@ public interface IGenericFileTree {
    * @param children The child trees list. May be {@code null}.
    */
   void setChildren( @Nullable List<IGenericFileTree> children );
+
+  /**
+   * Adds a child tree to this file tree.
+   * <p>
+   * If this file tree has a {@code null} {@link #getChildren() child trees list} before this call, one will be
+   * instantiated to hold the new child tree.
+   *
+   * @param childTree The child tree.
+   */
+  default void addChild( @NonNull IGenericFileTree childTree ) {
+    Objects.requireNonNull( childTree );
+
+    List<IGenericFileTree> children = getChildren();
+
+    if ( children == null ) {
+      children = new ArrayList<>();
+      setChildren( children );
+    }
+
+    children.add( childTree );
+  }
 }

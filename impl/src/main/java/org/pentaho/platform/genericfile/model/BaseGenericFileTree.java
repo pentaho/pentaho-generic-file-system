@@ -17,7 +17,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,15 +46,5 @@ public class BaseGenericFileTree implements IGenericFileTree {
   @Override
   public void setChildren( @Nullable List<IGenericFileTree> children ) {
     this.children = children;
-  }
-
-  public void addChild( @NonNull IGenericFileTree childTree ) {
-    Objects.requireNonNull( childTree );
-
-    if ( children == null ) {
-      children = new ArrayList<>();
-    }
-
-    children.add( childTree );
   }
 }

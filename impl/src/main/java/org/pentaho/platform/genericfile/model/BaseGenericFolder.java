@@ -26,8 +26,11 @@ public abstract class BaseGenericFolder extends BaseGenericFile implements IGene
 
   @Override
   public void setType( String type ) {
-    // Ensure type is always folder
-    super.setType( TYPE_FOLDER );
+    if ( !TYPE_FOLDER.equals( type ) ) {
+      throw new IllegalArgumentException( "Type for a folder must be " + TYPE_FOLDER );
+    }
+
+    super.setType( type );
   }
 
   @Override
