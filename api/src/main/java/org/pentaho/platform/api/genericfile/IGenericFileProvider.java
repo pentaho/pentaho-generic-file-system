@@ -26,6 +26,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -143,6 +144,20 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @see IGenericFileService#createFolder(GenericFilePath)
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Creates a file given its path and content, with overwrite option.
+   *
+   * @param path      The path of the generic file to create.
+   * @param overwrite If {@code true}, overwrites the file if it already exists; if {@code false}, returns {@code
+   *                  false} if file exists.
+   * @param content   The content to write to the file as an InputStream.
+   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
+   * overwrite is false.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  boolean createFile( @NonNull GenericFilePath path, boolean overwrite, @NonNull InputStream content )
+    throws OperationFailedException;
 
   /**
    * Determines if the provider owns a given path.

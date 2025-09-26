@@ -35,6 +35,7 @@ import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.util.logging.Logger;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -195,6 +196,12 @@ public class DefaultGenericFileService implements IGenericFileService {
   @Override
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getOwnerFileProvider( path ).createFolder( path );
+  }
+
+  @Override
+  public boolean createFile( @NonNull GenericFilePath path, boolean overwrite, @NonNull InputStream content )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).createFile( path, overwrite, content );
   }
 
   @NonNull

@@ -67,6 +67,7 @@ import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -184,6 +185,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( FileService.InvalidNameException e ) {
       throw new InvalidPathException();
     }
+  }
+
+  @Override
+  protected boolean createFileCore( @NonNull GenericFilePath path, boolean overwrite, @NonNull InputStream content )
+    throws OperationFailedException {
+    // Repository file provider does not support file creation
+    throw new UnsupportedOperationException( "File creation is not supported in the repository provider" );
   }
 
   @NonNull
