@@ -20,6 +20,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
@@ -27,6 +28,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -54,6 +56,13 @@ class BaseGenericFileProviderTest {
     @Override
     protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
       throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected boolean createFileCore( @NonNull GenericFilePath path,
+                                      @NonNull InputStream content,
+                                      @NonNull CreateFileOptions createFileOptions ) {
+      return false;
     }
 
     @NonNull
@@ -86,6 +95,10 @@ class BaseGenericFileProviderTest {
     public IGenericFile getFile( @NonNull GenericFilePath path, @NonNull GetFileOptions options )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
+    }
+
+    @NonNull @Override public List<IGenericFile> getDeletedFiles() throws OperationFailedException {
+      return super.getDeletedFiles();
     }
 
     @Override

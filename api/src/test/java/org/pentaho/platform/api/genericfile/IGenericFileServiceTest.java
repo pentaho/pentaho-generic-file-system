@@ -18,11 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.io.InputStream;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -71,6 +73,14 @@ class IGenericFileServiceTest {
 
     @Override
     public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean createFile( @NonNull GenericFilePath path,
+                               @NonNull InputStream content,
+                               @NonNull CreateFileOptions createFileOptions )
+      throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
@@ -241,6 +251,56 @@ class IGenericFileServiceTest {
       GenericFileServiceForTesting service = new GenericFileServiceForTesting();
 
       assertThrows( InvalidPathException.class, () -> service.createFolder( "foo" ) );
+    }
+  }
+
+  /**
+   * Tests for the {@link IGenericFileService#createFile(String, InputStream, CreateFileOptions)} method.
+   */
+  @Nested
+  class CreateFileTests {
+    @Test
+    void testValidStringPathIsAccepted() throws OperationFailedException {
+      GenericFileServiceForTesting service = spy( new GenericFileServiceForTesting() );
+      ArgumentCaptor<GenericFilePath> pathCaptor = ArgumentCaptor.forClass( GenericFilePath.class );
+      ArgumentCaptor<CreateFileOptions> createFileOptionsArgumentCaptor =
+        ArgumentCaptor.forClass( CreateFileOptions.class );
+      ArgumentCaptor<InputStream> contentCaptor = ArgumentCaptor.forClass( InputStream.class );
+
+      InputStream mockContent = new java.io.ByteArrayInputStream( "test content".getBytes() );
+      CreateFileOptions options = new CreateFileOptions();
+      options.setOverwrite( true );
+
+      doReturn( true ).when( service )
+        .createFile( any( GenericFilePath.class ), any( InputStream.class ), any( CreateFileOptions.class ) );
+
+      assertTrue( service.createFile( "/foo/test.txt", mockContent, options ) );
+
+      verify( service, times( 1 ) ).createFile( pathCaptor.capture(), contentCaptor.capture(),
+        createFileOptionsArgumentCaptor.capture() );
+      GenericFilePath path = pathCaptor.getValue();
+      assertNotNull( path );
+      assertEquals( "/foo/test.txt", path.toString() );
+      assertEquals( true, createFileOptionsArgumentCaptor.getValue().isOverwrite() );
+      assertEquals( mockContent, contentCaptor.getValue() );
+    }
+
+    @Test
+    void testEmptyStringPathThrowsInvalidPathException() {
+      GenericFileServiceForTesting service = new GenericFileServiceForTesting();
+      InputStream mockContent = new java.io.ByteArrayInputStream( "test content".getBytes() );
+      CreateFileOptions options = new CreateFileOptions();
+
+      assertThrows( InvalidPathException.class, () -> service.createFile( "", mockContent, options ) );
+    }
+
+    @Test
+    void testInvalidStringPathThrowsInvalidPathException() {
+      GenericFileServiceForTesting service = new GenericFileServiceForTesting();
+      InputStream mockContent = new java.io.ByteArrayInputStream( "test content".getBytes() );
+      CreateFileOptions options = new CreateFileOptions();
+
+      assertThrows( InvalidPathException.class, () -> service.createFile( "foo", mockContent, options ) );
     }
   }
 }

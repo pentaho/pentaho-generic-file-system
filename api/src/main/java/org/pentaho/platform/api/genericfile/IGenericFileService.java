@@ -23,11 +23,13 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.io.InputStream;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -250,6 +252,59 @@ public interface IGenericFileService {
    */
   default boolean createFolder( @Nullable String path ) throws OperationFailedException {
     return createFolder( GenericFilePath.parseRequired( path ) );
+  }
+
+  /**
+   * Creates a file given its path and content, with default options.
+   * <p>
+   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and
+   * allowed.
+   *
+   * @param path              The path of the generic file to create.
+   * @param content           The content to write to the file as an InputStream.
+   * @param createFileOptions The options for creating the file, includes the overwrite flag.
+   * @return {@code true}, if the file did not exist and was created; {@code false}, if the file already existed.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
+   *                                   if the path exists but references a folder, or its longest existing prefix
+   *                                   does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   files on the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   */
+  boolean createFile( @NonNull GenericFilePath path,
+                      @NonNull InputStream content,
+                      @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException;
+
+  /**
+   * Creates a file given its path and content, with overwrite option.
+   * <p>
+   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and
+   * allowed.
+   *
+   * @param path              The path of the generic file to create.
+   * @param content           The content to write to the file as an InputStream.
+   * @param createFileOptions The options for creating the file, includes the overwrite flag.
+   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
+   * overwrite is false.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   files on the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   */
+  default boolean createFile( @NonNull String path,
+                              @NonNull InputStream content,
+                              @NonNull CreateFileOptions createFileOptions )
+    throws OperationFailedException {
+    // Default implementation for backward compatibility - delegates to existing method
+    return createFile( GenericFilePath.parseRequired( path ), content, createFileOptions );
   }
 
   /**
