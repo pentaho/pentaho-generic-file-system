@@ -29,9 +29,9 @@ public interface IGenericFileDecorator {
    * Decorates the metadata for a file identified by a path. This method is invoked when the caller requests a file
    * metadata (see {@link IGenericFileService#getFileMetadata} ).
    *
-   * @param fileMetadata the mutable metadata to decorate (never {@code null})
-   * @param path         the file path associated with the metadata (never {@code null})
-   * @param service      the invoking file service (can be used to fetch additional information) (never {@code null})
+   * @param fileMetadata the mutable metadata to decorate (never {@code null}).
+   * @param path         the file path associated with the metadata (never {@code null}).
+   * @param service      the invoking file service (can be used to fetch additional information) (never {@code null}).
    * @throws OperationFailedException if decoration cannot complete successfully. Implementations may
    *                                  either propagate or (in higher-level wrappers) have this swallowed and logged.
    */
@@ -42,9 +42,9 @@ public interface IGenericFileDecorator {
   /**
    * Decorates a file. This method is invoked when the caller requests a file (see {@link IGenericFileService#getFile}).
    *
-   * @param file    the mutable file to decorate (never {@code null})
-   * @param service the invoking file service (can be used to fetch additional information) (never {@code null})
-   * @param options the file retrieval options (never {@code null})
+   * @param file    the mutable file to decorate (never {@code null}).
+   * @param service the invoking file service (can be used to fetch additional information) (never {@code null}).
+   * @param options the file retrieval options (never {@code null}).
    * @throws OperationFailedException if decoration cannot complete successfully. Implementations may
    *                                  either propagate or (in higher-level wrappers) have this swallowed and logged.
    */
@@ -56,9 +56,9 @@ public interface IGenericFileDecorator {
    * Decorates a tree. This method is invoked when the caller requests a tree (see
    * {@link IGenericFileService#getTree} or {@link IGenericFileService#getRootTrees}).
    *
-   * @param fileTree the mutable tree to decorate (never {@code null})
-   * @param service  the invoking file service (can be used to fetch additional information) (never {@code null})
-   * @param options  the tree retrieval options (never {@code null})
+   * @param fileTree the mutable tree to decorate (never {@code null}).
+   * @param service  the invoking file service (can be used to fetch additional information) (never {@code null}).
+   * @param options  the tree retrieval options (never {@code null}).
    * @throws OperationFailedException if decoration cannot complete successfully. Implementations may
    *                                  either propagate or (in higher-level wrappers) have this swallowed and logged.
    */
