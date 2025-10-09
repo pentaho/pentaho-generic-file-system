@@ -38,10 +38,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Decorate file metadata given the file path.
    *
-   * @param fileMetadata the file metadata to decorate
-   * @param path         the file path
-   * @param service      the file service
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param fileMetadata the file metadata to decorate. Must not be {@code null}.
+   * @param path         the file path. Must not be {@code null}.
+   * @param service      the file service. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   @Override
   public final void decorateFileMetadata( @NonNull IGenericFileMetadata fileMetadata,
@@ -62,10 +62,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Decorate file metadata given the file.
    *
-   * @param fileMetadata the file metadata to decorate
-   * @param file         the file
-   * @param service      the file service
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param fileMetadata the file metadata to decorate. Must not be {@code null}.
+   * @param file         the file. Must not be {@code null}.
+   * @param service      the file service. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   protected void decorateFileMetadataCore( @NonNull IGenericFileMetadata fileMetadata,
                                            @NonNull IGenericFile file,
@@ -76,10 +76,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Hook to decorate file metadata. Default implementation is a no-op.
    *
-   * @param fileMetadata the file metadata to decorate
-   * @param path         the file path
-   * @param service      the file service
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param fileMetadata the file metadata to decorate. Must not be {@code null}.
+   * @param path         the file path. Must not be {@code null}.
+   * @param service      the file service. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   protected void decorateFileMetadataCore( @NonNull IGenericFileMetadata fileMetadata,
                                            @NonNull GenericFilePath path,
@@ -90,10 +90,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Decorate a file. If metadata decoration is requested (in the options), it is done first.
    *
-   * @param file    the file to decorate
-   * @param service the file service
-   * @param options the get file options
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param file    the file to decorate. Must not be {@code null}.
+   * @param service the file service. Must not be {@code null}.
+   * @param options the get file options. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   @Override
   public final void decorateFile( @NonNull IGenericFile file,
@@ -109,6 +109,8 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
 
         if ( metadata != null ) {
           decorateFileMetadataCore( metadata, file, service );
+        } else {
+          Logger.warn( getClass().getName(), "File at path=" + file.getPath() + " has no metadata to decorate." );
         }
       }
     } catch ( OperationFailedException e ) {
@@ -128,10 +130,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
    * Mandatory hook to decorate a file (excluding metadata). The metadata decoration is handled previously and at
    * this point the file already has the decorated metadata. Default implementation is a no-op.
    *
-   * @param file    the file to decorate
-   * @param service the file service
-   * @param options the get file options
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param file    the file to decorate. Must not be {@code null}.
+   * @param service the file service. Must not be {@code null}.
+   * @param options the get file options. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   protected void decorateFileCore( @NonNull IGenericFile file,
                                    @NonNull IGenericFileService service,
@@ -143,10 +145,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
    * Decorate a file tree recursively. Each node is decorated by calling
    * {@link #decorateTreeNode(IGenericFile, IGenericFileTree, IGenericFileService, GetTreeOptions)}.
    *
-   * @param fileTree the file tree to decorate
-   * @param service  the file service
-   * @param options  the get tree options
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param fileTree the file tree to decorate. Must not be {@code null}.
+   * @param service  the file service. Must not be {@code null}.
+   * @param options  the get tree options. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   @Override
   public final void decorateTree( @NonNull IGenericFileTree fileTree,
@@ -166,10 +168,10 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Recursively decorate a file tree node and its children.
    *
-   * @param fileTree the file tree node to decorate
-   * @param service  the file service
-   * @param options  the get tree options
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param fileTree the file tree node to decorate. May be null.
+   * @param service  the file service. Must not be {@code null}.
+   * @param options  the get tree options. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   private void decorateTreeRecursively( @Nullable IGenericFileTree fileTree,
                                         @NonNull IGenericFileService service,
@@ -190,8 +192,8 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
   /**
    * Maps tree options to file options. Extend if new flags are added.
    *
-   * @param treeOptions the tree options
-   * @return the derived file options
+   * @param treeOptions the tree options. Must not be {@code null}.
+   * @return the derived file options. Never {@code null}.
    */
   @NonNull
   protected GetFileOptions deriveFileOptions( @NonNull GetTreeOptions treeOptions ) {
@@ -207,11 +209,11 @@ public abstract class BaseGenericFileDecorator implements IGenericFileDecorator 
    * Note: Do not call super + decorateFile again (super already performs file decoration).
    * Subclasses should catch and handle their own exceptions if they want finer granularity than the framework logging.
    *
-   * @param file     the file to decorate
-   * @param fileTree the file tree node
-   * @param service  the file service
-   * @param options  the get tree options
-   * @throws OperationFailedException if an error occurs during decoration
+   * @param file     the file to decorate. Must not be {@code null}.
+   * @param fileTree the file tree node. Must not be {@code null}.
+   * @param service  the file service. Must not be {@code null}.
+   * @param options  the get tree options. Must not be {@code null}.
+   * @throws OperationFailedException if an error occurs during decoration.
    */
   @SuppressWarnings( "unused" )
   protected void decorateTreeNode( @NonNull IGenericFile file,

@@ -46,6 +46,7 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
+import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileMetadata;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.model.DefaultGenericFileContent;
@@ -266,7 +267,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       return;
     }
 
-    if ( tree.getFile() instanceof RepositoryObject node ) {
+    if ( tree.getFile() instanceof BaseGenericFile node ) {
       try {
         node.setMetadata( getFileMetadata( GenericFilePath.parseRequired( node.getPath() ) ) );
       } catch ( InvalidPathException e ) {

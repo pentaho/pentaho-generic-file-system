@@ -139,6 +139,24 @@ class BaseGenericFileDecoratorTest {
   }
 
   @Test
+  void testDecorateFileIncludesMetadataWhenFlagTrueAndMetadataIsNull() throws Exception {
+    RecordingDecorator decorator = new RecordingDecorator();
+
+    IGenericFile file = mock( IGenericFile.class );
+    when( file.getMetadata() ).thenReturn( null );
+    when( file.getPath() ).thenReturn( "/root/file.txt" );
+    IGenericFileService service = mock( IGenericFileService.class );
+    GetFileOptions options = new GetFileOptions();
+    options.setIncludeMetadata( true );
+
+    decorator.decorateFile( file, service, options );
+
+    assertEquals( 0, decorator.fileMetadataFileCalls );
+    assertEquals( 0, decorator.fileMetadataPathCalls );
+    assertEquals( 1, decorator.fileCoreCalls );
+  }
+
+  @Test
   void testDecorateFileSkipsMetadataWhenFlagFalse() throws Exception {
     RecordingDecorator decorator = new RecordingDecorator();
 
@@ -312,6 +330,25 @@ class BaseGenericFileDecoratorTest {
 
     assertEquals( 1, decorator.fileMetadataFileCalls );
     assertEquals( 1, decorator.fileMetadataPathCalls );
+  }
+
+  @Test
+  void testDecorateFileMetadataOverloadFromFileUsesPathVariantWhenMetadataIsNull() throws Exception {
+    RecordingDecorator decorator = new RecordingDecorator();
+
+    IGenericFile file = mock( IGenericFile.class );
+    when( file.getPath() ).thenReturn( "/p" );
+
+    // invoke protected overload indirectly via decorateFile with includeMetadata true
+    IGenericFileService service = mock( IGenericFileService.class );
+    GetFileOptions options = new GetFileOptions();
+    options.setIncludeMetadata( true );
+    when( file.getMetadata() ).thenReturn( null );
+
+    decorator.decorateFile( file, service, options );
+
+    assertEquals( 0, decorator.fileMetadataFileCalls );
+    assertEquals( 0, decorator.fileMetadataPathCalls );
   }
   // endregion
 

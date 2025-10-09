@@ -211,14 +211,13 @@ public class BaseGenericFile implements IGenericFile {
     this.fileSize = fileSize;
   }
 
-  @NonNull
   @Override
   public IGenericFileMetadata getMetadata() {
     return metadata;
   }
 
   @Override
-  public void setMetadata( @NonNull IGenericFileMetadata metadata ) {
+  public void setMetadata( IGenericFileMetadata metadata ) {
     this.metadata = metadata;
   }
 }

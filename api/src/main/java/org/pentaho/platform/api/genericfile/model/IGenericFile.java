@@ -12,8 +12,6 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.util.Date;
 import java.util.List;
 
@@ -328,15 +326,14 @@ public interface IGenericFile extends IProviderable {
   void setFileSize( long fileSize );
 
   /**
-   * Gets the metadata of the generic file. The result is never {@code null}.
+   * Gets the metadata of the generic file. The result maybe null for some implementations that don't support metadata.
    */
-  @NonNull
   IGenericFileMetadata getMetadata();
 
   /**
    * Sets the metadata of the generic file.
    *
-   * @param metadata the metadata to set. Must not be {@code null}.
+   * @param metadata the metadata to set.
    */
-  void setMetadata( @NonNull IGenericFileMetadata metadata );
+  void setMetadata( IGenericFileMetadata metadata );
 }
