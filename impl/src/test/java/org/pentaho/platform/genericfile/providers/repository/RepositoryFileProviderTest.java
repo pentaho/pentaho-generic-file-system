@@ -20,6 +20,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -29,6 +30,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
@@ -54,10 +56,12 @@ import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -2468,6 +2472,270 @@ class RepositoryFileProviderTest {
 
     assertThrows( OperationFailedException.class, () -> repositoryProvider.getFile( path, new GetFileOptions() ) );
     verify( repositoryMock ).getFile( anyString() );
+  }
+  // endregion
+
+  // region createFolder
+  @Test
+  void testCreateFolderSuccess() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/newFolder" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertTrue( repositoryProvider.createFolder( path ) );
+    verify( fileServiceMock ).doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+  }
+
+  @Test
+  void testCreateFolderAccessDenied() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/newFolder" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doThrow( UnifiedRepositoryAccessDeniedException.class ).when( fileServiceMock )
+      .doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertThrows( AccessControlException.class, () -> repositoryProvider.createFolder( path ) );
+    verify( fileServiceMock ).doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+  }
+
+  @Test
+  void testCreateFolderInvalidName() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/invalid:name" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doThrow( FileService.InvalidNameException.class ).when( fileServiceMock )
+      .doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertThrows( InvalidPathException.class, () -> repositoryProvider.createFolder( path ) );
+    verify( fileServiceMock ).doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
+  }
+  // endregion
+
+  // region createFile
+  @Test
+  void testCreateFileThrowsUnsupportedOperation() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/newFile.txt" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    InputStream inputStream = mock( InputStream.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    CreateFileOptions options = new CreateFileOptions();
+
+    assertThrows( UnsupportedOperationException.class,
+      () -> repositoryProvider.createFile( path, inputStream, options ) );
+  }
+  // endregion
+
+  // region owns
+  @Test
+  void testOwnsReturnsTrueForRootPath() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertTrue( repositoryProvider.owns( path ) );
+  }
+
+  @Test
+  void testOwnsReturnsTrueForSubPath() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/test" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertTrue( repositoryProvider.owns( path ) );
+  }
+
+  @Test
+  void testOwnsReturnsFalseForNonRepositoryPath() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "scheme://my/folder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertFalse( repositoryProvider.owns( path ) );
+  }
+  // endregion
+
+  // region hasAccess
+  @Test
+  void testHasAccessReturnsTrue() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/test" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( repositoryMock ).hasAccess( eq( path.toString() ), any() );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertTrue( repositoryProvider.hasAccess( path, EnumSet.of( GenericFilePermission.READ ) ) );
+    verify( repositoryMock ).hasAccess( eq( path.toString() ), any() );
+  }
+
+  @Test
+  void testHasAccessReturnsFalse() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/test" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( false ).when( repositoryMock ).hasAccess( eq( path.toString() ), any() );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertFalse( repositoryProvider.hasAccess( path, EnumSet.of( GenericFilePermission.WRITE ) ) );
+    verify( repositoryMock ).hasAccess( eq( path.toString() ), any() );
+  }
+  // endregion
+
+  // region getType and getName
+  @Test
+  void testGetTypeReturnsCorrectType() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertEquals( "repository", repositoryProvider.getType() );
+  }
+
+  @Test
+  void testGetNameReturnsCorrectName() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ),
+      repositoryProvider.getName() );
+  }
+
+  @Test
+  void testGetFileClassReturnsCorrectClass() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    assertEquals( org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile.class,
+      repositoryProvider.getFileClass() );
+  }
+  // endregion
+
+  // region convertToNativeFileMetadata
+  @Test
+  void testConvertToNativeFileMetadataWithValidData() {
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+    metadata.addMetadatum( "key1", "value1" );
+    metadata.addMetadatum( "key2", "value2" );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    List<StringKeyStringValueDto> result = repositoryProvider.convertToNativeFileMetadata( metadata );
+
+    assertNotNull( result );
+    assertEquals( 2, result.size() );
+    assertEquals( "key1", result.get( 0 ).getKey() );
+    assertEquals( "value1", result.get( 0 ).getValue() );
+    assertEquals( "key2", result.get( 1 ).getKey() );
+    assertEquals( "value2", result.get( 1 ).getValue() );
+  }
+
+  @Test
+  void testConvertToNativeFileMetadataWithNullMetadata() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    List<StringKeyStringValueDto> result = repositoryProvider.convertToNativeFileMetadata( null );
+
+    assertNotNull( result );
+    assertTrue( result.isEmpty() );
+  }
+
+  @Test
+  void testConvertToNativeFileMetadataWithEmptyMap() {
+    BaseGenericFileMetadata metadata = new BaseGenericFileMetadata();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    List<StringKeyStringValueDto> result = repositoryProvider.convertToNativeFileMetadata( metadata );
+
+    assertNotNull( result );
+    assertTrue( result.isEmpty() );
+  }
+  // endregion
+
+  // region getOwnerByFileId
+  @Test
+  void testGetOwnerByFileIdReturnsOwner() {
+    String fileId = "12345";
+    String ownerName = "admin";
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileAcl aclMock = createMockFileOwner( ownerName );
+    doReturn( aclMock ).when( repositoryMock ).getAcl( fileId );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    String result = repositoryProvider.getOwnerByFileId( fileId );
+
+    assertEquals( ownerName, result );
+    verify( repositoryMock ).getAcl( fileId );
+  }
+
+  @Test
+  void testGetOwnerByFileIdReturnsNullWhenAclNull() {
+    String fileId = "12345";
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( null ).when( repositoryMock ).getAcl( fileId );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    String result = repositoryProvider.getOwnerByFileId( fileId );
+
+    assertNull( result );
+    verify( repositoryMock ).getAcl( fileId );
+  }
+  // endregion
+
+  // region getRepositoryFilter
+  @Test
+  void testGetRepositoryFilterFolders() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.FOLDERS );
+
+    assertEquals( "*|FOLDERS", result );
+  }
+
+  @Test
+  void testGetRepositoryFilterFiles() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.FILES );
+
+    assertEquals( "*|FILES", result );
+  }
+
+  @Test
+  void testGetRepositoryFilterAll() {
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.ALL );
+
+    assertEquals( "*", result );
   }
   // endregion
 }
