@@ -10,7 +10,6 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.exception;
 
 public class InvalidOperationException extends OperationFailedException {
@@ -19,11 +18,13 @@ public class InvalidOperationException extends OperationFailedException {
     super();
   }
 
+  /**
+   * Message should not contain sensitive information.
+   *
+   * @param message
+   */
   public InvalidOperationException( String message ) {
     super( message );
   }
 
-  public InvalidOperationException( Throwable cause ) {
-    super( cause );
-  }
 }
