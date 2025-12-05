@@ -22,6 +22,7 @@ import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
+import org.pentaho.platform.util.logging.Logger;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -197,6 +198,13 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         // Get the children of this tree as well.
         childTrees = getChildTrees( path, options, 1 );
 
+        if ( childTrees == null ) {
+          assert tree.getChildren() == null;
+
+          // Could not get children.
+          return true;
+        }
+
         tree.setChildren( childTrees );
       }
 
@@ -218,7 +226,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     return true;
   }
 
-  @NonNull
+  @Nullable
   private List<IGenericFileTree> getChildTrees( @NonNull GenericFilePath basePath,
                                                 @NonNull GetTreeOptions baseOptions,
                                                 int maxDepth ) throws OperationFailedException {
@@ -231,11 +239,17 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     options.setExpandedPaths( null );
     options.setExpandedMaxDepth( null );
 
-    BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
+    try {
+      BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
 
-    assert treeWithChildren.getChildren() != null;
+      assert treeWithChildren.getChildren() != null;
 
-    return treeWithChildren.getChildren();
+      return treeWithChildren.getChildren();
+    } catch ( OperationFailedException e ) {
+      Logger.error( this.getClass().getName(), "Failed to get child trees for path: " + basePath, e );
+
+      return null;
+    }
   }
 
   /**
