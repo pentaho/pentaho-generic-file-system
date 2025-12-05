@@ -19,6 +19,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -1300,8 +1301,50 @@ class BaseGenericFileProviderTest {
     // - /home
     verify( provider, times( 3 ) ).getTree( any( GetTreeOptions.class ) );
   }
+  // endregion
 
   // endregion
 
+  // region getTree exception handling
+  @Test
+  void testGetTreeReturnsEmptyChildrenWhenGetTreeThrowsException() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+
+    // First call returns the root tree, second call throws exception (simulating not found)
+    doReturn( rootTree )
+      .doThrow( new NotFoundException( "Path not found" ) )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    // 'expanded path' is deeper than max depth, so it will try to get children
+    options.setExpandedPath( "/home/admin" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Verify the structure - /home should have empty children due to the exception
+    IGenericFileTree homeTree = assertRepositoryDepth1Structure( rootTree );
+
+    // The children of /home should be an empty list because getTree threw an exception
+    List<IGenericFileTree> homeChildren = homeTree.getChildren();
+    assertNull( homeChildren );
+
+    // Verify getTreeCore was called twice: once for root, once for /home (which failed)
+    verify( provider, times( 2 ) ).getTreeCore( any( GetTreeOptions.class ) );
+  }
   // endregion
 }
