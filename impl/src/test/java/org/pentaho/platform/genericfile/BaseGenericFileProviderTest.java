@@ -1347,4 +1347,335 @@ class BaseGenericFileProviderTest {
     verify( provider, times( 2 ) ).getTreeCore( any( GetTreeOptions.class ) );
   }
   // endregion
+
+  // region equalsName tests
+
+  /**
+   * Test that equalsName correctly matches when the file name equals the segment name.
+   * This is tested indirectly through the expanded path functionality which uses findChildTreeByName.
+   */
+  @Test
+  void testEqualsNameMatchesCorrectChild() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+    BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+
+    doReturn( rootTree )
+      .doReturn( homeTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    options.setExpandedPath( "/home/admin" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Verify the structure - /home should have been found and expanded
+    IGenericFileTree homeTreeResult = assertRepositoryDepth1Structure( rootTree );
+    IGenericFileTree adminTree = assertRepositoryHomeDepth1Structure( homeTreeResult );
+
+    assertNotNull( adminTree );
+    assertEquals( "/home/admin", adminTree.getFile().getPath() );
+  }
+
+  /**
+   * Test that equalsName returns false when the segment name doesn't match any child.
+   * The expansion should stop when it can't find the matching child.
+   */
+  @Test
+  void testEqualsNameDoesNotMatchNonExistentChild() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+    BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+
+    doReturn( rootTree )
+      .doReturn( homeTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    // Try to expand to a non-existent path
+    options.setExpandedPath( "/home/nonexistent" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Verify the structure - /home should be present but nonexistent child should not be found
+    IGenericFileTree homeTreeResult = assertRepositoryDepth1Structure( rootTree );
+    List<IGenericFileTree> homeChildren = homeTreeResult.getChildren();
+
+    assertNotNull( homeChildren );
+    assertEquals( 2, homeChildren.size() );
+
+    // Verify neither child is "nonexistent"
+    assertTrue( homeChildren.stream().noneMatch( child ->
+      "nonexistent".equals( child.getFile().getName() ) ) );
+  }
+
+  /**
+   * Test that equalsName correctly handles files with complex names.
+   * This tests name matching with special characters and various formats.
+   */
+  @Test
+  void testEqualsNameWithComplexNames() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    // Create a tree with complex names
+    BaseGenericFileTree rootTree = createSampleFileTree( "/", "" );
+    BaseGenericFileTree childWithDash = createSampleFileTree( "/my-folder", "my-folder" );
+    BaseGenericFileTree childWithUnderscore = createSampleFileTree( "/my_folder", "my_folder" );
+    BaseGenericFileTree childWithSpace = createSampleFileTree( "/my folder", "my folder" );
+    BaseGenericFileTree childWithSpaceEncoded = createSampleFileTree( "/my%20folder", "my%20folder" );
+
+    rootTree.addChild( childWithDash );
+    rootTree.addChild( childWithUnderscore );
+    rootTree.addChild( childWithSpace );
+    rootTree.addChild( childWithSpaceEncoded );
+
+    doReturn( rootTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    options.setExpandedPath( "/my%20folder" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Verify the correct child was found
+    List<IGenericFileTree> children = result.getChildren();
+    assertNotNull( children );
+    assertEquals( 4, children.size() );
+
+    // Verify that my%20folder exists and was properly matched
+    assertTrue( children.stream().anyMatch( child ->
+      "my%20folder".equals( child.getFile().getName() ) ) );
+  }
+
+  /**
+   * Test that equalsName handles invalid paths gracefully.
+   * When a file has an invalid path, equalsName should return false and log an error.
+   */
+  @Test
+  void testEqualsNameHandlesInvalidPathGracefully() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    // Create a tree with a file that has an invalid path format
+    BaseGenericFileTree rootTree = createSampleFileTree( "/", "" );
+    BaseGenericFileTree validChild = createSampleFileTree( "/valid", "valid" );
+
+    // Create a child with a potentially problematic path
+    BaseGenericFile invalidFile = new BaseGenericFile();
+    invalidFile.setName( "invalid" );
+    invalidFile.setPath( "" ); // Empty path could cause issues
+    invalidFile.setType( TYPE_FOLDER );
+    BaseGenericFileTree invalidChild = new BaseGenericFileTree( invalidFile );
+
+    rootTree.addChild( validChild );
+    rootTree.addChild( invalidChild );
+
+    doReturn( rootTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    options.setExpandedPath( "/valid" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Verify that valid child was found despite the invalid sibling
+    List<IGenericFileTree> children = result.getChildren();
+    assertNotNull( children );
+    assertEquals( 2, children.size() );
+  }
+
+  /**
+   * Test that equalsName correctly handles case-sensitive matching.
+   * File names should match exactly, including case.
+   */
+  @Test
+  void testEqualsNameIsCaseSensitive() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = createSampleFileTree( "/", "" );
+    BaseGenericFileTree lowerCaseChild = createSampleFileTree( "/folder", "folder" );
+    BaseGenericFileTree upperCaseChild = createSampleFileTree( "/FOLDER", "FOLDER" );
+    BaseGenericFileTree mixedCaseChild = createSampleFileTree( "/Folder", "Folder" );
+
+    rootTree.addChild( lowerCaseChild );
+    rootTree.addChild( upperCaseChild );
+    rootTree.addChild( mixedCaseChild );
+
+    doReturn( rootTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    options.setExpandedPath( "/Folder" ); // Mixed case
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    List<IGenericFileTree> children = result.getChildren();
+    assertNotNull( children );
+    assertEquals( 3, children.size() );
+
+    // Verify exact match exists
+    assertTrue( children.stream().anyMatch( child ->
+      "Folder".equals( child.getFile().getName() ) ) );
+    assertTrue( children.stream().anyMatch( child ->
+      "folder".equals( child.getFile().getName() ) ) );
+    assertTrue( children.stream().anyMatch( child ->
+      "FOLDER".equals( child.getFile().getName() ) ) );
+  }
+
+  /**
+   * Test equalsName with paths containing multiple segments.
+   * The method should only compare the last segment.
+   */
+  @Test
+  void testEqualsNameComparesLastSegmentOnly() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = createSampleFileTree( "/", "" );
+    BaseGenericFileTree parentFolder = createSampleFileTree( "/parent", "parent" );
+    BaseGenericFileTree childFolder = createSampleFileTree( "/parent/child", "child" );
+
+    rootTree.addChild( parentFolder );
+    parentFolder.addChild( childFolder );
+
+    doReturn( rootTree )
+      .doReturn( parentFolder )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    options.setExpandedPath( "/parent/child" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    List<IGenericFileTree> rootChildren = result.getChildren();
+    assertNotNull( rootChildren );
+    assertEquals( 1, rootChildren.size() );
+
+    IGenericFileTree parentTree = rootChildren.get( 0 );
+    assertEquals( "parent", parentTree.getFile().getName() );
+
+    List<IGenericFileTree> parentChildren = parentTree.getChildren();
+    assertNotNull( parentChildren );
+    assertEquals( 1, parentChildren.size() );
+
+    IGenericFileTree childTree = parentChildren.get( 0 );
+    assertEquals( "child", childTree.getFile().getName() );
+  }
+
+  /**
+   * Test equalsName with empty string name.
+   * This should not match any valid file.
+   */
+  @Test
+  void testEqualsNameWithEmptyStringDoesNotMatch() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+
+    doReturn( rootTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    // Try to expand with an empty segment (which shouldn't match anything)
+    options.setExpandedPath( "/" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // Root should still have its normal children
+    List<IGenericFileTree> children = result.getChildren();
+    assertNotNull( children );
+    assertEquals( 2, children.size() );
+  }
+  // endregion
 }
