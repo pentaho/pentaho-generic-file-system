@@ -291,6 +291,9 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     }
   }
 
+  // This method used the getFile().getName() and now uses GenericFilePath to get the last segment from the path of
+  // the same file. This was changed because, in the previous way, the getName(), was returning a URL decoded name
+  // while the expanded paths were using encoded names, causing mismatches.
   @Nullable
   private IGenericFileTree findChildTreeByName( @NonNull List<IGenericFileTree> childTrees, @NonNull String name ) {
     return childTrees.stream()
@@ -302,7 +305,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     try {
       return name.equals( GenericFilePath.parseRequired( file.getPath() ).getLastSegment() );
     } catch ( InvalidPathException e ) {
-      Logger.error( this.getClass().getName(), "Failed to get path: " + file, e );
+      Logger.error( this.getClass().getName(), "Failed to parse file path: " + file.getPath(), e );
       return false;
     }
   }
