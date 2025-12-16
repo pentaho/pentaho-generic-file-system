@@ -17,6 +17,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -293,8 +294,17 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   @Nullable
   private IGenericFileTree findChildTreeByName( @NonNull List<IGenericFileTree> childTrees, @NonNull String name ) {
     return childTrees.stream()
-      .filter( childTree -> name.equals( childTree.getFile().getName() ) )
+      .filter( childTree -> equalsName( childTree.getFile(), name ) )
       .findFirst().orElse( null );
+  }
+
+  private boolean equalsName( @NonNull IGenericFile file, @NonNull String name ) {
+    try {
+      return name.equals( GenericFilePath.parseRequired( file.getPath() ).getLastSegment() );
+    } catch ( InvalidPathException e ) {
+      Logger.error( this.getClass().getName(), "Failed to get path: " + file, e );
+      return false;
+    }
   }
   // endregion
 
