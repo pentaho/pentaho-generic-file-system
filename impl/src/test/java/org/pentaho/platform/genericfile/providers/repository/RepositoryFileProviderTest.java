@@ -17,10 +17,12 @@ import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.GenericFileSid;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -32,6 +34,8 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
+import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -43,6 +47,8 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclAceDto;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
@@ -2406,6 +2412,206 @@ class RepositoryFileProviderTest {
   }
   // endregion
 
+  // region getFileAcl
+  @Test
+  void testGetFileAclSuccess() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    doReturn( nativeAcl ).when( fileServiceMock ).doGetFileAcl( encodeRepositoryPath( path.toString() ) );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( acl ).when( repositoryProvider ).convertFromNativeFileAcl( nativeAcl );
+
+    IGenericFileAcl result = repositoryProvider.getFileAcl( path );
+
+    assertNotNull( result );
+    assertSame( acl, result );
+    verify( fileServiceMock ).doGetFileAcl( encodeRepositoryPath( path.toString() ) );
+  }
+
+  @Test
+  void testGetFileAclNotFound() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    assertThrows( NotFoundException.class, () -> repositoryProvider.getFileAcl( path ) );
+    verify( fileServiceMock, never() ).doGetFileAcl( any() );
+  }
+
+  @Test
+  void testGetFileAclResourceAccessDeniedException() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    doThrow( UnifiedRepositoryAccessDeniedException.class ).when( fileServiceMock )
+      .doGetFileAcl( encodeRepositoryPath( path.toString() ) );
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.getFileAcl( path ) );
+  }
+
+  @Test
+  void testGetFileAclOperationFailedException() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodeRepositoryPath( path.toString() ) );
+    doThrow( new RuntimeException( "acl failed" ) ).when( fileServiceMock )
+      .doGetFileAcl( encodeRepositoryPath( path.toString() ) );
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.getFileAcl( path ) );
+  }
+  // endregion
+
+  // region setFileAcl
+  @Test
+  void testSetFileAclSuccess() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doNothing().when( fileServiceMock ).setFileAcls( any(), any() );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( true ).when( repositoryProvider ).validateUsersAndRoles( acl );
+
+    repositoryProvider.setFileAcl( path, acl );
+
+    verify( fileServiceMock ).setFileAcls( encodeRepositoryPath( path.toString() ), nativeAcl );
+  }
+
+  @Test
+  void testSetFileAclNotFound() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doThrow( FileNotFoundException.class ).when( fileServiceMock ).setFileAcls( any(), any() );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( true ).when( repositoryProvider ).validateUsersAndRoles( acl );
+
+    assertThrows( NotFoundException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
+  }
+
+  @Test
+  void testSetFileAclAccessControlException() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( false ).when( repositoryProvider ).validateUsersAndRoles( acl );
+
+    assertThrows( AccessControlException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
+    verify( fileServiceMock, never() ).setFileAcls( any(), any() );
+  }
+  // endregion
+
+  // region validateUsersAndRoles
+  @ParameterizedTest
+  @ValueSource( strings = { "validUser", "admin", "pentahoRepoAdmin" } )
+  void testValidateUsersAndRolesSuccess( String owner ) {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( owner ).when( acl ).getOwner();
+    doReturn( Collections.emptyList() ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    assertTrue( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource( strings = { "", "user#invalid", "user+invalid", "user<invalid", " user<invalid", "user<invalid ", " user<invalid " } )
+  void testValidateUsersAndRolesError( String owner ) {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( owner ).when( acl ).getOwner();
+    doReturn( Collections.emptyList() ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    assertFalse( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @Test
+  void testValidateUsersAndRolesWithValidAces() {
+    IGenericFileAce ace1 = mock( IGenericFileAce.class );
+    doReturn( "user1" ).when( ace1 ).getRecipient();
+    IGenericFileAce ace2 = mock( IGenericFileAce.class );
+    doReturn( "user2" ).when( ace2 ).getRecipient();
+
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( Arrays.asList( ace1, ace2 ) ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    assertTrue( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource( strings = { "", "user#invalid", "user>invalid" } )
+  void testValidateUsersAndRolesWithInvalidRecipient( String recipient ) {
+    IGenericFileAce ace = mock( IGenericFileAce.class );
+    doReturn( recipient ).when( ace ).getRecipient();
+
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( Collections.singletonList( ace ) ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    assertFalse( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @Test
+  void testValidateUsersAndRolesWithMixedValidAndInvalidAces() {
+    IGenericFileAce ace1 = mock( IGenericFileAce.class );
+    doReturn( "validRecipient" ).when( ace1 ).getRecipient();
+    IGenericFileAce ace2 = mock( IGenericFileAce.class );
+    doReturn( "" ).when( ace2 ).getRecipient();
+
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( Arrays.asList( ace1, ace2 ) ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    assertFalse( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+  // endregion
+
   // region doesFolderExist
   @Test
   void testDoesFolderExistTrue() throws OperationFailedException {
@@ -2736,6 +2942,312 @@ class RepositoryFileProviderTest {
     String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.ALL );
 
     assertEquals( "*", result );
+  }
+  // endregion
+
+  // region ACL Conversion Tests
+  @Test
+  void testConvertFromNativeFileAcl() {
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+    nativeAcl.setOwner( "admin" );
+    nativeAcl.setOwnerType( 0 ); // USER
+
+    RepositoryFileAclAceDto ace1 = new RepositoryFileAclAceDto();
+    ace1.setRecipient( "user1" );
+    ace1.setRecipientType( 0 ); // USER
+    ace1.setPermissions( List.of( 0, 1 ) ); // READ, WRITE
+
+    RepositoryFileAclAceDto ace2 = new RepositoryFileAclAceDto();
+    ace2.setRecipient( "role1" );
+    ace2.setRecipientType( 1 ); // ROLE
+    ace2.setPermissions( List.of( 0 ) ); // READ
+
+    nativeAcl.setAces( List.of( ace1, ace2 ), true );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAcl result = repositoryProvider.convertFromNativeFileAcl( nativeAcl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( GenericFileSid.USER, result.getOwnerType() );
+    assertTrue( result.isEntriesInheriting() );
+    assertEquals( 2, result.getEntries().size() );
+
+    IGenericFileAce entry1 = result.getEntries().get( 0 );
+    assertEquals( "user1", entry1.getRecipient() );
+    assertEquals( GenericFileSid.USER, entry1.getRecipientType() );
+    assertEquals( 2, entry1.getPermissions().size() );
+    assertEquals( GenericFilePermission.READ, entry1.getPermissions().get( 0 ) );
+    assertEquals( GenericFilePermission.WRITE, entry1.getPermissions().get( 1 ) );
+
+    IGenericFileAce entry2 = result.getEntries().get( 1 );
+    assertEquals( "role1", entry2.getRecipient() );
+    assertEquals( GenericFileSid.ROLE, entry2.getRecipientType() );
+    assertEquals( 1, entry2.getPermissions().size() );
+    assertEquals( GenericFilePermission.READ, entry2.getPermissions().get( 0 ) );
+  }
+
+  @Test
+  void testConvertFromNativeFileAclWithNullAces() {
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+    nativeAcl.setOwner( "admin" );
+    nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setAces( null, false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAcl result = repositoryProvider.convertFromNativeFileAcl( nativeAcl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( GenericFileSid.USER, result.getOwnerType() );
+    assertFalse( result.isEntriesInheriting() );
+    assertNotNull( result.getEntries() );
+    assertTrue( result.getEntries().isEmpty() );
+  }
+
+  @Test
+  void testConvertFromNativeFileAclEntry() {
+    RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
+    nativeEntry.setRecipient( "testUser" );
+    nativeEntry.setRecipientType( 0 ); // USER
+    nativeEntry.setPermissions( List.of( 0, 1, 2, 3, 4 ) ); // READ, WRITE, DELETE, ACL_MANAGEMENT, ALL
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAce result = repositoryProvider.convertFromNativeFileAclEntry( nativeEntry );
+
+    assertNotNull( result );
+    assertEquals( "testUser", result.getRecipient() );
+    assertEquals( GenericFileSid.USER, result.getRecipientType() );
+    assertEquals( 5, result.getPermissions().size() );
+    assertEquals( GenericFilePermission.READ, result.getPermissions().get( 0 ) );
+    assertEquals( GenericFilePermission.WRITE, result.getPermissions().get( 1 ) );
+    assertEquals( GenericFilePermission.DELETE, result.getPermissions().get( 2 ) );
+    assertEquals( GenericFilePermission.ACL_MANAGEMENT, result.getPermissions().get( 3 ) );
+    assertEquals( GenericFilePermission.ALL, result.getPermissions().get( 4 ) );
+  }
+
+  @Test
+  void testConvertFromNativeFileAclEntryWithNullPermissions() {
+    RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
+    nativeEntry.setRecipient( "testRole" );
+    nativeEntry.setRecipientType( 1 ); // ROLE
+    nativeEntry.setPermissions( null );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAce result = repositoryProvider.convertFromNativeFileAclEntry( nativeEntry );
+
+    assertNotNull( result );
+    assertEquals( "testRole", result.getRecipient() );
+    assertEquals( GenericFileSid.ROLE, result.getRecipientType() );
+    assertNotNull( result.getPermissions() );
+    assertTrue( result.getPermissions().isEmpty() );
+  }
+
+  @Test
+  void testConvertFromNativeFileAclEntryInvalidPermissions() {
+    RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
+    nativeEntry.setRecipient( "testUser" );
+    nativeEntry.setRecipientType( 0 ); // USER
+    nativeEntry.setPermissions( List.of( 0, -1 ) ); // READ, UNKNOWN
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAce result = repositoryProvider.convertFromNativeFileAclEntry( nativeEntry );
+
+    assertNotNull( result );
+    assertEquals( "testUser", result.getRecipient() );
+    assertEquals( GenericFileSid.USER, result.getRecipientType() );
+    assertEquals( 1, result.getPermissions().size() );
+    assertEquals( GenericFilePermission.READ, result.getPermissions().get( 0 ) );
+  }
+
+  @Test
+  void testConvertToNativeFileAcl() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    IGenericFileAce ace1 = mock( IGenericFileAce.class );
+    IGenericFileAce ace2 = mock( IGenericFileAce.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( GenericFileSid.USER ).when( acl ).getOwnerType();
+    doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( List.of( ace1, ace2 ) ).when( acl ).getEntries();
+
+    doReturn( "user1" ).when( ace1 ).getRecipient();
+    doReturn( GenericFileSid.USER ).when( ace1 ).getRecipientType();
+    doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE ) ).when( ace1 ).getPermissions();
+
+    doReturn( "role1" ).when( ace2 ).getRecipient();
+    doReturn( GenericFileSid.ROLE ).when( ace2 ).getRecipientType();
+    doReturn( List.of( GenericFilePermission.READ ) ).when( ace2 ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( 0, result.getOwnerType() ); // USER
+    assertTrue( result.isEntriesInheriting() );
+    assertEquals( 2, result.getAces().size() );
+
+    RepositoryFileAclAceDto nativeAce1 = result.getAces().get( 0 );
+    assertEquals( "user1", nativeAce1.getRecipient() );
+    assertEquals( 0, nativeAce1.getRecipientType() ); // USER
+    assertEquals( 2, nativeAce1.getPermissions().size() );
+    assertEquals( 0, nativeAce1.getPermissions().get( 0 ) ); // READ
+    assertEquals( 1, nativeAce1.getPermissions().get( 1 ) ); // WRITE
+
+    RepositoryFileAclAceDto nativeAce2 = result.getAces().get( 1 );
+    assertEquals( "role1", nativeAce2.getRecipient() );
+    assertEquals( 1, nativeAce2.getRecipientType() ); // ROLE
+    assertEquals( 1, nativeAce2.getPermissions().size() );
+    assertEquals( 0, nativeAce2.getPermissions().get( 0 ) ); // READ
+  }
+
+  @Test
+  void testConvertToNativeFileAclWithNullOwnerType() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( null ).when( acl ).getOwnerType();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+    doReturn( Collections.emptyList() ).when( acl ).getEntries();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( -1, result.getOwnerType() ); // Default value
+    assertFalse( result.isEntriesInheriting() );
+    assertNotNull( result.getAces() );
+    assertTrue( result.getAces().isEmpty() );
+  }
+
+  @Test
+  void testConvertToNativeFileAclEntry() {
+    IGenericFileAce ace = mock( IGenericFileAce.class );
+
+    doReturn( "testUser" ).when( ace ).getRecipient();
+    doReturn( GenericFileSid.USER ).when( ace ).getRecipientType();
+    doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE, GenericFilePermission.DELETE,
+      GenericFilePermission.ACL_MANAGEMENT, GenericFilePermission.ALL ) ).when( ace ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclAceDto result = repositoryProvider.convertToNativeFileAclEntry( ace );
+
+    assertNotNull( result );
+    assertEquals( "testUser", result.getRecipient() );
+    assertEquals( 0, result.getRecipientType() ); // USER
+    assertEquals( 5, result.getPermissions().size() );
+    assertEquals( 0, result.getPermissions().get( 0 ) ); // READ
+    assertEquals( 1, result.getPermissions().get( 1 ) ); // WRITE
+    assertEquals( 2, result.getPermissions().get( 2 ) ); // DELETE
+    assertEquals( 3, result.getPermissions().get( 3 ) ); // ACL_MANAGEMENT
+    assertEquals( 4, result.getPermissions().get( 4 ) ); // ALL
+  }
+
+  @Test
+  void testConvertToNativeFileAclEntryWithNullRecipientType() {
+    IGenericFileAce ace = mock( IGenericFileAce.class );
+
+    doReturn( "testRole" ).when( ace ).getRecipient();
+    doReturn( null ).when( ace ).getRecipientType();
+    doReturn( List.of( GenericFilePermission.READ ) ).when( ace ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclAceDto result = repositoryProvider.convertToNativeFileAclEntry( ace );
+
+    assertNotNull( result );
+    assertEquals( "testRole", result.getRecipient() );
+    assertEquals( -1, result.getRecipientType() ); // Default value
+    assertEquals( 1, result.getPermissions().size() );
+    assertEquals( 0, result.getPermissions().get( 0 ) ); // READ
+  }
+
+  @Test
+  void testConvertToNativeFileAclEntryWithEmptyPermissions() {
+    IGenericFileAce ace = mock( IGenericFileAce.class );
+
+    doReturn( "testUser" ).when( ace ).getRecipient();
+    doReturn( GenericFileSid.ROLE ).when( ace ).getRecipientType();
+    doReturn( Collections.emptyList() ).when( ace ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclAceDto result = repositoryProvider.convertToNativeFileAclEntry( ace );
+
+    assertNotNull( result );
+    assertEquals( "testUser", result.getRecipient() );
+    assertEquals( 1, result.getRecipientType() ); // ROLE
+    assertNotNull( result.getPermissions() );
+    assertTrue( result.getPermissions().isEmpty() );
+  }
+
+  @Test
+  void testConvertFromNativeFileAclRoundTrip() {
+    // Create a native ACL
+    RepositoryFileAclDto originalNativeAcl = new RepositoryFileAclDto();
+    originalNativeAcl.setOwner( "admin" );
+    originalNativeAcl.setOwnerType( 0 ); // USER
+
+    RepositoryFileAclAceDto ace = new RepositoryFileAclAceDto();
+    ace.setRecipient( "user1" );
+    ace.setRecipientType( 1 ); // ROLE
+    ace.setPermissions( List.of( 0, 1, 2 ) ); // READ, WRITE, DELETE
+
+    originalNativeAcl.setAces( List.of( ace ), true );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    // Convert native -> generic -> native
+    IGenericFileAcl genericAcl = repositoryProvider.convertFromNativeFileAcl( originalNativeAcl );
+    RepositoryFileAclDto roundTripNativeAcl = repositoryProvider.convertToNativeFileAcl( genericAcl );
+
+    // Verify round trip
+    assertEquals( originalNativeAcl.getOwner(), roundTripNativeAcl.getOwner() );
+    assertEquals( originalNativeAcl.getOwnerType(), roundTripNativeAcl.getOwnerType() );
+    assertEquals( originalNativeAcl.isEntriesInheriting(), roundTripNativeAcl.isEntriesInheriting() );
+    assertEquals( originalNativeAcl.getAces().size(), roundTripNativeAcl.getAces().size() );
+
+    RepositoryFileAclAceDto originalAce = originalNativeAcl.getAces().get( 0 );
+    RepositoryFileAclAceDto roundTripAce = roundTripNativeAcl.getAces().get( 0 );
+
+    assertEquals( originalAce.getRecipient(), roundTripAce.getRecipient() );
+    assertEquals( originalAce.getRecipientType(), roundTripAce.getRecipientType() );
+    assertEquals( originalAce.getPermissions().size(), roundTripAce.getPermissions().size() );
+    assertEquals( originalAce.getPermissions().get( 0 ), roundTripAce.getPermissions().get( 0 ) );
+    assertEquals( originalAce.getPermissions().get( 1 ), roundTripAce.getPermissions().get( 1 ) );
+    assertEquals( originalAce.getPermissions().get( 2 ), roundTripAce.getPermissions().get( 2 ) );
   }
   // endregion
 }

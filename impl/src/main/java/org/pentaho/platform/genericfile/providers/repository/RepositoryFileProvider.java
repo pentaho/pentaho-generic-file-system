@@ -19,6 +19,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.GenericFileSid;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -30,6 +31,8 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
+import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -39,6 +42,8 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclAceDto;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringValueDto;
@@ -47,6 +52,8 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
+import org.pentaho.platform.genericfile.model.BaseGenericFileAce;
+import org.pentaho.platform.genericfile.model.BaseGenericFileAcl;
 import org.pentaho.platform.genericfile.model.BaseGenericFileMetadata;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.model.DefaultGenericFileContent;
@@ -63,6 +70,7 @@ import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStrea
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.util.StringUtil;
+import org.pentaho.platform.web.http.api.resources.FileResource;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
@@ -78,12 +86,18 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang.StringUtils.isBlank;
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
 @SuppressWarnings( { "java:S3008", "java:S1192" } )
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
+  private static final String INVALID_SECURITY_PRINCIPAL_CHARACTERS = "[#,+\"\\\\<>;]";
+  private static final Pattern INVALID_SECURITY_PRINCIPAL_PATTERN =
+    Pattern.compile( INVALID_SECURITY_PRINCIPAL_CHARACTERS );
+
   public static final String ROOT_PATH = "/";
   public static final String FOLDER_NAME_TRASH = ".trash";
 
@@ -784,6 +798,38 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @NonNull
+  @Override
+  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
+    String pathString = pathToString( path );
+
+    if ( !fileService.doesExist( pathString ) ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
+    }
+
+    try {
+      return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString ) );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+    } catch ( Exception e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  @Override
+  public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException {
+    if ( !validateUsersAndRoles( acl ) ) {
+      throw new AccessControlException( "User is not authorized to perform this operation." );
+    }
+
+    try {
+      fileService.setFileAcls( pathToString( path ), convertToNativeFileAcl( acl ) );
+    } catch ( FileNotFoundException e ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
+    }
+  }
+
   protected String pathToString( @NonNull GenericFilePath path ) {
     Objects.requireNonNull( path );
     return encodeRepositoryPath( path.toString() );
@@ -886,5 +932,143 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     Collections.reverse( location );
 
     return location;
+  }
+
+  /**
+   * Checks if the given users and roles are valid, i.e. don't contain illegal characters.
+   * Illegal characters may lead to repository corruption.
+   * <p>
+   * RFC 2253 - The names of security principal objects can contain all Unicode characters except the special LDAP
+   * characters defined in RFC 2253. This list of special characters includes: a leading space; a trailing space;
+   * and any of the following characters: # , + " \ < > ;
+   *
+   * @param acl the ACL containing the permissions we want to set
+   * @return true if all users and roles are valid, false otherwise
+   */
+  protected boolean validateUsersAndRoles( @NonNull IGenericFileAcl acl ) {
+    // this is a special case when logged in as 'admin'
+    if ( Objects.equals( acl.getOwner(), FileResource.REPOSITORY_ADMIN_USERNAME ) ) {
+      return true;
+    }
+
+    if ( !validateSecurityPrincipal( acl.getOwner() ) ) {
+      return false;
+    }
+
+    // then check the ACL recipients
+    for ( IGenericFileAce entry : acl.getEntries() ) {
+      if ( !validateSecurityPrincipal( entry.getRecipient() ) ) {
+        return false;
+      }
+    }
+
+    // if all users and roles are syntactically valid we end up here!
+    return true;
+  }
+
+  /**
+   * Checks if all characters in the security principal name are valid.
+   *
+   * @param principal The security principal to validate
+   * @return true if all characters are valid.
+   */
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  protected boolean validateSecurityPrincipal( String principal ) {
+    if ( isBlank( principal ) ) {
+      return false;
+    }
+
+    // RFC 2253: leading and trailing spaces are illegal in security principal names.
+    if ( !principal.equals( principal.trim() ) ) {
+      return false;
+    }
+
+    return !INVALID_SECURITY_PRINCIPAL_PATTERN.matcher( principal ).find();
+  }
+
+  /**
+   * Converts a native {@link RepositoryFileAclDto} to a {@link IGenericFileAcl}.
+   *
+   * @param nativeAcl The native ACL DTO
+   * @return The generic file ACL
+   */
+  @NonNull
+  protected IGenericFileAcl convertFromNativeFileAcl( @NonNull RepositoryFileAclDto nativeAcl ) {
+    BaseGenericFileAcl acl = new BaseGenericFileAcl();
+
+    acl.setOwner( nativeAcl.getOwner() );
+    acl.setOwnerType( GenericFileSid.fromValue( nativeAcl.getOwnerType() ) );
+    acl.setEntriesInheriting( nativeAcl.isEntriesInheriting() );
+
+    if ( nativeAcl.getAces() != null ) {
+      acl.setEntries( nativeAcl.getAces().stream().map( this::convertFromNativeFileAclEntry ).toList() );
+    }
+
+    return acl;
+  }
+
+  /**
+   * Converts a native {@link RepositoryFileAclAceDto} to a {@link IGenericFileAce}.
+   *
+   * @param nativeEntry The native ACL entry DTO
+   * @return The generic file ACL entry
+   */
+  @NonNull
+  protected IGenericFileAce convertFromNativeFileAclEntry( @NonNull RepositoryFileAclAceDto nativeEntry ) {
+    BaseGenericFileAce ace = new BaseGenericFileAce();
+
+    ace.setRecipient( nativeEntry.getRecipient() );
+    ace.setRecipientType( GenericFileSid.fromValue( nativeEntry.getRecipientType() ) );
+
+    if ( nativeEntry.getPermissions() != null ) {
+      ace.setPermissions(
+        nativeEntry.getPermissions().stream().map( GenericFilePermission::fromValue ).filter( Objects::nonNull )
+          .toList() );
+    }
+
+    return ace;
+  }
+
+  /**
+   * Converts a {@link IGenericFileAcl} to a native {@link RepositoryFileAclDto}.
+   *
+   * @param acl The generic file ACL
+   * @return The native ACL DTO
+   */
+  @NonNull
+  protected RepositoryFileAclDto convertToNativeFileAcl( @NonNull IGenericFileAcl acl ) {
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+
+    nativeAcl.setOwner( acl.getOwner() );
+
+    if ( acl.getOwnerType() != null ) {
+      nativeAcl.setOwnerType( acl.getOwnerType().getValue() );
+    }
+
+    nativeAcl.setAces( acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).toList(),
+      acl.isEntriesInheriting() );
+
+    return nativeAcl;
+  }
+
+  /**
+   * Converts a {@link IGenericFileAce} to a native {@link RepositoryFileAclAceDto}.
+   *
+   * @param entry The generic file ACL entry
+   * @return The native ACL entry DTO
+   */
+  @NonNull
+  protected RepositoryFileAclAceDto convertToNativeFileAclEntry( @NonNull IGenericFileAce entry ) {
+    RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
+
+    nativeEntry.setRecipient( entry.getRecipient() );
+
+    if ( entry.getRecipientType() != null ) {
+      nativeEntry.setRecipientType( entry.getRecipientType().getValue() );
+    }
+
+    nativeEntry.setPermissions( entry.getPermissions().stream().map( GenericFilePermission::getValue ).toList() );
+
+    return nativeEntry;
   }
 }
