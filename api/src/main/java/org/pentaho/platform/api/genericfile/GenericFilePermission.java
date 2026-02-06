@@ -14,12 +14,40 @@
 package org.pentaho.platform.api.genericfile;
 
 public enum GenericFilePermission {
-  READ,
-  WRITE,
-  DELETE,
-  ACL_MANAGEMENT,
-  ALL;
+  READ( 0 ),
+  WRITE( 1 ),
+  DELETE( 2 ),
+  ACL_MANAGEMENT( 3 ),
+  ALL( 4 );
 
-  private GenericFilePermission() {
+  private final int value;
+
+  GenericFilePermission( int value ) {
+    this.value = value;
+  }
+
+  /**
+   * Gets the numeric value associated with this permission.
+   *
+   * @return The numeric value.
+   */
+  public int getValue() {
+    return value;
+  }
+
+  /**
+   * Gets the permission enum from its numeric value.
+   *
+   * @param value The numeric value.
+   * @return The corresponding permission, or {@code null} if not found.
+   */
+  public static GenericFilePermission fromValue( int value ) {
+    for ( GenericFilePermission permission : values() ) {
+      if ( permission.value == value ) {
+        return permission;
+      }
+    }
+
+    return null;
   }
 }
