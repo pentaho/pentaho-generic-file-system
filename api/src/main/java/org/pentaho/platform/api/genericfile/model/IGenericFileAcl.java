@@ -13,7 +13,6 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.List;
@@ -29,32 +28,18 @@ public interface IGenericFileAcl {
   /**
    * Gets the owner of the file.
    *
-   * @return The owner of the file, or {@code null} if not set.
+   * @return The owner of the file.
    */
-  @Nullable
+  @NonNull
   String getOwner();
-
-  /**
-   * Sets the owner of the file.
-   *
-   * @param owner The owner of the file.
-   */
-  void setOwner( @Nullable String owner );
 
   /**
    * Gets the type of the owner (e.g., {@link GenericFilePrincipalType#USER} or {@link GenericFilePrincipalType#ROLE}).
    *
-   * @return The owner type, or {@code null} if not set.
+   * @return The owner type.
    */
-  @Nullable
+  @NonNull
   GenericFilePrincipalType getOwnerType();
-
-  /**
-   * Sets the type of the owner.
-   *
-   * @param ownerType The owner type.
-   */
-  void setOwnerType( @Nullable GenericFilePrincipalType ownerType );
 
   /**
    * Indicates whether entries are inheriting from the parent folder.
@@ -64,32 +49,11 @@ public interface IGenericFileAcl {
   boolean isEntriesInheriting();
 
   /**
-   * Sets whether entries should inherit from the parent folder.
-   *
-   * @param entriesInheriting {@code true} to enable inheritance; {@code false} otherwise.
-   */
-  void setEntriesInheriting( boolean entriesInheriting );
-
-  /**
    * Gets the list of access control entries (ACEs).
    *
-   * @return A list of ACEs, or an empty list if none are defined.
+   * @return A list of ACEs.
    */
   @NonNull
   List<IGenericFileAce> getEntries();
-
-  /**
-   * Sets the list of access control entries (ACEs).
-   *
-   * @param entries The list of ACEs.
-   */
-  void setEntries( @NonNull List<IGenericFileAce> entries );
-
-  /**
-   * Adds an access control entry (ACE) to the list.
-   *
-   * @param entry The ACE to add.
-   */
-  void addEntry( @NonNull IGenericFileAce entry );
 }
 
