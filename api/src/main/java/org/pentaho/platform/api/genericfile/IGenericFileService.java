@@ -984,11 +984,11 @@ public interface IGenericFileService {
    * Sets the file acl settings, given its path and the acl settings to set.
    *
    * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
-   * @param acl  The acl settings to set.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
-   *                                  (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
+   * @throws InvalidOperationException If the acl settings are not valid.
+   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
+   *                                   (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
   void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
     throws OperationFailedException;
@@ -1002,13 +1002,13 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the file's path to set the acl settings for. This path must not refer
    *             to an item in the trash (deleted).
-   * @param acl  The acl settings to set. If empty, all existing acl settings are removed.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
-   *                                  {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the
-   *                                  trash (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
+   * @throws InvalidOperationException If the acl settings are not valid.
+   * @throws InvalidPathException      If the specified path's string representation is not valid, according to
+   *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the
+   *                                   trash (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileAcl(GenericFilePath, IGenericFileAcl)
    */
   default void setFileAcl( @NonNull String path, @NonNull IGenericFileAcl acl )

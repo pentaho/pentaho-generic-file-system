@@ -13,9 +13,8 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.List;
 
@@ -29,53 +28,25 @@ public interface IGenericFileAce {
   /**
    * Gets the recipient of this ACE.
    *
-   * @return The recipient, or {@code null} if not set.
+   * @return The recipient.
    */
-  @Nullable
+  @NonNull
   String getRecipient();
 
   /**
-   * Sets the recipient of this ACE.
+   * Gets the type of recipient (e.g., {@link GenericFilePrincipalType#USER} or {@link GenericFilePrincipalType#ROLE}).
    *
-   * @param recipient The recipient.
+   * @return The recipient type.
    */
-  void setRecipient( @Nullable String recipient );
-
-  /**
-   * Gets the type of recipient (e.g., {@link GenericFileSid#USER} or {@link GenericFileSid#ROLE}).
-   *
-   * @return The recipient type, or {@code null} if not set.
-   */
-  @Nullable
-  GenericFileSid getRecipientType();
-
-  /**
-   * Sets the type of recipient.
-   *
-   * @param recipientType The recipient type (e.g., {@link GenericFileSid#USER} or {@link GenericFileSid#ROLE}).
-   */
-  void setRecipientType( @Nullable GenericFileSid recipientType );
+  @NonNull
+  GenericFilePrincipalType getRecipientType();
 
   /**
    * Gets the list of permissions granted to the recipient.
    *
-   * @return A list of permission, or an empty list if none are defined.
+   * @return A list of permissions.
    */
   @NonNull
   List<GenericFilePermission> getPermissions();
-
-  /**
-   * Sets the list of permissions granted to the recipient.
-   *
-   * @param permissions The list of permissions.
-   */
-  void setPermissions( @NonNull List<GenericFilePermission> permissions );
-
-  /**
-   * Adds a permission to the list.
-   *
-   * @param permission The permission to add.
-   */
-  void addPermission( @NonNull GenericFilePermission permission );
 }
 

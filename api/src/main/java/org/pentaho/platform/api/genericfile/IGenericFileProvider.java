@@ -376,7 +376,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Gets the file acl settings, given its path.
    *
    * @param path The file path to get the acl settings from. This path must not refer to an item in the trash (deleted).
-   * @return The file acl settings.
+   * @return The file acl settings. The acl must not be empty; otherwise it is considered invalid.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
@@ -391,11 +391,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Sets the file acl settings, given its path and the acl settings to set.
    *
    * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
-   * @param acl  The acl settings to set.
-   * @throws AccessControlException   If the current user cannot perform this operation.
-   * @throws NotFoundException        If the specified path does not exist, or does refer to an item in the trash
-   *                                  (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
+   * @throws InvalidOperationException If the acl settings are not valid.
+   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
+   *                                   (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileAcl(GenericFilePath, IGenericFileAcl)
    */
   void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )

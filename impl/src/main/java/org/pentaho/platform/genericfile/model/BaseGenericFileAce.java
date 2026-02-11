@@ -13,63 +13,40 @@
 package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Default implementation of {@link IGenericFileAce}.
- */
 public class BaseGenericFileAce implements IGenericFileAce {
-  private String recipient;
-  private GenericFileSid recipientType;
-  private List<GenericFilePermission> permissions;
+  private final String recipient;
+  private final GenericFilePrincipalType recipientType;
+  private final List<GenericFilePermission> permissions;
 
-  public BaseGenericFileAce() {
-    this.permissions = new ArrayList<>();
+  public BaseGenericFileAce( @NonNull String recipient, @NonNull GenericFilePrincipalType recipientType,
+                             @NonNull List<GenericFilePermission> permissions ) {
+    this.recipient = Objects.requireNonNull( recipient );
+    this.recipientType = Objects.requireNonNull( recipientType );
+    this.permissions = Objects.requireNonNull( permissions );
   }
 
-  @Nullable
+  @NonNull
   @Override
   public String getRecipient() {
     return recipient;
   }
 
+  @NonNull
   @Override
-  public void setRecipient( @Nullable String recipient ) {
-    this.recipient = recipient;
-  }
-
-  @Nullable
-  @Override
-  public GenericFileSid getRecipientType() {
+  public GenericFilePrincipalType getRecipientType() {
     return recipientType;
-  }
-
-  @Override
-  public void setRecipientType( @Nullable GenericFileSid recipientType ) {
-    this.recipientType = recipientType;
   }
 
   @NonNull
   @Override
   public List<GenericFilePermission> getPermissions() {
     return permissions;
-  }
-
-  @Override
-  public void setPermissions( @NonNull List<GenericFilePermission> permissions ) {
-    this.permissions = Objects.requireNonNull( permissions );
-  }
-
-  @Override
-  public void addPermission( @NonNull GenericFilePermission permission ) {
-    Objects.requireNonNull( permission );
-    this.permissions.add( permission );
   }
 }
