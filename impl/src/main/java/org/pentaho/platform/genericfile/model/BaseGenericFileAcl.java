@@ -14,7 +14,7 @@ package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 
@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class BaseGenericFileAcl implements IGenericFileAcl {
   private String owner;
-  private GenericFileSid ownerType;
+  private GenericFilePrincipalType ownerType;
   private boolean entriesInheriting;
   private List<IGenericFileAce> entries;
 
@@ -48,12 +48,12 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
 
   @Nullable
   @Override
-  public GenericFileSid getOwnerType() {
+  public GenericFilePrincipalType getOwnerType() {
     return ownerType;
   }
 
   @Override
-  public void setOwnerType( @Nullable GenericFileSid ownerType ) {
+  public void setOwnerType( @Nullable GenericFilePrincipalType ownerType ) {
     this.ownerType = ownerType;
   }
 

@@ -15,7 +15,7 @@ package org.pentaho.platform.genericfile.model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,13 +78,13 @@ class BaseGenericFileAceTest {
   // region RecipientType Tests
   @Test
   void testSetRecipientType_setsRecipientTypeSuccessfully() {
-    ace.setRecipientType( GenericFileSid.USER );
-    assertEquals( GenericFileSid.USER, ace.getRecipientType() );
+    ace.setRecipientType( GenericFilePrincipalType.USER );
+    assertEquals( GenericFilePrincipalType.USER, ace.getRecipientType() );
   }
 
   @Test
   void testSetRecipientType_acceptsNull() {
-    ace.setRecipientType( GenericFileSid.ROLE );
+    ace.setRecipientType( GenericFilePrincipalType.ROLE );
     ace.setRecipientType( null );
     assertNull( ace.getRecipientType() );
   }
@@ -222,12 +222,12 @@ class BaseGenericFileAceTest {
   @Test
   void testCompleteAceSetup() {
     ace.setRecipient( "user1" );
-    ace.setRecipientType( GenericFileSid.USER );
+    ace.setRecipientType( GenericFilePrincipalType.USER );
     ace.addPermission( GenericFilePermission.READ );
     ace.addPermission( GenericFilePermission.WRITE );
 
     assertEquals( "user1", ace.getRecipient() );
-    assertEquals( GenericFileSid.USER, ace.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.USER, ace.getRecipientType() );
     assertEquals( 2, ace.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, ace.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, ace.getPermissions().get( 1 ) );

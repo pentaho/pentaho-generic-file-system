@@ -14,7 +14,7 @@ package org.pentaho.platform.genericfile.model;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
 
 import java.util.ArrayList;
@@ -88,14 +88,14 @@ class BaseGenericFileAclTest {
   // region OwnerType Tests
   @Test
   void testSetOwnerType_setsOwnerTypeSuccessfully() {
-    acl.setOwnerType( GenericFileSid.USER );
+    acl.setOwnerType( GenericFilePrincipalType.USER );
 
-    assertEquals( GenericFileSid.USER, acl.getOwnerType() );
+    assertEquals( GenericFilePrincipalType.USER, acl.getOwnerType() );
   }
 
   @Test
   void testSetOwnerType_acceptsNull() {
-    acl.setOwnerType( GenericFileSid.ROLE );
+    acl.setOwnerType( GenericFilePrincipalType.ROLE );
     acl.setOwnerType( null );
 
     assertNull( acl.getOwnerType() );
@@ -103,15 +103,15 @@ class BaseGenericFileAclTest {
 
   @Test
   void testSetOwnerType_replacesExistingOwnerType() {
-    acl.setOwnerType( GenericFileSid.USER );
-    acl.setOwnerType( GenericFileSid.ROLE );
+    acl.setOwnerType( GenericFilePrincipalType.USER );
+    acl.setOwnerType( GenericFilePrincipalType.ROLE );
 
-    assertEquals( GenericFileSid.ROLE, acl.getOwnerType() );
+    assertEquals( GenericFilePrincipalType.ROLE, acl.getOwnerType() );
   }
 
   @Test
   void testSetOwnerType_supportsAllEnumValues() {
-    for ( GenericFileSid sidType : GenericFileSid.values() ) {
+    for ( GenericFilePrincipalType sidType : GenericFilePrincipalType.values() ) {
       acl.setOwnerType( sidType );
       assertEquals( sidType, acl.getOwnerType() );
     }
@@ -296,7 +296,7 @@ class BaseGenericFileAclTest {
   @Test
   void testCompleteAclSetup() {
     acl.setOwner( "admin" );
-    acl.setOwnerType( GenericFileSid.USER );
+    acl.setOwnerType( GenericFilePrincipalType.USER );
     acl.setEntriesInheriting( true );
 
     IGenericFileAce ace1 = mock( IGenericFileAce.class );
@@ -305,7 +305,7 @@ class BaseGenericFileAclTest {
     acl.addEntry( ace2 );
 
     assertEquals( "admin", acl.getOwner() );
-    assertEquals( GenericFileSid.USER, acl.getOwnerType() );
+    assertEquals( GenericFilePrincipalType.USER, acl.getOwnerType() );
     assertTrue( acl.isEntriesInheriting() );
     assertEquals( 2, acl.getEntries().size() );
   }

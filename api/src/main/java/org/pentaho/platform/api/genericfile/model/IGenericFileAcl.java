@@ -14,7 +14,7 @@ package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.List;
 
@@ -42,19 +42,19 @@ public interface IGenericFileAcl {
   void setOwner( @Nullable String owner );
 
   /**
-   * Gets the type of the owner (e.g., {@link GenericFileSid#USER} or {@link GenericFileSid#ROLE}).
+   * Gets the type of the owner (e.g., {@link GenericFilePrincipalType#USER} or {@link GenericFilePrincipalType#ROLE}).
    *
    * @return The owner type, or {@code null} if not set.
    */
   @Nullable
-  GenericFileSid getOwnerType();
+  GenericFilePrincipalType getOwnerType();
 
   /**
    * Sets the type of the owner.
    *
    * @param ownerType The owner type.
    */
-  void setOwnerType( @Nullable GenericFileSid ownerType );
+  void setOwnerType( @Nullable GenericFilePrincipalType ownerType );
 
   /**
    * Indicates whether entries are inheriting from the parent folder.

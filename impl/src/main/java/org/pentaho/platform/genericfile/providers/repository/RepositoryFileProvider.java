@@ -19,7 +19,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -997,7 +997,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     BaseGenericFileAcl acl = new BaseGenericFileAcl();
 
     acl.setOwner( nativeAcl.getOwner() );
-    acl.setOwnerType( GenericFileSid.fromValue( nativeAcl.getOwnerType() ) );
+    acl.setOwnerType( GenericFilePrincipalType.fromValue( nativeAcl.getOwnerType() ) );
     acl.setEntriesInheriting( nativeAcl.isEntriesInheriting() );
 
     if ( nativeAcl.getAces() != null ) {
@@ -1018,7 +1018,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     BaseGenericFileAce ace = new BaseGenericFileAce();
 
     ace.setRecipient( nativeEntry.getRecipient() );
-    ace.setRecipientType( GenericFileSid.fromValue( nativeEntry.getRecipientType() ) );
+    ace.setRecipientType( GenericFilePrincipalType.fromValue( nativeEntry.getRecipientType() ) );
 
     if ( nativeEntry.getPermissions() != null ) {
       ace.setPermissions(

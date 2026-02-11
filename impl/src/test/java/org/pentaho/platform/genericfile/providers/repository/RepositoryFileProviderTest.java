@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -2972,20 +2972,20 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "admin", result.getOwner() );
-    assertEquals( GenericFileSid.USER, result.getOwnerType() );
+    assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
     assertTrue( result.isEntriesInheriting() );
     assertEquals( 2, result.getEntries().size() );
 
     IGenericFileAce entry1 = result.getEntries().get( 0 );
     assertEquals( "user1", entry1.getRecipient() );
-    assertEquals( GenericFileSid.USER, entry1.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.USER, entry1.getRecipientType() );
     assertEquals( 2, entry1.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, entry1.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, entry1.getPermissions().get( 1 ) );
 
     IGenericFileAce entry2 = result.getEntries().get( 1 );
     assertEquals( "role1", entry2.getRecipient() );
-    assertEquals( GenericFileSid.ROLE, entry2.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.ROLE, entry2.getRecipientType() );
     assertEquals( 1, entry2.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, entry2.getPermissions().get( 0 ) );
   }
@@ -3005,7 +3005,7 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "admin", result.getOwner() );
-    assertEquals( GenericFileSid.USER, result.getOwnerType() );
+    assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
     assertFalse( result.isEntriesInheriting() );
     assertNotNull( result.getEntries() );
     assertTrue( result.getEntries().isEmpty() );
@@ -3026,7 +3026,7 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "testUser", result.getRecipient() );
-    assertEquals( GenericFileSid.USER, result.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.USER, result.getRecipientType() );
     assertEquals( 5, result.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, result.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, result.getPermissions().get( 1 ) );
@@ -3050,7 +3050,7 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "testRole", result.getRecipient() );
-    assertEquals( GenericFileSid.ROLE, result.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.ROLE, result.getRecipientType() );
     assertNotNull( result.getPermissions() );
     assertTrue( result.getPermissions().isEmpty() );
   }
@@ -3070,7 +3070,7 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "testUser", result.getRecipient() );
-    assertEquals( GenericFileSid.USER, result.getRecipientType() );
+    assertEquals( GenericFilePrincipalType.USER, result.getRecipientType() );
     assertEquals( 1, result.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, result.getPermissions().get( 0 ) );
   }
@@ -3082,16 +3082,16 @@ class RepositoryFileProviderTest {
     IGenericFileAce ace2 = mock( IGenericFileAce.class );
 
     doReturn( "admin" ).when( acl ).getOwner();
-    doReturn( GenericFileSid.USER ).when( acl ).getOwnerType();
+    doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
     doReturn( true ).when( acl ).isEntriesInheriting();
     doReturn( List.of( ace1, ace2 ) ).when( acl ).getEntries();
 
     doReturn( "user1" ).when( ace1 ).getRecipient();
-    doReturn( GenericFileSid.USER ).when( ace1 ).getRecipientType();
+    doReturn( GenericFilePrincipalType.USER ).when( ace1 ).getRecipientType();
     doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE ) ).when( ace1 ).getPermissions();
 
     doReturn( "role1" ).when( ace2 ).getRecipient();
-    doReturn( GenericFileSid.ROLE ).when( ace2 ).getRecipientType();
+    doReturn( GenericFilePrincipalType.ROLE ).when( ace2 ).getRecipientType();
     doReturn( List.of( GenericFilePermission.READ ) ).when( ace2 ).getPermissions();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3148,7 +3148,7 @@ class RepositoryFileProviderTest {
     IGenericFileAce ace = mock( IGenericFileAce.class );
 
     doReturn( "testUser" ).when( ace ).getRecipient();
-    doReturn( GenericFileSid.USER ).when( ace ).getRecipientType();
+    doReturn( GenericFilePrincipalType.USER ).when( ace ).getRecipientType();
     doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE, GenericFilePermission.DELETE,
       GenericFilePermission.ACL_MANAGEMENT, GenericFilePermission.ALL ) ).when( ace ).getPermissions();
 
@@ -3195,7 +3195,7 @@ class RepositoryFileProviderTest {
     IGenericFileAce ace = mock( IGenericFileAce.class );
 
     doReturn( "testUser" ).when( ace ).getRecipient();
-    doReturn( GenericFileSid.ROLE ).when( ace ).getRecipientType();
+    doReturn( GenericFilePrincipalType.ROLE ).when( ace ).getRecipientType();
     doReturn( Collections.emptyList() ).when( ace ).getPermissions();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );

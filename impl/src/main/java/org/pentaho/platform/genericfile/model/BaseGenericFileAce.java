@@ -15,7 +15,7 @@ package org.pentaho.platform.genericfile.model;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class BaseGenericFileAce implements IGenericFileAce {
   private String recipient;
-  private GenericFileSid recipientType;
+  private GenericFilePrincipalType recipientType;
   private List<GenericFilePermission> permissions;
 
   public BaseGenericFileAce() {
@@ -47,12 +47,12 @@ public class BaseGenericFileAce implements IGenericFileAce {
 
   @Nullable
   @Override
-  public GenericFileSid getRecipientType() {
+  public GenericFilePrincipalType getRecipientType() {
     return recipientType;
   }
 
   @Override
-  public void setRecipientType( @Nullable GenericFileSid recipientType ) {
+  public void setRecipientType( @Nullable GenericFilePrincipalType recipientType ) {
     this.recipientType = recipientType;
   }
 

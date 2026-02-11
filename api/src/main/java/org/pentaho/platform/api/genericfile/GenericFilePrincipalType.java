@@ -19,7 +19,7 @@ package org.pentaho.platform.api.genericfile;
  * Same abstraction as {@code org.springframework.security.acls.sid.Sid}.
  * </p>
  */
-public enum GenericFileSid {
+public enum GenericFilePrincipalType {
   /**
    * Owner is a user.
    */
@@ -32,7 +32,7 @@ public enum GenericFileSid {
 
   private final int value;
 
-  GenericFileSid( int value ) {
+  GenericFilePrincipalType( int value ) {
     this.value = value;
   }
 
@@ -51,8 +51,8 @@ public enum GenericFileSid {
    * @param value The numeric value.
    * @return The corresponding owner type, or {@code null} if not found.
    */
-  public static GenericFileSid fromValue( int value ) {
-    for ( GenericFileSid type : values() ) {
+  public static GenericFilePrincipalType fromValue( int value ) {
+    for ( GenericFilePrincipalType type : values() ) {
       if ( type.value == value ) {
         return type;
       }

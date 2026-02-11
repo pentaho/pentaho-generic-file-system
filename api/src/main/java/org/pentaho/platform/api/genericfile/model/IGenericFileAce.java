@@ -15,7 +15,7 @@ package org.pentaho.platform.api.genericfile.model;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
-import org.pentaho.platform.api.genericfile.GenericFileSid;
+import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.List;
 
@@ -42,19 +42,19 @@ public interface IGenericFileAce {
   void setRecipient( @Nullable String recipient );
 
   /**
-   * Gets the type of recipient (e.g., {@link GenericFileSid#USER} or {@link GenericFileSid#ROLE}).
+   * Gets the type of recipient (e.g., {@link GenericFilePrincipalType#USER} or {@link GenericFilePrincipalType#ROLE}).
    *
    * @return The recipient type, or {@code null} if not set.
    */
   @Nullable
-  GenericFileSid getRecipientType();
+  GenericFilePrincipalType getRecipientType();
 
   /**
    * Sets the type of recipient.
    *
-   * @param recipientType The recipient type (e.g., {@link GenericFileSid#USER} or {@link GenericFileSid#ROLE}).
+   * @param recipientType The recipient type (e.g., {@link GenericFilePrincipalType#USER} or {@link GenericFilePrincipalType#ROLE}).
    */
-  void setRecipientType( @Nullable GenericFileSid recipientType );
+  void setRecipientType( @Nullable GenericFilePrincipalType recipientType );
 
   /**
    * Gets the list of permissions granted to the recipient.
