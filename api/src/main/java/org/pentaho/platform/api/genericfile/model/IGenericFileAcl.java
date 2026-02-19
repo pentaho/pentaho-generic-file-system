@@ -13,6 +13,7 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
 import java.util.List;
@@ -51,16 +52,18 @@ public interface IGenericFileAcl {
   /**
    * Gets the tenant path associated with the ACL.
    *
-   * @return The tenant path.
+   * @return The tenant path. This may be {@code null} if the ACE is not associated with a specific tenant.
    */
+  @Nullable
   String getTenantPath();
 
   /**
    * Gets the list of access control entries (ACEs).
    *
-   * @return A list of ACEs.
+   * @return A list of ACEs. This may be {@code null} if {@code entriesInheriting} is {@code true}, that is, the ACL
+   * is inheriting entries from the parent folder and does not have its own entries.
    */
-  @NonNull
+  @Nullable
   List<IGenericFileAce> getEntries();
 }
 

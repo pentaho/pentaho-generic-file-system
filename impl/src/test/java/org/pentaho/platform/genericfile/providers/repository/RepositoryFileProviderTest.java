@@ -2729,6 +2729,48 @@ class RepositoryFileProviderTest {
 
     assertTrue( repositoryProvider.validateUsersAndRoles( acl ) );
   }
+
+  @Test
+  void testValidateUsersAndRolesWithEntriesInheritingAndNullEntries() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( null ).when( acl ).getEntries();
+    doReturn( true ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    // When isEntriesInheriting is true, validation should pass regardless of entries
+    assertTrue( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @Test
+  void testValidateUsersAndRolesWithEntriesInheritingAndEmptyEntries() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( Collections.emptyList() ).when( acl ).getEntries();
+    doReturn( true ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    // When isEntriesInheriting is true, validation should pass regardless of entries
+    assertTrue( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
+
+  @Test
+  void testValidateUsersAndRolesWithNullEntriesAndNotInheriting() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    doReturn( "validUser" ).when( acl ).getOwner();
+    doReturn( null ).when( acl ).getEntries();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    // When isEntriesInheriting is false, null entries should fail validation
+    assertFalse( repositoryProvider.validateUsersAndRoles( acl ) );
+  }
   // endregion
 
   // region doesFolderExist
@@ -3086,7 +3128,7 @@ class RepositoryFileProviderTest {
     ace2.setModifiable( false );
     ace2.setPermissions( List.of( 0 ) ); // READ
 
-    nativeAcl.setAces( List.of( ace1, ace2 ), true );
+    nativeAcl.setAces( List.of( ace1, ace2 ), false ); // entriesInheriting = false
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -3097,8 +3139,9 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "admin", result.getOwner() );
     assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
-    assertTrue( result.isEntriesInheriting() );
+    assertFalse( result.isEntriesInheriting() );
     assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertNotNull( result.getEntries() );
     assertEquals( 2, result.getEntries().size() );
 
     IGenericFileAce entry1 = result.getEntries().get( 0 );
@@ -3120,12 +3163,62 @@ class RepositoryFileProviderTest {
   }
 
   @Test
+  void testConvertFromNativeFileAclWithEntriesInheriting() throws InvalidOperationException {
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+    nativeAcl.setOwner( "admin" );
+    nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setTenantPath( "/pentaho/tenant1" );
+
+    // Even if aces are provided, they should be null when entriesInheriting is true
+    RepositoryFileAclAceDto ace = new RepositoryFileAclAceDto();
+    ace.setRecipient( "user1" );
+    ace.setRecipientType( 0 );
+    ace.setPermissions( List.of( 0 ) );
+    nativeAcl.setAces( List.of( ace ), true ); // entriesInheriting = true
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAcl result = repositoryProvider.convertFromNativeFileAcl( nativeAcl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
+    assertTrue( result.isEntriesInheriting() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertNull( result.getEntries() ); // entries should be null when inheriting
+  }
+
+  @Test
   void testConvertFromNativeFileAclWithNullAces() throws InvalidOperationException {
     RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
     nativeAcl.setOwner( "admin" );
     nativeAcl.setOwnerType( 0 ); // USER
     nativeAcl.setTenantPath( null );
     nativeAcl.setAces( null, false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    IGenericFileAcl result = repositoryProvider.convertFromNativeFileAcl( nativeAcl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
+    assertFalse( result.isEntriesInheriting() );
+    assertNull( result.getTenantPath() );
+    assertNull( result.getEntries() ); // null aces should result in null entries
+  }
+
+  @Test
+  void testConvertFromNativeFileAclWithEmptyAces() throws InvalidOperationException {
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+    nativeAcl.setOwner( "admin" );
+    nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setTenantPath( null );
+    nativeAcl.setAces( Collections.emptyList(), false );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -3347,6 +3440,30 @@ class RepositoryFileProviderTest {
     RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     assertThrows( NullPointerException.class, () -> repositoryProvider.convertToNativeFileAcl( acl ) );
+  }
+
+  @Test
+  void testConvertToNativeFileAclWithNullEntriesAndEntriesInheriting() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
+    doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
+    doReturn( null ).when( acl ).getEntries(); // null entries when inheriting
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( 0, result.getOwnerType() ); // USER
+    assertTrue( result.isEntriesInheriting() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertNull( result.getAces() );
   }
 
   @Test

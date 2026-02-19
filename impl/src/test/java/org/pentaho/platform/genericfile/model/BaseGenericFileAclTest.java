@@ -85,8 +85,27 @@ class BaseGenericFileAclTest {
     String owner = "admin";
     GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
 
-    assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAcl( owner, ownerType, false, "/tenant", null ) );
+    // Null entries are allowed when entriesInheriting is true
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, true, "/tenant", null );
+
+    assertEquals( owner, acl.getOwner() );
+    assertEquals( ownerType, acl.getOwnerType() );
+    assertTrue( acl.isEntriesInheriting() );
+    assertNull( acl.getEntries() );
+  }
+
+  @Test
+  void testConstructorWithNullEntriesAndNotInheriting() {
+    String owner = "admin";
+    GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
+
+    // Null entries are also allowed when entriesInheriting is false (validation is caller's responsibility)
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, false, "/tenant", null );
+
+    assertEquals( owner, acl.getOwner() );
+    assertEquals( ownerType, acl.getOwnerType() );
+    assertFalse( acl.isEntriesInheriting() );
+    assertNull( acl.getEntries() );
   }
   // endregion
 
@@ -154,6 +173,14 @@ class BaseGenericFileAclTest {
 
     assertFalse( acl.isEntriesInheriting() );
   }
+
+  @Test
+  void testIsEntriesInheritingTrueWithNullEntries() {
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, true, null, null );
+
+    assertTrue( acl.isEntriesInheriting() );
+    assertNull( acl.getEntries() );
+  }
   // endregion
 
   // region TenantPath Tests
@@ -176,6 +203,13 @@ class BaseGenericFileAclTest {
   // endregion
 
   // region Entries Tests
+  @Test
+  void testGetEntriesNull() {
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, true, null, null );
+
+    assertNull( acl.getEntries() );
+  }
+
   @Test
   void testGetEntriesEmpty() {
     List<IGenericFileAce> entries = Collections.emptyList();

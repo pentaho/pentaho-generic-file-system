@@ -13,6 +13,7 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
@@ -44,8 +45,9 @@ public interface IGenericFileAce {
   /**
    * Gets the tenant path associated with the ACL.
    *
-   * @return The tenant path.
+   * @return The tenant path. This may be {@code null} if the ACE is not associated with a specific tenant.
    */
+  @Nullable
   String getTenantPath();
 
   /**

@@ -13,6 +13,7 @@
 package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAce;
 import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
@@ -27,13 +28,23 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
   private final String tenantPath;
   private final List<IGenericFileAce> entries;
 
+  /**
+   * Creates an ACL with the specified properties.
+   *
+   * @param owner             The owner of the file. Must not be {@code null}.
+   * @param ownerType         The type of the owner. Must not be {@code null}.
+   * @param entriesInheriting Whether entries are inherited from the parent folder.
+   * @param tenantPath        The tenant path. May be {@code null}.
+   * @param entries           The list of ACEs. May be {@code null} if {@code entriesInheriting} is {@code true}.
+   */
   public BaseGenericFileAcl( @NonNull String owner, @NonNull GenericFilePrincipalType ownerType,
-                             boolean entriesInheriting, String tenantPath, @NonNull List<IGenericFileAce> entries ) {
+                             boolean entriesInheriting, @Nullable String tenantPath,
+                             @Nullable List<IGenericFileAce> entries ) {
     this.owner = Objects.requireNonNull( owner );
     this.ownerType = Objects.requireNonNull( ownerType );
     this.entriesInheriting = entriesInheriting;
     this.tenantPath = tenantPath;
-    this.entries = Objects.requireNonNull( entries );
+    this.entries = entries;
   }
 
   @NonNull
@@ -53,12 +64,13 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
     return entriesInheriting;
   }
 
+  @Nullable
   @Override
   public String getTenantPath() {
     return tenantPath;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public List<IGenericFileAce> getEntries() {
     return entries;

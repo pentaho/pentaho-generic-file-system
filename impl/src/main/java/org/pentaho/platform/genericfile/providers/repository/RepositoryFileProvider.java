@@ -954,8 +954,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       return false;
     }
 
+    // If entries are inheriting, no need to validate entries
+    if ( acl.isEntriesInheriting() ) {
+      return true;
+    }
+
     // ACL must contain at least one entry for all owners, including admin
-    if ( acl.getEntries().isEmpty() ) {
+    if ( acl.getEntries() == null || acl.getEntries().isEmpty() ) {
       return false;
     }
 
@@ -1053,9 +1058,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @NonNull
   protected IGenericFileAcl convertFromNativeFileAcl( @NonNull RepositoryFileAclDto nativeAcl )
     throws InvalidOperationException {
-    List<IGenericFileAce> aces = new ArrayList<>();
+    List<IGenericFileAce> aces = null;
 
-    if ( nativeAcl.getAces() != null ) {
+    if ( !nativeAcl.isEntriesInheriting() && nativeAcl.getAces() != null ) {
+      aces = new ArrayList<>();
       for ( RepositoryFileAclAceDto nativeEntry : nativeAcl.getAces() ) {
         aces.add( convertFromNativeFileAclEntry( nativeEntry ) );
       }
@@ -1093,8 +1099,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     nativeAcl.setOwner( acl.getOwner() );
     nativeAcl.setOwnerType( convertToNativePrincipalType( acl.getOwnerType() ) );
     nativeAcl.setTenantPath( acl.getTenantPath() );
-    nativeAcl.setAces( acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).toList(),
-      acl.isEntriesInheriting() );
+
+    List<RepositoryFileAclAceDto> nativeAces = acl.getEntries() != null
+      ? acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).toList()
+      : null;
+    nativeAcl.setAces( nativeAces, acl.isEntriesInheriting() );
 
     return nativeAcl;
   }
