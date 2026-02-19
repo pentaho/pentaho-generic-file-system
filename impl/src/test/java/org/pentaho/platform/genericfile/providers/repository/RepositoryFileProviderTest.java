@@ -71,6 +71,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -3503,6 +3504,52 @@ class RepositoryFileProviderTest {
     for ( int i = 0; i < allPermissions.size(); i++ ) {
       assertEquals( allPermissions.get( i ).ordinal(), nativeAce.getPermissions().get( i ) );
     }
+  }
+
+  @Test
+  void testConvertToNativeFileAclReturnsModifiableAcesList() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    IGenericFileAce ace1 = mock( IGenericFileAce.class );
+    IGenericFileAce ace2 = mock( IGenericFileAce.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+    doReturn( null ).when( acl ).getTenantPath();
+    doReturn( List.of( ace1, ace2 ) ).when( acl ).getEntries();
+
+    doReturn( "user1" ).when( ace1 ).getRecipient();
+    doReturn( GenericFilePrincipalType.USER ).when( ace1 ).getRecipientType();
+    doReturn( null ).when( ace1 ).getTenantPath();
+    doReturn( true ).when( ace1 ).isModifiable();
+    doReturn( List.of( GenericFilePermission.READ ) ).when( ace1 ).getPermissions();
+
+    doReturn( "user2" ).when( ace2 ).getRecipient();
+    doReturn( GenericFilePrincipalType.USER ).when( ace2 ).getRecipientType();
+    doReturn( null ).when( ace2 ).getTenantPath();
+    doReturn( true ).when( ace2 ).isModifiable();
+    doReturn( List.of( GenericFilePermission.WRITE ) ).when( ace2 ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertNotNull( result.getAces() );
+    assertEquals( 2, result.getAces().size() );
+
+    // Verify the list is mutable by removing an item (should not throw UnsupportedOperationException)
+    assertDoesNotThrow( () -> result.getAces().remove( 0 ) );
+    assertEquals( 1, result.getAces().size() );
+    assertEquals( "user2", result.getAces().get( 0 ).getRecipient() );
+
+    // Verify the list is mutable by adding an item
+    RepositoryFileAclAceDto newAce = new RepositoryFileAclAceDto();
+    newAce.setRecipient( "user3" );
+    assertDoesNotThrow( () -> result.getAces().add( newAce ) );
+    assertEquals( 2, result.getAces().size() );
   }
 
   @Test

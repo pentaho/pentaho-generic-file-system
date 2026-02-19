@@ -1101,7 +1101,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     nativeAcl.setTenantPath( acl.getTenantPath() );
 
     List<RepositoryFileAclAceDto> nativeAces = acl.getEntries() != null
-      ? acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).toList()
+      ? acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).collect( Collectors.toList() )
       : null;
     nativeAcl.setAces( nativeAces, acl.isEntriesInheriting() );
 
