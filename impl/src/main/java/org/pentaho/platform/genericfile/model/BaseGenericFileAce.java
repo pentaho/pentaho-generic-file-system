@@ -23,12 +23,16 @@ import java.util.Objects;
 public class BaseGenericFileAce implements IGenericFileAce {
   private final String recipient;
   private final GenericFilePrincipalType recipientType;
+  private final String tenantPath;
+  private final boolean modifiable;
   private final List<GenericFilePermission> permissions;
 
   public BaseGenericFileAce( @NonNull String recipient, @NonNull GenericFilePrincipalType recipientType,
-                             @NonNull List<GenericFilePermission> permissions ) {
+                             String tenantPath, boolean modifiable, @NonNull List<GenericFilePermission> permissions ) {
     this.recipient = Objects.requireNonNull( recipient );
     this.recipientType = Objects.requireNonNull( recipientType );
+    this.tenantPath = tenantPath;
+    this.modifiable = modifiable;
     this.permissions = Objects.requireNonNull( permissions );
   }
 
@@ -42,6 +46,16 @@ public class BaseGenericFileAce implements IGenericFileAce {
   @Override
   public GenericFilePrincipalType getRecipientType() {
     return recipientType;
+  }
+
+  @Override
+  public String getTenantPath() {
+    return tenantPath;
+  }
+
+  @Override
+  public boolean isModifiable() {
+    return modifiable;
   }
 
   @NonNull

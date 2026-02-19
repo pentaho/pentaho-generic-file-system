@@ -42,6 +42,20 @@ public interface IGenericFileAce {
   GenericFilePrincipalType getRecipientType();
 
   /**
+   * Gets the tenant path associated with the ACL.
+   *
+   * @return The tenant path.
+   */
+  String getTenantPath();
+
+  /**
+   * Indicates whether this ACE is modifiable.
+   *
+   * @return {@code true} if the ACE is modifiable; {@code false} otherwise.
+   */
+  boolean isModifiable();
+
+  /**
    * Gets the list of permissions granted to the recipient.
    *
    * @return A list of permissions.

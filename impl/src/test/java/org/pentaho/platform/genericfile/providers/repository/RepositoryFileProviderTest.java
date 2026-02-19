@@ -3070,15 +3070,20 @@ class RepositoryFileProviderTest {
     RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
     nativeAcl.setOwner( "admin" );
     nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setTenantPath( "/pentaho/tenant1" );
 
     RepositoryFileAclAceDto ace1 = new RepositoryFileAclAceDto();
     ace1.setRecipient( "user1" );
     ace1.setRecipientType( 0 ); // USER
+    ace1.setTenantPath( "/pentaho/tenant1" );
+    ace1.setModifiable( true );
     ace1.setPermissions( List.of( 0, 1 ) ); // READ, WRITE
 
     RepositoryFileAclAceDto ace2 = new RepositoryFileAclAceDto();
     ace2.setRecipient( "role1" );
     ace2.setRecipientType( 1 ); // ROLE
+    ace2.setTenantPath( "/pentaho/tenant1" );
+    ace2.setModifiable( false );
     ace2.setPermissions( List.of( 0 ) ); // READ
 
     nativeAcl.setAces( List.of( ace1, ace2 ), true );
@@ -3093,11 +3098,14 @@ class RepositoryFileProviderTest {
     assertEquals( "admin", result.getOwner() );
     assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
     assertTrue( result.isEntriesInheriting() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
     assertEquals( 2, result.getEntries().size() );
 
     IGenericFileAce entry1 = result.getEntries().get( 0 );
     assertEquals( "user1", entry1.getRecipient() );
     assertEquals( GenericFilePrincipalType.USER, entry1.getRecipientType() );
+    assertEquals( "/pentaho/tenant1", entry1.getTenantPath() );
+    assertTrue( entry1.isModifiable() );
     assertEquals( 2, entry1.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, entry1.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, entry1.getPermissions().get( 1 ) );
@@ -3105,6 +3113,8 @@ class RepositoryFileProviderTest {
     IGenericFileAce entry2 = result.getEntries().get( 1 );
     assertEquals( "role1", entry2.getRecipient() );
     assertEquals( GenericFilePrincipalType.ROLE, entry2.getRecipientType() );
+    assertEquals( "/pentaho/tenant1", entry2.getTenantPath() );
+    assertFalse( entry2.isModifiable() );
     assertEquals( 1, entry2.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, entry2.getPermissions().get( 0 ) );
   }
@@ -3114,6 +3124,7 @@ class RepositoryFileProviderTest {
     RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
     nativeAcl.setOwner( "admin" );
     nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setTenantPath( null );
     nativeAcl.setAces( null, false );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3126,6 +3137,7 @@ class RepositoryFileProviderTest {
     assertEquals( "admin", result.getOwner() );
     assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
     assertFalse( result.isEntriesInheriting() );
+    assertNull( result.getTenantPath() );
     assertNotNull( result.getEntries() );
     assertTrue( result.getEntries().isEmpty() );
   }
@@ -3149,10 +3161,13 @@ class RepositoryFileProviderTest {
     RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
     nativeAcl.setOwner( "admin" );
     nativeAcl.setOwnerType( 0 ); // USER
+    nativeAcl.setTenantPath( "/pentaho/tenant1" );
 
     RepositoryFileAclAceDto ace = new RepositoryFileAclAceDto();
     ace.setRecipient( "user1" );
     ace.setRecipientType( 0 ); // USER
+    ace.setTenantPath( "/pentaho/tenant1" );
+    ace.setModifiable( true );
     // Add all permission types (0-4 for READ, WRITE, DELETE, ACL_MANAGEMENT, ALL)
     ace.setPermissions( List.of( 0, 1, 2, 3, 4 ) );
 
@@ -3165,8 +3180,11 @@ class RepositoryFileProviderTest {
     IGenericFileAcl result = repositoryProvider.convertFromNativeFileAcl( nativeAcl );
 
     assertNotNull( result );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
     assertEquals( 1, result.getEntries().size() );
     IGenericFileAce entry = result.getEntries().get( 0 );
+    assertEquals( "/pentaho/tenant1", entry.getTenantPath() );
+    assertTrue( entry.isModifiable() );
     assertEquals( 5, entry.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, entry.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, entry.getPermissions().get( 1 ) );
@@ -3180,6 +3198,8 @@ class RepositoryFileProviderTest {
     RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
     nativeEntry.setRecipient( "testUser" );
     nativeEntry.setRecipientType( 0 ); // USER
+    nativeEntry.setTenantPath( "/pentaho/tenant1" );
+    nativeEntry.setModifiable( true );
     nativeEntry.setPermissions( List.of( 0, 1, 2, 3, 4 ) ); // READ, WRITE, DELETE, ACL_MANAGEMENT, ALL
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3191,6 +3211,8 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "testUser", result.getRecipient() );
     assertEquals( GenericFilePrincipalType.USER, result.getRecipientType() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertTrue( result.isModifiable() );
     assertEquals( 5, result.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, result.getPermissions().get( 0 ) );
     assertEquals( GenericFilePermission.WRITE, result.getPermissions().get( 1 ) );
@@ -3204,6 +3226,8 @@ class RepositoryFileProviderTest {
     RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
     nativeEntry.setRecipient( "testRole" );
     nativeEntry.setRecipientType( 1 ); // ROLE
+    nativeEntry.setTenantPath( null );
+    nativeEntry.setModifiable( false );
     nativeEntry.setPermissions( null );
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3215,6 +3239,8 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "testRole", result.getRecipient() );
     assertEquals( GenericFilePrincipalType.ROLE, result.getRecipientType() );
+    assertNull( result.getTenantPath() );
+    assertFalse( result.isModifiable() );
     assertNotNull( result.getPermissions() );
     assertTrue( result.getPermissions().isEmpty() );
   }
@@ -3260,14 +3286,19 @@ class RepositoryFileProviderTest {
     doReturn( "admin" ).when( acl ).getOwner();
     doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
     doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
     doReturn( List.of( ace1, ace2 ) ).when( acl ).getEntries();
 
     doReturn( "user1" ).when( ace1 ).getRecipient();
     doReturn( GenericFilePrincipalType.USER ).when( ace1 ).getRecipientType();
+    doReturn( "/pentaho/tenant1" ).when( ace1 ).getTenantPath();
+    doReturn( true ).when( ace1 ).isModifiable();
     doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE ) ).when( ace1 ).getPermissions();
 
     doReturn( "role1" ).when( ace2 ).getRecipient();
     doReturn( GenericFilePrincipalType.ROLE ).when( ace2 ).getRecipientType();
+    doReturn( "/pentaho/tenant1" ).when( ace2 ).getTenantPath();
+    doReturn( false ).when( ace2 ).isModifiable();
     doReturn( List.of( GenericFilePermission.READ ) ).when( ace2 ).getPermissions();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3280,11 +3311,14 @@ class RepositoryFileProviderTest {
     assertEquals( "admin", result.getOwner() );
     assertEquals( 0, result.getOwnerType() ); // USER
     assertTrue( result.isEntriesInheriting() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
     assertEquals( 2, result.getAces().size() );
 
     RepositoryFileAclAceDto nativeAce1 = result.getAces().get( 0 );
     assertEquals( "user1", nativeAce1.getRecipient() );
     assertEquals( 0, nativeAce1.getRecipientType() ); // USER
+    assertEquals( "/pentaho/tenant1", nativeAce1.getTenantPath() );
+    assertTrue( nativeAce1.isModifiable() );
     assertEquals( 2, nativeAce1.getPermissions().size() );
     assertEquals( 0, nativeAce1.getPermissions().get( 0 ) ); // READ
     assertEquals( 1, nativeAce1.getPermissions().get( 1 ) ); // WRITE
@@ -3292,6 +3326,8 @@ class RepositoryFileProviderTest {
     RepositoryFileAclAceDto nativeAce2 = result.getAces().get( 1 );
     assertEquals( "role1", nativeAce2.getRecipient() );
     assertEquals( 1, nativeAce2.getRecipientType() ); // ROLE
+    assertEquals( "/pentaho/tenant1", nativeAce2.getTenantPath() );
+    assertFalse( nativeAce2.isModifiable() );
     assertEquals( 1, nativeAce2.getPermissions().size() );
     assertEquals( 0, nativeAce2.getPermissions().get( 0 ) ); // READ
   }
@@ -3303,6 +3339,7 @@ class RepositoryFileProviderTest {
     doReturn( "admin" ).when( acl ).getOwner();
     doReturn( null ).when( acl ).getOwnerType();
     doReturn( false ).when( acl ).isEntriesInheriting();
+    doReturn( null ).when( acl ).getTenantPath();
     doReturn( Collections.emptyList() ).when( acl ).getEntries();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3319,11 +3356,14 @@ class RepositoryFileProviderTest {
     doReturn( "testOwner" ).when( acl ).getOwner();
     doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
     doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
 
     List<GenericFilePermission> allPermissions = Arrays.asList( GenericFilePermission.values() );
     IGenericFileAce ace = mock( IGenericFileAce.class );
     doReturn( "testUser" ).when( ace ).getRecipient();
     doReturn( GenericFilePrincipalType.ROLE ).when( ace ).getRecipientType();
+    doReturn( "/pentaho/tenant1" ).when( ace ).getTenantPath();
+    doReturn( true ).when( ace ).isModifiable();
     doReturn( allPermissions ).when( ace ).getPermissions();
 
     doReturn( List.of( ace ) ).when( acl ).getEntries();
@@ -3336,9 +3376,12 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( GenericFilePrincipalType.USER.ordinal(), result.getOwnerType() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
     assertEquals( 1, result.getAces().size() );
     RepositoryFileAclAceDto nativeAce = result.getAces().get( 0 );
     assertEquals( GenericFilePrincipalType.ROLE.ordinal(), nativeAce.getRecipientType() );
+    assertEquals( "/pentaho/tenant1", nativeAce.getTenantPath() );
+    assertTrue( nativeAce.isModifiable() );
     assertEquals( allPermissions.size(), nativeAce.getPermissions().size() );
     for ( int i = 0; i < allPermissions.size(); i++ ) {
       assertEquals( allPermissions.get( i ).ordinal(), nativeAce.getPermissions().get( i ) );
@@ -3351,6 +3394,8 @@ class RepositoryFileProviderTest {
 
     doReturn( "testUser" ).when( ace ).getRecipient();
     doReturn( GenericFilePrincipalType.USER ).when( ace ).getRecipientType();
+    doReturn( "/pentaho/tenant1" ).when( ace ).getTenantPath();
+    doReturn( true ).when( ace ).isModifiable();
     doReturn( List.of( GenericFilePermission.READ, GenericFilePermission.WRITE, GenericFilePermission.DELETE,
       GenericFilePermission.ACL_MANAGEMENT, GenericFilePermission.ALL ) ).when( ace ).getPermissions();
 
@@ -3363,6 +3408,8 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "testUser", result.getRecipient() );
     assertEquals( 0, result.getRecipientType() ); // USER
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertTrue( result.isModifiable() );
     assertEquals( 5, result.getPermissions().size() );
     assertEquals( 0, result.getPermissions().get( 0 ) ); // READ
     assertEquals( 1, result.getPermissions().get( 1 ) ); // WRITE
@@ -3377,6 +3424,8 @@ class RepositoryFileProviderTest {
 
     doReturn( "testRole" ).when( ace ).getRecipient();
     doReturn( null ).when( ace ).getRecipientType();
+    doReturn( null ).when( ace ).getTenantPath();
+    doReturn( false ).when( ace ).isModifiable();
     doReturn( List.of( GenericFilePermission.READ ) ).when( ace ).getPermissions();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3392,6 +3441,8 @@ class RepositoryFileProviderTest {
 
     doReturn( "testUser" ).when( ace ).getRecipient();
     doReturn( GenericFilePrincipalType.ROLE ).when( ace ).getRecipientType();
+    doReturn( null ).when( ace ).getTenantPath();
+    doReturn( false ).when( ace ).isModifiable();
     doReturn( Collections.emptyList() ).when( ace ).getPermissions();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3403,6 +3454,8 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "testUser", result.getRecipient() );
     assertEquals( 1, result.getRecipientType() ); // ROLE
+    assertNull( result.getTenantPath() );
+    assertFalse( result.isModifiable() );
     assertNotNull( result.getPermissions() );
     assertTrue( result.getPermissions().isEmpty() );
   }

@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -34,13 +35,30 @@ class BaseGenericFileAclTest {
     String owner = "admin";
     GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
     boolean entriesInheriting = true;
+    String tenantPath = "/pentaho/tenant1";
     List<IGenericFileAce> entries = new ArrayList<>();
 
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, entriesInheriting, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, entriesInheriting, tenantPath, entries );
 
     assertEquals( owner, acl.getOwner() );
     assertEquals( ownerType, acl.getOwnerType() );
     assertTrue( acl.isEntriesInheriting() );
+    assertEquals( tenantPath, acl.getTenantPath() );
+    assertEquals( entries, acl.getEntries() );
+  }
+
+  @Test
+  void testConstructorWithNullTenantPath() {
+    String owner = "admin";
+    GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
+    List<IGenericFileAce> entries = new ArrayList<>();
+
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, false, null, entries );
+
+    assertEquals( owner, acl.getOwner() );
+    assertEquals( ownerType, acl.getOwnerType() );
+    assertFalse( acl.isEntriesInheriting() );
+    assertNull( acl.getTenantPath() );
     assertEquals( entries, acl.getEntries() );
   }
 
@@ -50,7 +68,7 @@ class BaseGenericFileAclTest {
     List<IGenericFileAce> entries = new ArrayList<>();
 
     assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAcl( null, ownerType, false, entries ) );
+      () -> new BaseGenericFileAcl( null, ownerType, false, "/tenant", entries ) );
   }
 
   @Test
@@ -59,7 +77,7 @@ class BaseGenericFileAclTest {
     List<IGenericFileAce> entries = new ArrayList<>();
 
     assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAcl( owner, null, false, entries ) );
+      () -> new BaseGenericFileAcl( owner, null, false, "/tenant", entries ) );
   }
 
   @Test
@@ -68,7 +86,7 @@ class BaseGenericFileAclTest {
     GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
 
     assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAcl( owner, ownerType, false, null ) );
+      () -> new BaseGenericFileAcl( owner, ownerType, false, "/tenant", null ) );
   }
   // endregion
 
@@ -77,7 +95,7 @@ class BaseGenericFileAclTest {
   void testGetOwner() {
     String owner = "testUser";
     BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, GenericFilePrincipalType.USER, false,
-      Collections.emptyList() );
+      null, Collections.emptyList() );
 
     assertEquals( owner, acl.getOwner() );
   }
@@ -88,7 +106,7 @@ class BaseGenericFileAclTest {
 
     for ( String owner : owners ) {
       BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, GenericFilePrincipalType.USER, false,
-        Collections.emptyList() );
+        null, Collections.emptyList() );
       assertEquals( owner, acl.getOwner() );
     }
   }
@@ -98,7 +116,7 @@ class BaseGenericFileAclTest {
   @Test
   void testGetOwnerTypeUser() {
     BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
-      Collections.emptyList() );
+      null, Collections.emptyList() );
 
     assertEquals( GenericFilePrincipalType.USER, acl.getOwnerType() );
   }
@@ -106,7 +124,7 @@ class BaseGenericFileAclTest {
   @Test
   void testGetOwnerTypeRole() {
     BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.ROLE, false,
-      Collections.emptyList() );
+      null, Collections.emptyList() );
 
     assertEquals( GenericFilePrincipalType.ROLE, acl.getOwnerType() );
   }
@@ -114,7 +132,7 @@ class BaseGenericFileAclTest {
   @Test
   void testGetOwnerTypeAllEnumValues() {
     for ( GenericFilePrincipalType type : GenericFilePrincipalType.values() ) {
-      BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", type, false, Collections.emptyList() );
+      BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", type, false, null, Collections.emptyList() );
       assertEquals( type, acl.getOwnerType() );
     }
   }
@@ -124,7 +142,7 @@ class BaseGenericFileAclTest {
   @Test
   void testIsEntriesInheritingTrue() {
     BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, true,
-      Collections.emptyList() );
+      null, Collections.emptyList() );
 
     assertTrue( acl.isEntriesInheriting() );
   }
@@ -132,9 +150,28 @@ class BaseGenericFileAclTest {
   @Test
   void testIsEntriesInheritingFalse() {
     BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
-      Collections.emptyList() );
+      null, Collections.emptyList() );
 
     assertFalse( acl.isEntriesInheriting() );
+  }
+  // endregion
+
+  // region TenantPath Tests
+  @Test
+  void testGetTenantPath() {
+    String tenantPath = "/pentaho/tenant1";
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      tenantPath, Collections.emptyList() );
+
+    assertEquals( tenantPath, acl.getTenantPath() );
+  }
+
+  @Test
+  void testGetTenantPathNull() {
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      null, Collections.emptyList() );
+
+    assertNull( acl.getTenantPath() );
   }
   // endregion
 
@@ -142,7 +179,8 @@ class BaseGenericFileAclTest {
   @Test
   void testGetEntriesEmpty() {
     List<IGenericFileAce> entries = Collections.emptyList();
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      null, entries );
 
     assertEquals( entries, acl.getEntries() );
     assertTrue( acl.getEntries().isEmpty() );
@@ -152,7 +190,8 @@ class BaseGenericFileAclTest {
   void testGetEntriesSingle() {
     IGenericFileAce ace = mock( IGenericFileAce.class );
     List<IGenericFileAce> entries = List.of( ace );
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      null, entries );
 
     assertEquals( entries, acl.getEntries() );
     assertEquals( 1, acl.getEntries().size() );
@@ -164,7 +203,8 @@ class BaseGenericFileAclTest {
     IGenericFileAce ace2 = mock( IGenericFileAce.class );
     IGenericFileAce ace3 = mock( IGenericFileAce.class );
     List<IGenericFileAce> entries = List.of( ace1, ace2, ace3 );
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      null, entries );
 
     assertEquals( entries, acl.getEntries() );
     assertEquals( 3, acl.getEntries().size() );
@@ -174,7 +214,8 @@ class BaseGenericFileAclTest {
   void testGetEntriesReturnsSameInstance() {
     List<IGenericFileAce> entries = new ArrayList<>();
     entries.add( mock( IGenericFileAce.class ) );
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, false,
+      null, entries );
 
     assertEquals( entries, acl.getEntries() );
 
@@ -191,15 +232,17 @@ class BaseGenericFileAclTest {
     String owner = "admin";
     GenericFilePrincipalType ownerType = GenericFilePrincipalType.USER;
     boolean entriesInheriting = true;
+    String tenantPath = "/pentaho/tenant1";
     IGenericFileAce ace1 = mock( IGenericFileAce.class );
     IGenericFileAce ace2 = mock( IGenericFileAce.class );
     List<IGenericFileAce> entries = List.of( ace1, ace2 );
 
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, entriesInheriting, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( owner, ownerType, entriesInheriting, tenantPath, entries );
 
     assertEquals( owner, acl.getOwner() );
     assertEquals( ownerType, acl.getOwnerType() );
     assertTrue( acl.isEntriesInheriting() );
+    assertEquals( tenantPath, acl.getTenantPath() );
     assertEquals( 2, acl.getEntries().size() );
     assertEquals( ace1, acl.getEntries().get( 0 ) );
     assertEquals( ace2, acl.getEntries().get( 1 ) );
@@ -208,10 +251,11 @@ class BaseGenericFileAclTest {
   @Test
   void testAclWithRoleOwner() {
     BaseGenericFileAcl acl = new BaseGenericFileAcl( "adminRole", GenericFilePrincipalType.ROLE, false,
-      Collections.emptyList() );
+      "/tenant", Collections.emptyList() );
 
     assertEquals( "adminRole", acl.getOwner() );
     assertEquals( GenericFilePrincipalType.ROLE, acl.getOwnerType() );
+    assertEquals( "/tenant", acl.getTenantPath() );
     assertTrue( acl.getEntries().isEmpty() );
   }
 
@@ -223,10 +267,12 @@ class BaseGenericFileAclTest {
       entries.add( mock( IGenericFileAce.class ) );
     }
 
-    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, true, entries );
+    BaseGenericFileAcl acl = new BaseGenericFileAcl( "admin", GenericFilePrincipalType.USER, true,
+      "/tenant", entries );
 
     assertEquals( 100, acl.getEntries().size() );
     assertTrue( acl.isEntriesInheriting() );
+    assertEquals( "/tenant", acl.getTenantPath() );
   }
   // endregion
 }

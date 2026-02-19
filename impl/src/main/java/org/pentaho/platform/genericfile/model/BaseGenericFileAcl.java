@@ -24,13 +24,15 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
   private final String owner;
   private final GenericFilePrincipalType ownerType;
   private final boolean entriesInheriting;
+  private final String tenantPath;
   private final List<IGenericFileAce> entries;
 
   public BaseGenericFileAcl( @NonNull String owner, @NonNull GenericFilePrincipalType ownerType,
-                             boolean entriesInheriting, @NonNull List<IGenericFileAce> entries ) {
+                             boolean entriesInheriting, String tenantPath, @NonNull List<IGenericFileAce> entries ) {
     this.owner = Objects.requireNonNull( owner );
     this.ownerType = Objects.requireNonNull( ownerType );
     this.entriesInheriting = entriesInheriting;
+    this.tenantPath = tenantPath;
     this.entries = Objects.requireNonNull( entries );
   }
 
@@ -49,6 +51,11 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
   @Override
   public boolean isEntriesInheriting() {
     return entriesInheriting;
+  }
+
+  @Override
+  public String getTenantPath() {
+    return tenantPath;
   }
 
   @NonNull

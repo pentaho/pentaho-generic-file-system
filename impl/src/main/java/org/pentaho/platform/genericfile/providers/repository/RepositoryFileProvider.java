@@ -1064,6 +1064,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return new BaseGenericFileAcl( nativeAcl.getOwner(),
       convertFromNativePrincipalType( nativeAcl.getOwnerType() ),
       nativeAcl.isEntriesInheriting(),
+      nativeAcl.getTenantPath(),
       aces );
   }
 
@@ -1080,6 +1081,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     return new BaseGenericFileAce( nativeEntry.getRecipient(),
       convertFromNativePrincipalType( nativeEntry.getRecipientType() ),
+      nativeEntry.getTenantPath(),
+      nativeEntry.isModifiable(),
       permissions );
   }
 
@@ -1089,6 +1092,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     nativeAcl.setOwner( acl.getOwner() );
     nativeAcl.setOwnerType( convertToNativePrincipalType( acl.getOwnerType() ) );
+    nativeAcl.setTenantPath( acl.getTenantPath() );
     nativeAcl.setAces( acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).toList(),
       acl.isEntriesInheriting() );
 
@@ -1101,6 +1105,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     nativeEntry.setRecipient( entry.getRecipient() );
     nativeEntry.setRecipientType( convertToNativePrincipalType( entry.getRecipientType() ) );
+    nativeEntry.setTenantPath( entry.getTenantPath() );
+    nativeEntry.setModifiable( entry.isModifiable() );
     nativeEntry.setPermissions( entry.getPermissions().stream().map( this::convertToNativePermission ).toList() );
 
     return nativeEntry;
