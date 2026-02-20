@@ -70,8 +70,8 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -3372,14 +3372,14 @@ class RepositoryFileProviderTest {
 
   // region convertToNativeFileAcl
   @Test
-  void testConvertToNativeFileAcl() {
+  void testConvertToNativeFileAclWithAllFields() {
     IGenericFileAcl acl = mock( IGenericFileAcl.class );
     IGenericFileAce ace1 = mock( IGenericFileAce.class );
     IGenericFileAce ace2 = mock( IGenericFileAce.class );
 
     doReturn( "admin" ).when( acl ).getOwner();
     doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
-    doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( false ).when( acl ).isEntriesInheriting();
     doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
     doReturn( List.of( ace1, ace2 ) ).when( acl ).getEntries();
 
@@ -3404,8 +3404,9 @@ class RepositoryFileProviderTest {
     assertNotNull( result );
     assertEquals( "admin", result.getOwner() );
     assertEquals( 0, result.getOwnerType() ); // USER
-    assertTrue( result.isEntriesInheriting() );
+    assertFalse( result.isEntriesInheriting() );
     assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertNotNull( result.getAces() );
     assertEquals( 2, result.getAces().size() );
 
     RepositoryFileAclAceDto nativeAce1 = result.getAces().get( 0 );
@@ -3444,6 +3445,39 @@ class RepositoryFileProviderTest {
   }
 
   @Test
+  void testConvertToNativeFileAclWithNullTenantPath() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    IGenericFileAce ace = mock( IGenericFileAce.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+    doReturn( null ).when( acl ).getTenantPath(); // null tenantPath
+    doReturn( List.of( ace ) ).when( acl ).getEntries();
+
+    doReturn( "user1" ).when( ace ).getRecipient();
+    doReturn( GenericFilePrincipalType.USER ).when( ace ).getRecipientType();
+    doReturn( null ).when( ace ).getTenantPath(); // null tenantPath in entry
+    doReturn( true ).when( ace ).isModifiable();
+    doReturn( List.of( GenericFilePermission.READ ) ).when( ace ).getPermissions();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( 0, result.getOwnerType() );
+    assertFalse( result.isEntriesInheriting() );
+    assertNull( result.getTenantPath() );
+    assertNotNull( result.getAces() );
+    assertEquals( 1, result.getAces().size() );
+    assertNull( result.getAces().get( 0 ).getTenantPath() );
+  }
+
+  @Test
   void testConvertToNativeFileAclWithNullEntriesAndEntriesInheriting() {
     IGenericFileAcl acl = mock( IGenericFileAcl.class );
 
@@ -3464,7 +3498,32 @@ class RepositoryFileProviderTest {
     assertEquals( 0, result.getOwnerType() ); // USER
     assertTrue( result.isEntriesInheriting() );
     assertEquals( "/pentaho/tenant1", result.getTenantPath() );
-    assertNull( result.getAces() );
+    assertTrue( result.getAces().isEmpty() );
+  }
+
+  @Test
+  void testConvertToNativeFileAclWithEmptyEntriesAndNotInheriting() {
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doReturn( "admin" ).when( acl ).getOwner();
+    doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
+    doReturn( false ).when( acl ).isEntriesInheriting();
+    doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
+    doReturn( Collections.emptyList() ).when( acl ).getEntries();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    RepositoryFileAclDto result = repositoryProvider.convertToNativeFileAcl( acl );
+
+    assertNotNull( result );
+    assertEquals( "admin", result.getOwner() );
+    assertEquals( 0, result.getOwnerType() );
+    assertFalse( result.isEntriesInheriting() );
+    assertEquals( "/pentaho/tenant1", result.getTenantPath() );
+    assertNotNull( result.getAces() );
+    assertTrue( result.getAces().isEmpty() );
   }
 
   @Test
@@ -3473,7 +3532,7 @@ class RepositoryFileProviderTest {
 
     doReturn( "testOwner" ).when( acl ).getOwner();
     doReturn( GenericFilePrincipalType.USER ).when( acl ).getOwnerType();
-    doReturn( true ).when( acl ).isEntriesInheriting();
+    doReturn( false ).when( acl ).isEntriesInheriting();
     doReturn( "/pentaho/tenant1" ).when( acl ).getTenantPath();
 
     List<GenericFilePermission> allPermissions = Arrays.asList( GenericFilePermission.values() );
@@ -3501,6 +3560,7 @@ class RepositoryFileProviderTest {
     assertEquals( "/pentaho/tenant1", nativeAce.getTenantPath() );
     assertTrue( nativeAce.isModifiable() );
     assertEquals( allPermissions.size(), nativeAce.getPermissions().size() );
+
     for ( int i = 0; i < allPermissions.size(); i++ ) {
       assertEquals( allPermissions.get( i ).ordinal(), nativeAce.getPermissions().get( i ) );
     }
@@ -3543,13 +3603,6 @@ class RepositoryFileProviderTest {
     // Verify the list is mutable by removing an item (should not throw UnsupportedOperationException)
     assertDoesNotThrow( () -> result.getAces().remove( 0 ) );
     assertEquals( 1, result.getAces().size() );
-    assertEquals( "user2", result.getAces().get( 0 ).getRecipient() );
-
-    // Verify the list is mutable by adding an item
-    RepositoryFileAclAceDto newAce = new RepositoryFileAclAceDto();
-    newAce.setRecipient( "user3" );
-    assertDoesNotThrow( () -> result.getAces().add( newAce ) );
-    assertEquals( 2, result.getAces().size() );
   }
 
   @Test

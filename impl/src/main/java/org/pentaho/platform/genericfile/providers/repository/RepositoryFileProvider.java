@@ -1062,6 +1062,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     if ( !nativeAcl.isEntriesInheriting() && nativeAcl.getAces() != null ) {
       aces = new ArrayList<>();
+
       for ( RepositoryFileAclAceDto nativeEntry : nativeAcl.getAces() ) {
         aces.add( convertFromNativeFileAclEntry( nativeEntry ) );
       }
@@ -1100,9 +1101,14 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     nativeAcl.setOwnerType( convertToNativePrincipalType( acl.getOwnerType() ) );
     nativeAcl.setTenantPath( acl.getTenantPath() );
 
-    List<RepositoryFileAclAceDto> nativeAces = acl.getEntries() != null
-      ? acl.getEntries().stream().map( this::convertToNativeFileAclEntry ).collect( Collectors.toList() )
-      : null;
+    List<RepositoryFileAclAceDto> nativeAces = new ArrayList<>();
+
+    if ( !acl.isEntriesInheriting() && acl.getEntries() != null ) {
+      for ( IGenericFileAce nativeEntry : acl.getEntries() ) {
+        nativeAces.add( convertToNativeFileAclEntry( nativeEntry ) );
+      }
+    }
+
     nativeAcl.setAces( nativeAces, acl.isEntriesInheriting() );
 
     return nativeAcl;

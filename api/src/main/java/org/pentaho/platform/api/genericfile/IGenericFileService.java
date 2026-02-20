@@ -984,8 +984,12 @@ public interface IGenericFileService {
    * Sets the file acl settings, given its path and the acl settings to set.
    *
    * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
-   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
-   * @throws InvalidOperationException If the acl settings are not valid.
+   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
+   *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
+   *             inheritance semantics.
+   * @throws InvalidOperationException If the acl settings are not valid for the target file (for example, if
+   *                                   inheritance is disabled but no entries are provided).
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -1002,7 +1006,10 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the file's path to set the acl settings for. This path must not refer
    *             to an item in the trash (deleted).
-   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
+   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
+   *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
+   *             inheritance semantics.
    * @throws InvalidOperationException If the acl settings are not valid.
    * @throws InvalidPathException      If the specified path's string representation is not valid, according to
    *                                   {@link GenericFilePath#parseRequired(String)}.

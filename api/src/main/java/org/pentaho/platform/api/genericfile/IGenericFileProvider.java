@@ -391,7 +391,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Sets the file acl settings, given its path and the acl settings to set.
    *
    * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
-   * @param acl  The acl settings to set. The acl must not be empty; otherwise it is considered invalid.
+   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
+   *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
+   *             inheritance semantics.
    * @throws InvalidOperationException If the acl settings are not valid.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.

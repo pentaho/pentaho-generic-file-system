@@ -43,9 +43,9 @@ public interface IGenericFileAce {
   GenericFilePrincipalType getRecipientType();
 
   /**
-   * Gets the tenant path associated with the ACL.
+   * Gets the tenant path associated with this ACE.
    *
-   * @return The tenant path. This may be {@code null} if the ACE is not associated with a specific tenant.
+   * @return The tenant path for this ACE. This may be {@code null} if the ACE is not associated with a specific tenant.
    */
   @Nullable
   String getTenantPath();

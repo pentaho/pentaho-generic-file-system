@@ -52,7 +52,7 @@ public interface IGenericFileAcl {
   /**
    * Gets the tenant path associated with the ACL.
    *
-   * @return The tenant path. This may be {@code null} if the ACE is not associated with a specific tenant.
+   * @return The tenant path. This may be {@code null} if this ACL is not associated with a specific tenant.
    */
   @Nullable
   String getTenantPath();
