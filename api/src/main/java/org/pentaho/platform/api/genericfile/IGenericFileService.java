@@ -947,6 +947,8 @@ public interface IGenericFileService {
    *
    * @param path The file path to get the acl settings from. This path must not refer to an item in the trash (deleted).
    * @return The file acl settings.
+   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
+   *                                       implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
@@ -966,6 +968,8 @@ public interface IGenericFileService {
    * @param path The string representation of the file's path to get the acl settings from. This path must not refer to
    *             an item in the trash (deleted).
    * @return The file acl settings.
+   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
+   *                                       implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidPathException          If the specified path's string representation is not valid, according to

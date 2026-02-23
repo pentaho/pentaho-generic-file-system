@@ -811,6 +811,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+    } catch ( InvalidOperationException e ) {
+      throw e;
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -1122,7 +1124,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     nativeEntry.setRecipientType( convertToNativePrincipalType( entry.getRecipientType() ) );
     nativeEntry.setTenantPath( entry.getTenantPath() );
     nativeEntry.setModifiable( entry.isModifiable() );
-    nativeEntry.setPermissions( entry.getPermissions().stream().map( this::convertToNativePermission ).toList() );
+    nativeEntry.setPermissions(
+      entry.getPermissions().stream().map( this::convertToNativePermission ).collect( Collectors.toList() ) );
 
     return nativeEntry;
   }
