@@ -830,6 +830,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       fileService.setFileAcls( pathToString( path ), convertToNativeFileAcl( acl ) );
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -1073,7 +1075,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return new BaseGenericFileAcl( nativeAcl.getOwner(),
       convertFromNativePrincipalType( nativeAcl.getOwnerType() ),
       nativeAcl.isEntriesInheriting(),
-      nativeAcl.getTenantPath(),
       aces );
   }
 
@@ -1090,7 +1091,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     return new BaseGenericFileAce( nativeEntry.getRecipient(),
       convertFromNativePrincipalType( nativeEntry.getRecipientType() ),
-      nativeEntry.getTenantPath(),
       nativeEntry.isModifiable(),
       permissions );
   }
@@ -1101,8 +1101,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     nativeAcl.setOwner( acl.getOwner() );
     nativeAcl.setOwnerType( convertToNativePrincipalType( acl.getOwnerType() ) );
-    nativeAcl.setTenantPath( acl.getTenantPath() );
 
+    // This cannot be null and cannot be immutable because the service expects a mutable list, but it can be empty if
+    // entries are inheriting.
     List<RepositoryFileAclAceDto> nativeAces = new ArrayList<>();
 
     if ( !acl.isEntriesInheriting() && acl.getEntries() != null ) {
@@ -1122,7 +1123,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     nativeEntry.setRecipient( entry.getRecipient() );
     nativeEntry.setRecipientType( convertToNativePrincipalType( entry.getRecipientType() ) );
-    nativeEntry.setTenantPath( entry.getTenantPath() );
     nativeEntry.setModifiable( entry.isModifiable() );
     nativeEntry.setPermissions(
       entry.getPermissions().stream().map( this::convertToNativePermission ).collect( Collectors.toList() ) );

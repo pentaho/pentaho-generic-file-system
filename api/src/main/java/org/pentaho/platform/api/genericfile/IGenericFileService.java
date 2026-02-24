@@ -950,7 +950,6 @@ public interface IGenericFileService {
    * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
    *                                       implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
-   * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
    *                                       (deleted).
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -971,7 +970,6 @@ public interface IGenericFileService {
    * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
    *                                       implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
-   * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidPathException          If the specified path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
@@ -992,11 +990,12 @@ public interface IGenericFileService {
    *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
    *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
    *             inheritance semantics.
-   * @throws InvalidOperationException If the acl settings are not valid for the target file (for example, if
-   *                                   inheritance is disabled but no entries are provided).
-   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
-   *                                   (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
+   *                                       inheritance is disabled but no entries are provided).
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
     throws OperationFailedException;
@@ -1014,12 +1013,14 @@ public interface IGenericFileService {
    *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
    *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
    *             inheritance semantics.
-   * @throws InvalidOperationException If the acl settings are not valid.
-   * @throws InvalidPathException      If the specified path's string representation is not valid, according to
-   *                                   {@link GenericFilePath#parseRequired(String)}.
-   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the
-   *                                   trash (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
+   *                                       inheritance is disabled but no entries are provided).
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws InvalidPathException          If the specified path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileAcl(GenericFilePath, IGenericFileAcl)
    */
   default void setFileAcl( @NonNull String path, @NonNull IGenericFileAcl acl )

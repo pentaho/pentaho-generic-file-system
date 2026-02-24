@@ -376,11 +376,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Gets the file acl settings, given its path.
    *
    * @param path The file path to get the acl settings from. This path must not refer to an item in the trash (deleted).
-   * @return The file acl settings. The acl must not be empty; otherwise it is considered invalid.
+   * @return The file acl settings.
    * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
-   * implementation.
+   *                                       implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
-   * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
    *                                       (deleted).
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
@@ -397,10 +396,12 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
    *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
    *             inheritance semantics.
-   * @throws InvalidOperationException If the acl settings are not valid.
-   * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
-   *                                   (deleted), or the current user is not allowed to access it.
-   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
+   *                                       inheritance is disabled but no entries are provided).
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    * @see IGenericFileService#setFileAcl(GenericFilePath, IGenericFileAcl)
    */
   void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )

@@ -13,7 +13,6 @@
 package org.pentaho.platform.api.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 
@@ -41,14 +40,6 @@ public interface IGenericFileAce {
    */
   @NonNull
   GenericFilePrincipalType getRecipientType();
-
-  /**
-   * Gets the tenant path associated with this ACE.
-   *
-   * @return The tenant path for this ACE. This may be {@code null} if the ACE is not associated with a specific tenant.
-   */
-  @Nullable
-  String getTenantPath();
 
   /**
    * Indicates whether this ACE is modifiable.

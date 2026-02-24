@@ -25,7 +25,6 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
   private final String owner;
   private final GenericFilePrincipalType ownerType;
   private final boolean entriesInheriting;
-  private final String tenantPath;
   private final List<IGenericFileAce> entries;
 
   /**
@@ -34,16 +33,13 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
    * @param owner             The owner of the file. Must not be {@code null}.
    * @param ownerType         The type of the owner. Must not be {@code null}.
    * @param entriesInheriting Whether entries are inherited from the parent folder.
-   * @param tenantPath        The tenant path. May be {@code null}.
    * @param entries           The list of ACEs. May be {@code null} if {@code entriesInheriting} is {@code true}.
    */
   public BaseGenericFileAcl( @NonNull String owner, @NonNull GenericFilePrincipalType ownerType,
-                             boolean entriesInheriting, @Nullable String tenantPath,
-                             @Nullable List<IGenericFileAce> entries ) {
+                             boolean entriesInheriting, @Nullable List<IGenericFileAce> entries ) {
     this.owner = Objects.requireNonNull( owner );
     this.ownerType = Objects.requireNonNull( ownerType );
     this.entriesInheriting = entriesInheriting;
-    this.tenantPath = tenantPath;
     this.entries = entries;
   }
 
@@ -62,12 +58,6 @@ public class BaseGenericFileAcl implements IGenericFileAcl {
   @Override
   public boolean isEntriesInheriting() {
     return entriesInheriting;
-  }
-
-  @Nullable
-  @Override
-  public String getTenantPath() {
-    return tenantPath;
   }
 
   @Nullable

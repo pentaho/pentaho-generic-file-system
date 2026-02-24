@@ -22,7 +22,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,15 +32,13 @@ class BaseGenericFileAceTest {
   void testConstructorWithValidParameters() {
     String recipient = "user1";
     GenericFilePrincipalType recipientType = GenericFilePrincipalType.USER;
-    String tenantPath = "/pentaho/tenant1";
     boolean modifiable = true;
     List<GenericFilePermission> permissions = List.of( GenericFilePermission.READ );
 
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, tenantPath, modifiable, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, modifiable, permissions );
 
     assertEquals( recipient, ace.getRecipient() );
     assertEquals( recipientType, ace.getRecipientType() );
-    assertEquals( tenantPath, ace.getTenantPath() );
     assertTrue( ace.isModifiable() );
     assertEquals( permissions, ace.getPermissions() );
   }
@@ -52,11 +49,10 @@ class BaseGenericFileAceTest {
     GenericFilePrincipalType recipientType = GenericFilePrincipalType.USER;
     List<GenericFilePermission> permissions = List.of( GenericFilePermission.READ );
 
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, false, permissions );
 
     assertEquals( recipient, ace.getRecipient() );
     assertEquals( recipientType, ace.getRecipientType() );
-    assertNull( ace.getTenantPath() );
     assertFalse( ace.isModifiable() );
     assertEquals( permissions, ace.getPermissions() );
   }
@@ -66,8 +62,7 @@ class BaseGenericFileAceTest {
     GenericFilePrincipalType recipientType = GenericFilePrincipalType.USER;
     List<GenericFilePermission> permissions = List.of( GenericFilePermission.READ );
 
-    assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAce( null, recipientType, "/tenant", true, permissions ) );
+    assertThrows( NullPointerException.class, () -> new BaseGenericFileAce( null, recipientType, true, permissions ) );
   }
 
   @Test
@@ -75,8 +70,7 @@ class BaseGenericFileAceTest {
     String recipient = "user1";
     List<GenericFilePermission> permissions = List.of( GenericFilePermission.READ );
 
-    assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAce( recipient, null, "/tenant", true, permissions ) );
+    assertThrows( NullPointerException.class, () -> new BaseGenericFileAce( recipient, null, true, permissions ) );
   }
 
   @Test
@@ -84,8 +78,7 @@ class BaseGenericFileAceTest {
     String recipient = "user1";
     GenericFilePrincipalType recipientType = GenericFilePrincipalType.USER;
 
-    assertThrows( NullPointerException.class,
-      () -> new BaseGenericFileAce( recipient, recipientType, "/tenant", true, null ) );
+    assertThrows( NullPointerException.class, () -> new BaseGenericFileAce( recipient, recipientType, true, null ) );
   }
   // endregion
 
@@ -93,8 +86,8 @@ class BaseGenericFileAceTest {
   @Test
   void testGetRecipient() {
     String recipient = "testUser";
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER,
-      null, false, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER, false, Collections.emptyList() );
 
     assertEquals( recipient, ace.getRecipient() );
   }
@@ -104,8 +97,8 @@ class BaseGenericFileAceTest {
     List<String> recipients = List.of( "user1", "admin", "role1", "testRecipient123" );
 
     for ( String recipient : recipients ) {
-      BaseGenericFileAce ace = new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER,
-        null, false, Collections.emptyList() );
+      BaseGenericFileAce ace =
+        new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER, false, Collections.emptyList() );
       assertEquals( recipient, ace.getRecipient() );
     }
   }
@@ -113,8 +106,8 @@ class BaseGenericFileAceTest {
   @Test
   void testGetRecipientWithSpecialCharacters() {
     String recipient = "user@domain.com";
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER,
-      null, false, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER, false, Collections.emptyList() );
 
     assertEquals( recipient, ace.getRecipient() );
   }
@@ -123,16 +116,16 @@ class BaseGenericFileAceTest {
   // region RecipientType Tests
   @Test
   void testGetRecipientTypeUser() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, Collections.emptyList() );
 
     assertEquals( GenericFilePrincipalType.USER, ace.getRecipientType() );
   }
 
   @Test
   void testGetRecipientTypeRole() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "role1", GenericFilePrincipalType.ROLE,
-      null, false, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( "role1", GenericFilePrincipalType.ROLE, false, Collections.emptyList() );
 
     assertEquals( GenericFilePrincipalType.ROLE, ace.getRecipientType() );
   }
@@ -140,44 +133,25 @@ class BaseGenericFileAceTest {
   @Test
   void testGetRecipientTypeAllEnumValues() {
     for ( GenericFilePrincipalType type : GenericFilePrincipalType.values() ) {
-      BaseGenericFileAce ace = new BaseGenericFileAce( "recipient", type, null, false, Collections.emptyList() );
+      BaseGenericFileAce ace = new BaseGenericFileAce( "recipient", type, false, Collections.emptyList() );
       assertEquals( type, ace.getRecipientType() );
     }
-  }
-  // endregion
-
-  // region TenantPath Tests
-  @Test
-  void testGetTenantPath() {
-    String tenantPath = "/pentaho/tenant1";
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      tenantPath, false, Collections.emptyList() );
-
-    assertEquals( tenantPath, ace.getTenantPath() );
-  }
-
-  @Test
-  void testGetTenantPathNull() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, Collections.emptyList() );
-
-    assertNull( ace.getTenantPath() );
   }
   // endregion
 
   // region Modifiable Tests
   @Test
   void testIsModifiableTrue() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, true, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, true, Collections.emptyList() );
 
     assertTrue( ace.isModifiable() );
   }
 
   @Test
   void testIsModifiableFalse() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, Collections.emptyList() );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, Collections.emptyList() );
 
     assertFalse( ace.isModifiable() );
   }
@@ -187,8 +161,7 @@ class BaseGenericFileAceTest {
   @Test
   void testGetPermissionsEmpty() {
     List<GenericFilePermission> permissions = Collections.emptyList();
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( permissions, ace.getPermissions() );
     assertTrue( ace.getPermissions().isEmpty() );
@@ -197,8 +170,7 @@ class BaseGenericFileAceTest {
   @Test
   void testGetPermissionsSingle() {
     List<GenericFilePermission> permissions = List.of( GenericFilePermission.READ );
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( permissions, ace.getPermissions() );
     assertEquals( 1, ace.getPermissions().size() );
@@ -212,8 +184,7 @@ class BaseGenericFileAceTest {
       GenericFilePermission.WRITE,
       GenericFilePermission.DELETE
     );
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( permissions, ace.getPermissions() );
     assertEquals( 3, ace.getPermissions().size() );
@@ -227,8 +198,7 @@ class BaseGenericFileAceTest {
     List<GenericFilePermission> permissions = new ArrayList<>();
     Collections.addAll( permissions, GenericFilePermission.values() );
 
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( GenericFilePermission.values().length, ace.getPermissions().size() );
 
@@ -242,8 +212,7 @@ class BaseGenericFileAceTest {
     List<GenericFilePermission> permissions = new ArrayList<>();
     permissions.add( GenericFilePermission.READ );
     permissions.add( GenericFilePermission.WRITE );
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( permissions, ace.getPermissions() );
 
@@ -259,8 +228,7 @@ class BaseGenericFileAceTest {
       GenericFilePermission.READ,
       GenericFilePermission.WRITE
     );
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, false, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, false, permissions );
 
     assertEquals( 3, ace.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, ace.getPermissions().get( 0 ) );
@@ -274,18 +242,16 @@ class BaseGenericFileAceTest {
   void testCompleteAceSetup() {
     String recipient = "user1";
     GenericFilePrincipalType recipientType = GenericFilePrincipalType.USER;
-    String tenantPath = "/pentaho/tenant1";
     boolean modifiable = true;
     List<GenericFilePermission> permissions = List.of(
       GenericFilePermission.READ,
       GenericFilePermission.WRITE
     );
 
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, tenantPath, modifiable, permissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, recipientType, modifiable, permissions );
 
     assertEquals( recipient, ace.getRecipient() );
     assertEquals( recipientType, ace.getRecipientType() );
-    assertEquals( tenantPath, ace.getTenantPath() );
     assertTrue( ace.isModifiable() );
     assertEquals( 2, ace.getPermissions().size() );
     assertEquals( GenericFilePermission.READ, ace.getPermissions().get( 0 ) );
@@ -294,13 +260,11 @@ class BaseGenericFileAceTest {
 
   @Test
   void testAceWithRoleRecipient() {
-    BaseGenericFileAce ace = new BaseGenericFileAce( "adminRole", GenericFilePrincipalType.ROLE,
-      "/tenant", false,
+    BaseGenericFileAce ace = new BaseGenericFileAce( "adminRole", GenericFilePrincipalType.ROLE, false,
       List.of( GenericFilePermission.READ, GenericFilePermission.WRITE, GenericFilePermission.DELETE ) );
 
     assertEquals( "adminRole", ace.getRecipient() );
     assertEquals( GenericFilePrincipalType.ROLE, ace.getRecipientType() );
-    assertEquals( "/tenant", ace.getTenantPath() );
     assertFalse( ace.isModifiable() );
     assertEquals( 3, ace.getPermissions().size() );
   }
@@ -310,8 +274,7 @@ class BaseGenericFileAceTest {
     List<GenericFilePermission> allPermissions = new ArrayList<>();
     Collections.addAll( allPermissions, GenericFilePermission.values() );
 
-    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      null, true, allPermissions );
+    BaseGenericFileAce ace = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, true, allPermissions );
 
     assertEquals( GenericFilePermission.values().length, ace.getPermissions().size() );
   }
@@ -319,8 +282,8 @@ class BaseGenericFileAceTest {
   @Test
   void testAceWithSpecialRecipientName() {
     String recipient = "user-123@domain.co.uk";
-    BaseGenericFileAce ace = new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER,
-      "/tenant", true, List.of( GenericFilePermission.READ ) );
+    BaseGenericFileAce ace =
+      new BaseGenericFileAce( recipient, GenericFilePrincipalType.USER, true, List.of( GenericFilePermission.READ ) );
 
     assertEquals( recipient, ace.getRecipient() );
     assertEquals( 1, ace.getPermissions().size() );
@@ -331,15 +294,11 @@ class BaseGenericFileAceTest {
     List<GenericFilePermission> permissions1 = List.of( GenericFilePermission.READ );
     List<GenericFilePermission> permissions2 = List.of( GenericFilePermission.WRITE, GenericFilePermission.DELETE );
 
-    BaseGenericFileAce ace1 = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER,
-      "/tenant1", true, permissions1 );
-    BaseGenericFileAce ace2 = new BaseGenericFileAce( "user2", GenericFilePrincipalType.ROLE,
-      "/tenant2", false, permissions2 );
+    BaseGenericFileAce ace1 = new BaseGenericFileAce( "user1", GenericFilePrincipalType.USER, true, permissions1 );
+    BaseGenericFileAce ace2 = new BaseGenericFileAce( "user2", GenericFilePrincipalType.ROLE, false, permissions2 );
 
     assertEquals( "user1", ace1.getRecipient() );
     assertEquals( "user2", ace2.getRecipient() );
-    assertEquals( "/tenant1", ace1.getTenantPath() );
-    assertEquals( "/tenant2", ace2.getTenantPath() );
     assertTrue( ace1.isModifiable() );
     assertFalse( ace2.isModifiable() );
     assertEquals( 1, ace1.getPermissions().size() );

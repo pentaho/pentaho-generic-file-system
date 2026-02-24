@@ -50,14 +50,6 @@ public interface IGenericFileAcl {
   boolean isEntriesInheriting();
 
   /**
-   * Gets the tenant path associated with the ACL.
-   *
-   * @return The tenant path. This may be {@code null} if this ACL is not associated with a specific tenant.
-   */
-  @Nullable
-  String getTenantPath();
-
-  /**
    * Gets the list of access control entries (ACEs).
    *
    * @return A list of ACEs. This may be {@code null} if {@code entriesInheriting} is {@code true}, that is, the ACL
