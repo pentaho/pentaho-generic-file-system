@@ -658,6 +658,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       } else {
         fileService.doDeleteFiles( fileId );
       }
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new ResourceAccessDeniedException( "User is not authorized to delete this path.", path );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
