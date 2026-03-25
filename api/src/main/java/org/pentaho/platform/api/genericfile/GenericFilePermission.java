@@ -19,4 +19,7 @@ public enum GenericFilePermission {
   DELETE,
   ACL_MANAGEMENT,
   ALL;
+
+  private GenericFilePermission() {
+  }
 }

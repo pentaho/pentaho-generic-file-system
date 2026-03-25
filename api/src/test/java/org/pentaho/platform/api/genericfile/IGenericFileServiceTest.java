@@ -20,7 +20,6 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -179,18 +178,6 @@ class IGenericFileServiceTest {
 
     @Override
     public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
-      throws OperationFailedException {
-      throw new UnsupportedOperationException();
-    }
-
-    @NonNull
-    @Override
-    public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }

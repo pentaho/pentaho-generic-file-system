@@ -27,7 +27,6 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -1237,108 +1236,6 @@ class DefaultGenericFileServiceTest {
     service.getFileMetadata( pathMock );
 
     verify( decoratorMock ).decorateFileMetadata( fileMetadataMock, pathMock, service );
-  }
-  // endregion
-
-  // region getFileAcl and setFileAcl
-  private static class FileAclMultipleProviderUseCase extends MultipleProviderUseCase {
-    public final GenericFilePath path1;
-    public final GenericFilePath path2;
-
-    public FileAclMultipleProviderUseCase() throws InvalidGenericFileProviderException {
-      path1 = mock( GenericFilePath.class );
-      path2 = mock( GenericFilePath.class );
-
-      doReturn( true ).when( provider1Mock ).owns( path1 );
-      doReturn( false ).when( provider1Mock ).owns( path2 );
-
-      doReturn( false ).when( provider2Mock ).owns( path1 );
-      doReturn( true ).when( provider2Mock ).owns( path2 );
-    }
-  }
-
-  @Test
-  void testGetFileAclSuccess() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-    IGenericFileAcl acl1 = mock( IGenericFileAcl.class );
-    IGenericFileAcl acl2 = mock( IGenericFileAcl.class );
-
-    doReturn( acl1 ).when( useCase.provider1Mock ).getFileAcl( useCase.path1 );
-    doReturn( acl2 ).when( useCase.provider2Mock ).getFileAcl( useCase.path2 );
-
-    assertSame( acl1, useCase.service.getFileAcl( useCase.path1 ) );
-    assertSame( acl2, useCase.service.getFileAcl( useCase.path2 ) );
-    verify( useCase.provider1Mock ).getFileAcl( useCase.path1 );
-    verify( useCase.provider2Mock ).getFileAcl( useCase.path2 );
-  }
-
-  @Test
-  void testGetFileAclPathNotFound() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-
-    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
-
-    NotFoundException exception =
-      assertThrows( NotFoundException.class, () -> useCase.service.getFileAcl( useCase.path1 ) );
-
-    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
-    verify( useCase.provider1Mock, never() ).getFileAcl( any() );
-  }
-
-  @Test
-  void testGetFileAclException() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-
-    doThrow( new OperationFailedException( "ACL failed." ) ).when( useCase.provider1Mock )
-      .getFileAcl( useCase.path1 );
-
-    OperationFailedException exception =
-      assertThrows( OperationFailedException.class, () -> useCase.service.getFileAcl( useCase.path1 ) );
-
-    assertEquals( "ACL failed.", exception.getMessage() );
-    verify( useCase.provider1Mock ).getFileAcl( useCase.path1 );
-  }
-
-  @Test
-  void testSetFileAclSuccess() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-    IGenericFileAcl acl1 = mock( IGenericFileAcl.class );
-    IGenericFileAcl acl2 = mock( IGenericFileAcl.class );
-
-    useCase.service.setFileAcl( useCase.path1, acl1 );
-    useCase.service.setFileAcl( useCase.path2, acl2 );
-
-    verify( useCase.provider1Mock ).setFileAcl( useCase.path1, acl1 );
-    verify( useCase.provider2Mock ).setFileAcl( useCase.path2, acl2 );
-  }
-
-  @Test
-  void testSetFileAclPathNotFound() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-    IGenericFileAcl acl = mock( IGenericFileAcl.class );
-
-    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
-
-    NotFoundException exception = assertThrows( NotFoundException.class,
-      () -> useCase.service.setFileAcl( useCase.path1, acl ) );
-
-    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
-    verify( useCase.provider1Mock, never() ).setFileAcl( any(), any() );
-  }
-
-  @Test
-  void testSetFileAclException() throws Exception {
-    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
-    IGenericFileAcl acl = mock( IGenericFileAcl.class );
-
-    doThrow( new OperationFailedException( "Set ACL failed." ) ).when( useCase.provider1Mock )
-      .setFileAcl( useCase.path1, acl );
-
-    OperationFailedException exception = assertThrows( OperationFailedException.class,
-      () -> useCase.service.setFileAcl( useCase.path1, acl ) );
-
-    assertEquals( "Set ACL failed.", exception.getMessage() );
-    verify( useCase.provider1Mock ).setFileAcl( useCase.path1, acl );
   }
   // endregion
 

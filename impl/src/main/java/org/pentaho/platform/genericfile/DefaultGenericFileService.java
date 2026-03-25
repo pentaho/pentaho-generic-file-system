@@ -28,7 +28,6 @@ import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -445,17 +444,5 @@ public class DefaultGenericFileService implements IGenericFileService {
   public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException {
     getOwnerFileProvider( path ).setFileMetadata( path, metadata );
-  }
-
-  @NonNull
-  @Override
-  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileAcl( path );
-  }
-
-  @Override
-  public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
-    throws OperationFailedException {
-    getOwnerFileProvider( path ).setFileAcl( path, acl );
   }
 }
