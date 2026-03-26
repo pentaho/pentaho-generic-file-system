@@ -1257,46 +1257,50 @@ class DefaultGenericFileServiceTest {
     }
   }
 
-  @Test
-  void testGetFileAclSuccess() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testGetFileAclSuccess( boolean forceInheriting ) throws Exception {
     FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
     IGenericFileAcl acl1 = mock( IGenericFileAcl.class );
     IGenericFileAcl acl2 = mock( IGenericFileAcl.class );
 
-    doReturn( acl1 ).when( useCase.provider1Mock ).getFileAcl( useCase.path1 );
-    doReturn( acl2 ).when( useCase.provider2Mock ).getFileAcl( useCase.path2 );
+    doReturn( acl1 ).when( useCase.provider1Mock ).getFileAcl( useCase.path1, forceInheriting );
+    doReturn( acl2 ).when( useCase.provider2Mock ).getFileAcl( useCase.path2, forceInheriting );
 
-    assertSame( acl1, useCase.service.getFileAcl( useCase.path1 ) );
-    assertSame( acl2, useCase.service.getFileAcl( useCase.path2 ) );
-    verify( useCase.provider1Mock ).getFileAcl( useCase.path1 );
-    verify( useCase.provider2Mock ).getFileAcl( useCase.path2 );
+    assertSame( acl1, useCase.service.getFileAcl( useCase.path1, forceInheriting ) );
+    assertSame( acl2, useCase.service.getFileAcl( useCase.path2, forceInheriting ) );
+    verify( useCase.provider1Mock ).getFileAcl( useCase.path1, forceInheriting );
+    verify( useCase.provider2Mock ).getFileAcl( useCase.path2, forceInheriting );
   }
 
-  @Test
-  void testGetFileAclPathNotFound() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testGetFileAclPathNotFound( boolean forceInheriting ) throws Exception {
     FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
 
     NotFoundException exception =
-      assertThrows( NotFoundException.class, () -> useCase.service.getFileAcl( useCase.path1 ) );
+      assertThrows( NotFoundException.class, () -> useCase.service.getFileAcl( useCase.path1, forceInheriting ) );
 
     assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
-    verify( useCase.provider1Mock, never() ).getFileAcl( any() );
+    verify( useCase.provider1Mock, never() ).getFileAcl( any(), anyBoolean() );
   }
 
-  @Test
-  void testGetFileAclException() throws Exception {
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testGetFileAclException( boolean forceInheriting ) throws Exception {
     FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
 
     doThrow( new OperationFailedException( "ACL failed." ) ).when( useCase.provider1Mock )
-      .getFileAcl( useCase.path1 );
+      .getFileAcl( useCase.path1, forceInheriting );
 
     OperationFailedException exception =
-      assertThrows( OperationFailedException.class, () -> useCase.service.getFileAcl( useCase.path1 ) );
+      assertThrows( OperationFailedException.class,
+        () -> useCase.service.getFileAcl( useCase.path1, forceInheriting ) );
 
     assertEquals( "ACL failed.", exception.getMessage() );
-    verify( useCase.provider1Mock ).getFileAcl( useCase.path1 );
+    verify( useCase.provider1Mock ).getFileAcl( useCase.path1, forceInheriting );
   }
 
   @Test
@@ -1339,6 +1343,62 @@ class DefaultGenericFileServiceTest {
 
     assertEquals( "Set ACL failed.", exception.getMessage() );
     verify( useCase.provider1Mock ).setFileAcl( useCase.path1, acl );
+  }
+
+  // region validateFileAcl
+  @Test
+  void testValidateFileAclSuccess() throws Exception {
+    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
+    IGenericFileAcl acl1 = mock( IGenericFileAcl.class );
+    IGenericFileAcl acl2 = mock( IGenericFileAcl.class );
+
+    doReturn( true ).when( useCase.provider1Mock ).validateFileAcl( acl1 );
+    doReturn( true ).when( useCase.provider2Mock ).validateFileAcl( acl2 );
+
+    assertTrue( useCase.service.validateFileAcl( useCase.path1, acl1 ) );
+    assertTrue( useCase.service.validateFileAcl( useCase.path2, acl2 ) );
+    verify( useCase.provider1Mock ).validateFileAcl( acl1 );
+    verify( useCase.provider2Mock ).validateFileAcl( acl2 );
+  }
+
+  @Test
+  void testValidateFileAclReturnsFalse() throws Exception {
+    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doReturn( false ).when( useCase.provider1Mock ).validateFileAcl( acl );
+
+    assertFalse( useCase.service.validateFileAcl( useCase.path1, acl ) );
+    verify( useCase.provider1Mock ).validateFileAcl( acl );
+  }
+
+  @Test
+  void testValidateFileAclPathNotFound() throws Exception {
+    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( useCase.path1 );
+
+    NotFoundException exception = assertThrows( NotFoundException.class,
+      () -> useCase.service.validateFileAcl( useCase.path1, acl ) );
+
+    assertEquals( "Path not found '" + useCase.path1 + "'.", exception.getMessage() );
+    verify( useCase.provider1Mock, never() ).validateFileAcl( any() );
+  }
+
+  @Test
+  void testValidateFileAclException() throws Exception {
+    FileAclMultipleProviderUseCase useCase = new FileAclMultipleProviderUseCase();
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    doThrow( new OperationFailedException( "Validate ACL failed." ) ).when( useCase.provider1Mock )
+      .validateFileAcl( acl );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> useCase.service.validateFileAcl( useCase.path1, acl ) );
+
+    assertEquals( "Validate ACL failed.", exception.getMessage() );
+    verify( useCase.provider1Mock ).validateFileAcl( acl );
   }
   // endregion
 
