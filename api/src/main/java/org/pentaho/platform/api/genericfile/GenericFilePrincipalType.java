@@ -10,13 +10,10 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile;
 
-public enum GenericFilePermission {
-  READ,
-  WRITE,
-  DELETE,
-  ACL_MANAGEMENT,
-  ALL;
+public enum GenericFilePrincipalType {
+  USER,
+  ROLE;
 }
+

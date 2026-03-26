@@ -25,6 +25,7 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.exception.ResourceAccessDeniedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileAcl;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -939,5 +940,91 @@ public interface IGenericFileService {
   default void setFileMetadata( @NonNull String path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException {
     setFileMetadata( GenericFilePath.parseRequired( path ), metadata );
+  }
+
+  /**
+   * Gets the file acl settings, given its path.
+   *
+   * @param path The file path to get the acl settings from. This path must not refer to an item in the trash (deleted).
+   * @return The file acl settings.
+   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
+   *                                       implementation.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted).
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets the file acl settings, given its path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileAcl(GenericFilePath)}
+   * with the result.
+   *
+   * @param path The string representation of the file's path to get the acl settings from. This path must not refer to
+   *             an item in the trash (deleted).
+   * @return The file acl settings.
+   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
+   *                                       implementation.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws InvalidPathException          If the specified path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted).
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getFileAcl(GenericFilePath)
+   */
+  @NonNull
+  default IGenericFileAcl getFileAcl( @NonNull String path ) throws OperationFailedException {
+    return getFileAcl( GenericFilePath.parseRequired( path ) );
+  }
+
+  /**
+   * Sets the file acl settings, given its path and the acl settings to set.
+   *
+   * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
+   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
+   *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
+   *             inheritance semantics.
+   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
+   *                                       inheritance is disabled but no entries are provided).
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException;
+
+  /**
+   * Sets the file acl settings, given its path and the acl settings to set.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls
+   * {@link #setFileAcl(GenericFilePath, IGenericFileAcl)} with the result.
+   *
+   * @param path The string representation of the file's path to set the acl settings for. This path must not refer
+   *             to an item in the trash (deleted).
+   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
+   *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
+   *             inheritance semantics.
+   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
+   *                                       inheritance is disabled but no entries are provided).
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws InvalidPathException          If the specified path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the
+   *                                       trash (deleted), or the current user is not allowed to access it.
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#setFileAcl(GenericFilePath, IGenericFileAcl)
+   */
+  default void setFileAcl( @NonNull String path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException {
+    setFileAcl( GenericFilePath.parseRequired( path ), acl );
   }
 }
