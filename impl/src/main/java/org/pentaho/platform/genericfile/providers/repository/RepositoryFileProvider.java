@@ -823,7 +823,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     throws OperationFailedException {
     // Validate the ACL before trying to set it to ensure correct exception is thrown in case of invalid ACL.
     if ( !validateFileAcl( acl ) ) {
-      throw new InvalidOperationException( "The ACL contains invalid users or roles." );
+      throw new InvalidOperationException(
+        "The ACL is invalid. It may contain invalid users or roles, empty or missing entries, or entries with empty "
+          + "permissions." );
     }
 
     try {

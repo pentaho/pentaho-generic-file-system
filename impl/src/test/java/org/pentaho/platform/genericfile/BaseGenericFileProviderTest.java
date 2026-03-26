@@ -159,8 +159,7 @@ class BaseGenericFileProviderTest {
     }
 
     @Override
-    public boolean validateFileAcl( @org.checkerframework.checker.nullness.qual.NonNull IGenericFileAcl acl )
-      throws OperationFailedException {
+    public boolean validateFileAcl( @NonNull IGenericFileAcl acl ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
