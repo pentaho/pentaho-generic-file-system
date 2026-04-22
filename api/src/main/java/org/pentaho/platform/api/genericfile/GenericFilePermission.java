@@ -17,6 +17,5 @@ public enum GenericFilePermission {
   READ,
   WRITE,
   DELETE,
-  ACL_MANAGEMENT,
-  ALL;
+  ACL_MANAGEMENT;
 }

@@ -943,55 +943,106 @@ public interface IGenericFileService {
   }
 
   /**
-   * Gets the file acl settings, given its path.
+   * Gets the file Access Control List (ACL), given its path.
    *
-   * @param path The file path to get the acl settings from. This path must not refer to an item in the trash (deleted).
-   * @return The file acl settings.
-   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
-   *                                       implementation.
+   * @param path The file path to get the Access Control List (ACL) from. This path must not refer to an item in the
+   *             trash (deleted).
+   * @return The file Access Control List (ACL).
+   * @throws InvalidOperationException     If the Access Control List (ACL) cannot be converted to an
+   *                                       {@link IGenericFileAcl} implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
    *                                       (deleted).
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
    */
   @NonNull
-  IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException;
+  default IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return getFileAcl( path, false );
+  }
 
   /**
-   * Gets the file acl settings, given its path.
+   * Gets the file Access Control List (ACL), given its path.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileAcl(GenericFilePath)}
-   * with the result.
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileAcl(GenericFilePath, boolean)} with
+   * the result.
    *
-   * @param path The string representation of the file's path to get the acl settings from. This path must not refer to
-   *             an item in the trash (deleted).
-   * @return The file acl settings.
-   * @throws InvalidOperationException     If the acl settings cannot be converted to an {@link IGenericFileAcl}
-   *                                       implementation.
+   * @param path The string representation of the file's path to get the Access Control List (ACL) from. This path
+   *             must not refer to an item in the trash (deleted).
+   * @return The file Access Control List (ACL).
+   * @throws InvalidOperationException     If the Access Control List (ACL) cannot be converted to an
+   *                                       {@link IGenericFileAcl} implementation.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws InvalidPathException          If the specified path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
    *                                       (deleted).
    * @throws OperationFailedException      If the operation fails for some other (checked) reason.
-   * @see IGenericFileService#getFileAcl(GenericFilePath)
+   * @see IGenericFileService#getFileAcl(GenericFilePath, boolean)
    */
   @NonNull
   default IGenericFileAcl getFileAcl( @NonNull String path ) throws OperationFailedException {
-    return getFileAcl( GenericFilePath.parseRequired( path ) );
+    return getFileAcl( GenericFilePath.parseRequired( path ), false );
   }
 
   /**
-   * Sets the file acl settings, given its path and the acl settings to set.
+   * Gets the file Access Control List (ACL), given its path.
    *
-   * @param path The file path to set the acl settings for. This path must not refer to an item in the trash (deleted).
-   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   * @param path            The file path to get the Access Control List (ACL) from. This path must not refer to an
+   *                        item in the trash (deleted).
+   * @param forceInheriting If {@code true}, the returned Access Control List (ACL) will be forced to inherit entries
+   *                        from its parent folders, if it does not have its own entries; if {@code false}, the returned
+   *                        ACL will be as stored for the file, without any modification.
+   * @return The file Access Control List (ACL).
+   * @throws InvalidOperationException     If the Access Control List (ACL) cannot be converted to an
+   *                                       {@link IGenericFileAcl} implementation.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted).
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  IGenericFileAcl getFileAcl( @NonNull GenericFilePath path, boolean forceInheriting ) throws OperationFailedException;
+
+  /**
+   * Gets the file Access Control List (ACL), given its path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileAcl(GenericFilePath, boolean)} with
+   * the result.
+   *
+   * @param path            The string representation of the file's path to get the Access Control List (ACL) from.
+   *                        This path must not refer to an item in the trash (deleted).
+   * @param forceInheriting If {@code true}, the returned Access Control List (ACL) will be forced to inherit entries
+   *                        from its parent folders, if it does not have its own entries; if {@code false}, the returned
+   *                        ACL will be as stored for the file, without any modification.
+   * @return The file Access Control List (ACL).
+   * @throws InvalidOperationException     If the Access Control List (ACL) cannot be converted to an
+   *                                       {@link IGenericFileAcl} implementation.
+   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
+   * @throws InvalidPathException          If the specified path's string representation is not valid, according to
+   *                                       {@link GenericFilePath#parseRequired(String)}.
+   * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
+   *                                       (deleted).
+   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getFileAcl(GenericFilePath, boolean)
+   */
+  @NonNull
+  default IGenericFileAcl getFileAcl( @NonNull String path, boolean forceInheriting ) throws OperationFailedException {
+    return getFileAcl( GenericFilePath.parseRequired( path ), forceInheriting );
+  }
+
+  /**
+   * Sets the file Access Control List (ACL), given its path and the ACL to set.
+   *
+   * @param path The file path to set the Access Control List (ACL) for. This path must not refer to an item in the
+   *             trash (deleted).
+   * @param acl  The Access Control List (ACL) to set. When {@code entriesInheriting} is {@code false} on the given
    *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
    *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
    *             inheritance semantics.
-   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
-   *                                       inheritance is disabled but no entries are provided).
+   * @throws InvalidOperationException     If the Access Control List (ACL) is not valid, for the target file (for
+   *                                       example, if inheritance is disabled but no entries are provided).
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws NotFoundException             If the specified path does not exist, or does refer to an item in the trash
    *                                       (deleted), or the current user is not allowed to access it.
@@ -1001,20 +1052,20 @@ public interface IGenericFileService {
     throws OperationFailedException;
 
   /**
-   * Sets the file acl settings, given its path and the acl settings to set.
+   * Sets the file Access Control List (ACL), given its path and the ACL to set.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls
    * {@link #setFileAcl(GenericFilePath, IGenericFileAcl)} with the result.
    *
-   * @param path The string representation of the file's path to set the acl settings for. This path must not refer
-   *             to an item in the trash (deleted).
-   * @param acl  The acl settings to set. When {@code entriesInheriting} is {@code false} on the given
+   * @param path The string representation of the file's path to set the Access Control List (ACL) for. This path
+   *             must not refer to an item in the trash (deleted).
+   * @param acl  The Access Control List (ACL) to set. When {@code entriesInheriting} is {@code false} on the given
    *             {@link IGenericFileAcl}, the acl must contain at least one entry; when{@code entriesInheriting} is
    *             {@code true}, the acl entries may be {@code null} or empty and will be interpreted according to the
    *             inheritance semantics.
-   * @throws InvalidOperationException     If the acl settings are not valid, for the target file (for example, if
-   *                                       inheritance is disabled but no entries are provided).
+   * @throws InvalidOperationException     If the Access Control List (ACL) is not valid, for the target file (for
+   *                                       example, if inheritance is disabled but no entries are provided).
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws InvalidPathException          If the specified path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}.
@@ -1026,5 +1077,41 @@ public interface IGenericFileService {
   default void setFileAcl( @NonNull String path, @NonNull IGenericFileAcl acl )
     throws OperationFailedException {
     setFileAcl( GenericFilePath.parseRequired( path ), acl );
+  }
+
+  /**
+   * Validates the given Access Control List (ACL) for a file, given its path.
+   * <p>
+   * This method can be used to validate an ACL before setting it on a file, to ensure that the ACL is valid for the
+   * provider and the file, and to avoid setting an invalid ACL and then having to handle the exception from the
+   * {@code setFileAcl} method.
+   * <p>
+   * The ACL is considered valid if it meets the provider-specific requirements for ACLs, such as having the
+   * necessary fields, having valid entries, and meeting any constraints related to inheritance or other ACL features.
+   *
+   * @param path The file path to validate the Access Control List (ACL). This path must not refer to an item in
+   *             the trash (deleted).
+   * @param acl  The Access Control List (ACL) to validate.
+   * @return {@code true} if the ACL is valid; {@code false} otherwise.
+   */
+  boolean validateFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException;
+
+  /**
+   * Validates the given Access Control List (ACL) for a file, given its path.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls
+   * {@link #validateFileAcl(GenericFilePath, IGenericFileAcl)} with the result.
+   *
+   * @param path The string representation of the file's path to validate the Access Control List (ACL). This path
+   *             must not refer to an item in the trash (deleted).
+   * @param acl  The Access Control List (ACL) to validate.
+   * @return {@code true} if the ACL is valid; {@code false} otherwise.
+   * @see IGenericFileService#validateFileAcl(GenericFilePath, IGenericFileAcl)
+   */
+  default boolean validateFileAcl( @NonNull String path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException {
+    return validateFileAcl( GenericFilePath.parseRequired( path ), acl );
   }
 }

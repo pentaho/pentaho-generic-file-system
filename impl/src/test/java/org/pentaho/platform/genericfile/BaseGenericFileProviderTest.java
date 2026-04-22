@@ -148,13 +148,18 @@ class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
-    @Override public @NonNull IGenericFileAcl getFileAcl( @NonNull GenericFilePath path )
+    @Override public @NonNull IGenericFileAcl getFileAcl( @NonNull GenericFilePath path, boolean forceInheriting )
       throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 
     @Override public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
       throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean validateFileAcl( @NonNull IGenericFileAcl acl ) throws OperationFailedException {
       throw new UnsupportedOperationException();
     }
 

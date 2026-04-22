@@ -606,14 +606,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         case WRITE:
           repositoryFilePermissions.add( RepositoryFilePermission.WRITE );
           break;
-        case ALL:
-          repositoryFilePermissions.add( RepositoryFilePermission.ALL );
-          break;
         case DELETE:
           repositoryFilePermissions.add( RepositoryFilePermission.DELETE );
           break;
         case ACL_MANAGEMENT:
           repositoryFilePermissions.add( RepositoryFilePermission.ACL_MANAGEMENT );
+          break;
+        default:
           break;
       }
     }
@@ -801,7 +800,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @NonNull
   @Override
-  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path, boolean forceInheriting )
+    throws OperationFailedException {
     String pathString = pathToString( path );
 
     // Check existence before trying to get ACL to ensure correct exception is thrown.
@@ -810,7 +810,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     try {
-      return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString ) );
+      return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString, forceInheriting ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
     } catch ( InvalidOperationException e ) {
@@ -824,8 +824,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
     throws OperationFailedException {
     // Validate the ACL before trying to set it to ensure correct exception is thrown in case of invalid ACL.
-    if ( !validateUsersAndRoles( acl ) ) {
-      throw new InvalidOperationException( "The ACL contains invalid users or roles." );
+    if ( !validateFileAcl( acl ) ) {
+      throw new InvalidOperationException(
+        "The ACL is invalid. It may contain invalid users or roles, empty or missing entries, or entries with empty "
+          + "permissions." );
     }
 
     try {
@@ -944,7 +946,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   /**
-   * Checks if the given users and roles are valid, i.e. don't contain illegal characters.
+   * Checks if the given ACL is valid, i.e. users and roles don't contain illegal characters.
    * Illegal characters may lead to repository corruption.
    * <p>
    * RFC 2253 - The names of security principal objects can contain all Unicode characters except the special LDAP
@@ -952,9 +954,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
    * and any of the following characters: # , + " \ < > ; =
    *
    * @param acl the ACL containing the permissions we want to set
-   * @return true if all users and roles are valid, false otherwise
+   * @return true if the ACL is valid, i.e. all users and roles are valid, false otherwise
    */
-  protected boolean validateUsersAndRoles( @NonNull IGenericFileAcl acl ) {
+  @Override
+  public boolean validateFileAcl( @NonNull IGenericFileAcl acl ) {
     // validate the ACL owner first
     if ( !validateSecurityPrincipal( acl.getOwner() ) ) {
       return false;
@@ -1024,7 +1027,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   /**
    * Converts a native permission (int) to {@link GenericFilePermission} enum.
-   * Uses enum ordinal indices for efficient mapping.
+   * <p>
+   * Native permission {@code 4} (ALL) is mapped to {@link GenericFilePermission#ACL_MANAGEMENT},
+   * as the ALL permission has been removed from the generic file permission model.
    *
    * @param nativePermission the native permission as int
    * @return the corresponding {@link GenericFilePermission}, or throw exception if unknown
@@ -1032,6 +1037,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
    */
   @NonNull
   protected GenericFilePermission convertFromNativePermission( int nativePermission ) throws InvalidOperationException {
+    // Native permission 4 (ALL) is mapped to ACL_MANAGEMENT.
+    if ( nativePermission == 4 ) {
+      return GenericFilePermission.ACL_MANAGEMENT;
+    }
+
     if ( nativePermission < 0 || nativePermission >= GenericFilePermission.values().length ) {
       throw new InvalidOperationException( "Unknown permission: " + nativePermission );
     }
@@ -1066,7 +1076,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     throws InvalidOperationException {
     List<IGenericFileAce> aces = null;
 
-    if ( !nativeAcl.isEntriesInheriting() && nativeAcl.getAces() != null ) {
+    if ( nativeAcl.getAces() != null ) {
       aces = new ArrayList<>();
 
       for ( RepositoryFileAclAceDto nativeEntry : nativeAcl.getAces() ) {
@@ -1108,7 +1118,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     // entries are inheriting.
     List<RepositoryFileAclAceDto> nativeAces = new ArrayList<>();
 
-    if ( !acl.isEntriesInheriting() && acl.getEntries() != null ) {
+    if ( acl.getEntries() != null ) {
       for ( IGenericFileAce nativeEntry : acl.getEntries() ) {
         nativeAces.add( convertToNativeFileAclEntry( nativeEntry ) );
       }

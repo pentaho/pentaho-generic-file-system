@@ -449,13 +449,20 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   @NonNull
   @Override
-  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
-    return getOwnerFileProvider( path ).getFileAcl( path );
+  public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path, boolean forceInheriting )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).getFileAcl( path, forceInheriting );
   }
 
   @Override
   public void setFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
     throws OperationFailedException {
     getOwnerFileProvider( path ).setFileAcl( path, acl );
+  }
+
+  @Override
+  public boolean validateFileAcl( @NonNull GenericFilePath path, @NonNull IGenericFileAcl acl )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).validateFileAcl( acl );
   }
 }
