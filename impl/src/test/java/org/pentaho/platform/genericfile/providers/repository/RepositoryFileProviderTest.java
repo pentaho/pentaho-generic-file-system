@@ -3230,8 +3230,7 @@ class RepositoryFileProviderTest {
       RepositoryFilePermission.READ,
       RepositoryFilePermission.WRITE,
       RepositoryFilePermission.DELETE,
-      RepositoryFilePermission.ACL_MANAGEMENT,
-      RepositoryFilePermission.ALL
+      RepositoryFilePermission.ACL_MANAGEMENT
     );
     EnumSet<RepositoryFilePermission> captured = captor.getValue();
     assertEquals( expectedPermissions, captured );
