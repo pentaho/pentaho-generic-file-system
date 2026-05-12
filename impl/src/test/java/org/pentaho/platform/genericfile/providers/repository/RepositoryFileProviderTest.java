@@ -2698,6 +2698,68 @@ class RepositoryFileProviderTest {
 
     assertThrows( OperationFailedException.class, () -> repositoryProvider.getFileAcl( path, forceInheriting ) );
   }
+
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testGetFileAclVerifiesEncodedPathIsPassed( boolean forceInheriting ) throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    String encodedPath = encodeRepositoryPath( path.toString() );
+
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodedPath );
+    doReturn( nativeAcl ).when( fileServiceMock ).doGetFileAcl( encodedPath, forceInheriting );
+
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( acl ).when( repositoryProvider ).convertFromNativeFileAcl( nativeAcl );
+
+    repositoryProvider.getFileAcl( path, forceInheriting );
+
+    verify( fileServiceMock ).doesExist( encodedPath );
+    verify( fileServiceMock ).doGetFileAcl( encodedPath, forceInheriting );
+    verify( repositoryProvider ).convertFromNativeFileAcl( nativeAcl );
+  }
+
+  @ParameterizedTest
+  @ValueSource( booleans = { true, false } )
+  void testGetFileAclReturnsConvertedAclWithCorrectProperties( boolean forceInheriting ) throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    String encodedPath = encodeRepositoryPath( path.toString() );
+
+    RepositoryFileAclDto nativeAcl = new RepositoryFileAclDto();
+    nativeAcl.setOwner( "owner1" );
+    nativeAcl.setOwnerType( 0 ); // USER
+
+    RepositoryFileAclAceDto ace = new RepositoryFileAclAceDto();
+    ace.setRecipient( "user1" );
+    ace.setRecipientType( 0 ); // USER
+    ace.setModifiable( true );
+    ace.setPermissions( List.of( 0, 1 ) ); // READ, WRITE
+    nativeAcl.setAces( List.of( ace ), forceInheriting );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( true ).when( fileServiceMock ).doesExist( encodedPath );
+    doReturn( nativeAcl ).when( fileServiceMock ).doGetFileAcl( encodedPath, forceInheriting );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    IGenericFileAcl result = repositoryProvider.getFileAcl( path, forceInheriting );
+
+    assertNotNull( result );
+    assertEquals( "owner1", result.getOwner() );
+    assertEquals( GenericFilePrincipalType.USER, result.getOwnerType() );
+    assertEquals( forceInheriting, result.isEntriesInheriting() );
+    assertNotNull( result.getEntries() );
+    assertEquals( 1, result.getEntries().size() );
+    assertEquals( "user1", result.getEntries().get( 0 ).getRecipient() );
+    assertEquals( 2, result.getEntries().get( 0 ).getPermissions().size() );
+    assertEquals( GenericFilePermission.READ, result.getEntries().get( 0 ).getPermissions().get( 0 ) );
+    assertEquals( GenericFilePermission.WRITE, result.getEntries().get( 0 ).getPermissions().get( 1 ) );
+  }
   // endregion
 
   // region setFileAcl
@@ -2780,6 +2842,59 @@ class RepositoryFileProviderTest {
     doReturn( true ).when( repositoryProvider ).validateFileAcl( acl );
     doThrow( new RuntimeException( "acl set failed" ) ).when( fileServiceMock )
       .setFileAcls( encodeRepositoryPath( path.toString() ), nativeAcl );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
+  }
+
+  @Test
+  void testSetFileAclUnifiedRepositoryExceptionWithAccessDeniedCause() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    UnifiedRepositoryException wrappedException =
+      new UnifiedRepositoryException( new UnifiedRepositoryAccessDeniedException( "wrapped access denied" ) );
+    doThrow( wrappedException ).when( fileServiceMock ).setFileAcls( any(), any() );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( true ).when( repositoryProvider ).validateFileAcl( acl );
+
+    assertThrows( ResourceAccessDeniedException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
+  }
+
+  @Test
+  void testSetFileAclUnifiedRepositoryExceptionWithOtherCause() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    UnifiedRepositoryException wrappedException =
+      new UnifiedRepositoryException( new RuntimeException( "other cause" ) );
+    doThrow( wrappedException ).when( fileServiceMock ).setFileAcls( any(), any() );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( true ).when( repositoryProvider ).validateFileAcl( acl );
+
+    assertThrows( OperationFailedException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
+  }
+
+  @Test
+  void testSetFileAclUnifiedRepositoryExceptionWithNullCause() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/testFile1" );
+    IGenericFileAcl acl = mock( IGenericFileAcl.class );
+    RepositoryFileAclDto nativeAcl = mock( RepositoryFileAclDto.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    UnifiedRepositoryException wrappedException = new UnifiedRepositoryException( "no cause" );
+    doThrow( wrappedException ).when( fileServiceMock ).setFileAcls( any(), any() );
+    RepositoryFileProvider repositoryProvider = spy(
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+    doReturn( nativeAcl ).when( repositoryProvider ).convertToNativeFileAcl( acl );
+    doReturn( true ).when( repositoryProvider ).validateFileAcl( acl );
 
     assertThrows( OperationFailedException.class, () -> repositoryProvider.setFileAcl( path, acl ) );
   }

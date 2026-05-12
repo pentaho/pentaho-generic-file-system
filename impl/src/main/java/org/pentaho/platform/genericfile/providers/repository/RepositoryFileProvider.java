@@ -812,7 +812,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString, forceInheriting ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+      throw new ResourceAccessDeniedException( "User is not authorized to get the ACL for this path.", path );
     } catch ( InvalidOperationException e ) {
       throw e;
     } catch ( Exception e ) {
@@ -835,7 +835,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+      throw new ResourceAccessDeniedException( "User is not authorized to set the ACL for this path.", path );
+    } catch ( UnifiedRepositoryException e ) {
+      if ( e.getCause() instanceof UnifiedRepositoryAccessDeniedException ) {
+        throw new ResourceAccessDeniedException( "User is not authorized to set the ACL for this path.", path );
+      }
+
+      throw new OperationFailedException( e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
