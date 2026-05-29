@@ -264,8 +264,7 @@ public interface IGenericFileService {
    * @param path              The path of the generic file to create.
    * @param content           The content to write to the file as an InputStream.
    * @param createFileOptions The options for creating the file, includes the overwrite flag.
-   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
-   * overwrite is false.
+   * @return {@code true}, if the file was created or overwritten.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidPathException          If the file path is not valid.
@@ -297,8 +296,7 @@ public interface IGenericFileService {
    * @param path              The string representation of the path of the generic file.
    * @param content           The content to write to the file as an InputStream.
    * @param createFileOptions The options for creating the file, includes the overwrite flag.
-   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
-   * overwrite is false.
+   * @return {@code true}, if the file was created or overwritten.
    * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
    * @throws AccessControlException        If the current user cannot perform this operation.
    * @throws InvalidPathException          If the file path is not valid.

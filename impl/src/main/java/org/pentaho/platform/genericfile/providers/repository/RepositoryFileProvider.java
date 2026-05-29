@@ -80,7 +80,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -253,8 +252,14 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
             .versioned( false )
             .build();
 
-        Serializable parentId = getNativeFile( Objects.requireNonNull( path.getParent() ) ).getId();
-        file = unifiedRepository.createFile( parentId, newFile, fileData, FILE_CREATE_MSG );
+        org.pentaho.platform.api.repository2.unified.RepositoryFile parentFile =
+          getNativeFile( Objects.requireNonNull( path.getParent() ) );
+
+        if ( !parentFile.isFolder() ) {
+          throw new InvalidOperationException( "Parent path is not a folder." );
+        }
+
+        file = unifiedRepository.createFile( parentFile.getId(), newFile, fileData, FILE_CREATE_MSG );
       }
 
       if ( file == null ) {
