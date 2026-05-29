@@ -17,6 +17,7 @@ import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
@@ -38,6 +39,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.importexport.ExportException;
+import org.pentaho.platform.api.repository2.unified.IRepositoryContentConverterHandler;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -67,6 +69,7 @@ import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
 import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
+import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
@@ -247,8 +250,11 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
         file = unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
       } else {
+        String newName = path.getLastSegment();
+        validateFileName( newName );
+
         org.pentaho.platform.api.repository2.unified.RepositoryFile newFile =
-          new org.pentaho.platform.api.repository2.unified.RepositoryFile.Builder( path.getLastSegment() )
+          new org.pentaho.platform.api.repository2.unified.RepositoryFile.Builder( newName )
             .versioned( false )
             .build();
 
@@ -320,6 +326,23 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     // Default fallback.
     return mimeType != null ? mimeType : "application/octet-stream";
+  }
+
+  protected void validateFileName( @NonNull String fileName ) throws InvalidOperationException {
+    if ( StringUtils.isEmpty( fileName ) ) {
+      throw new InvalidOperationException( "File name cannot be empty." );
+    }
+
+    String ext = RepositoryFilenameUtils.getExtension( fileName );
+    IRepositoryContentConverterHandler handler = getContentConverterHandler();
+
+    if ( handler != null && handler.getConverter( ext ) == null ) {
+      throw new InvalidOperationException( String.format( "The file extension '%s' is not valid.", fileName ) );
+    }
+
+    if ( !fileService.isValidFileName( fileName, true ) ) {
+      throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", fileName ) );
+    }
   }
 
   @NonNull
@@ -985,6 +1008,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   protected ExportHandler getPentahoExportHandler() {
     return PentahoSystem.get( DefaultExportHandler.class );
+  }
+
+  protected IRepositoryContentConverterHandler getContentConverterHandler() {
+    return PentahoSystem.get( IRepositoryContentConverterHandler.class );
   }
 
   protected String getFileId( @NonNull GenericFilePath path ) throws OperationFailedException {

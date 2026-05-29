@@ -41,6 +41,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 import org.pentaho.platform.api.importexport.ExportException;
+import org.pentaho.platform.api.repository2.unified.IRepositoryContentConverterHandler;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
@@ -4599,6 +4600,60 @@ class RepositoryFileProviderTest {
    }
    // endregion
 
+   // region validateFileName
+   @Test
+   void testValidateFileNameValidWithNoConverterHandler() {
+     FileService fileServiceMock = mock( FileService.class );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( "file.txt", true );
+
+     RepositoryFileProvider repositoryProvider = spy(
+       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+     doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
+
+     assertDoesNotThrow( () -> repositoryProvider.validateFileName( "file.txt" ) );
+   }
+
+   @Test
+   void testValidateFileNameEmptyName() {
+     RepositoryFileProvider repositoryProvider =
+       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+     InvalidOperationException exception = assertThrows( InvalidOperationException.class,
+       () -> repositoryProvider.validateFileName( "" ) );
+
+     assertEquals( "File name cannot be empty.", exception.getMessage() );
+   }
+
+   @Test
+   void testValidateFileNameInvalidExtensionWhenConverterMissing() {
+     IRepositoryContentConverterHandler converterHandlerMock = mock( IRepositoryContentConverterHandler.class );
+
+     RepositoryFileProvider repositoryProvider = spy(
+       new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) ) );
+     doReturn( converterHandlerMock ).when( repositoryProvider ).getContentConverterHandler();
+
+     InvalidOperationException exception = assertThrows( InvalidOperationException.class,
+       () -> repositoryProvider.validateFileName( "report.prpt" ) );
+
+     assertEquals( "The file extension 'report.prpt' is not valid.", exception.getMessage() );
+   }
+
+   @Test
+   void testValidateFileNameInvalidByFileService() {
+     FileService fileServiceMock = mock( FileService.class );
+     doReturn( false ).when( fileServiceMock ).isValidFileName( "bad?.txt", true );
+
+     RepositoryFileProvider repositoryProvider = spy(
+       new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock ) );
+     doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
+
+     InvalidOperationException exception = assertThrows( InvalidOperationException.class,
+       () -> repositoryProvider.validateFileName( "bad?.txt" ) );
+
+     assertEquals( "The new name 'bad?.txt' is not valid.", exception.getMessage() );
+   }
+   // endregion
+
    // region detectMimeType and createSimpleRepositoryFileData
    @Test
    void testDetectMimeTypeFromStreamContentSupported() throws Exception {
@@ -4765,6 +4820,7 @@ class RepositoryFileProviderTest {
      FileService fileServiceMock = mock( FileService.class );
      doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
      doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( path.getLastSegment(), true );
 
      RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
      doReturn( "text/plain" ).when( repositoryProvider ).detectMimeType( any(), eq( path ) );
@@ -4796,6 +4852,7 @@ class RepositoryFileProviderTest {
      FileService fileServiceMock = mock( FileService.class );
      doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
      doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( path.getLastSegment(), true );
 
      RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
      doReturn( "text/plain" ).when( repositoryProvider ).detectMimeType( any(), eq( path ) );
@@ -4824,6 +4881,7 @@ class RepositoryFileProviderTest {
      FileService fileServiceMock = mock( FileService.class );
      doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
      doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( path.getLastSegment(), true );
 
      RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
      doReturn( "text/plain" ).when( repositoryProvider ).detectMimeType( any(), eq( path ) );
@@ -4894,6 +4952,7 @@ class RepositoryFileProviderTest {
      FileService fileServiceMock = mock( FileService.class );
      doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
      doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( path.getLastSegment(), true );
 
      RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
      doReturn( "text/plain" ).when( repositoryProvider ).detectMimeType( any(), eq( path ) );
@@ -4922,6 +4981,7 @@ class RepositoryFileProviderTest {
      FileService fileServiceMock = mock( FileService.class );
      doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
      doReturn( true ).when( fileServiceMock ).isPathValid( path.toString() );
+     doReturn( true ).when( fileServiceMock ).isValidFileName( path.getLastSegment(), true );
 
      RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
      doReturn( "text/plain" ).when( repositoryProvider ).detectMimeType( any(), eq( path ) );
@@ -5014,7 +5074,7 @@ class RepositoryFileProviderTest {
      OperationFailedException exception = assertThrows( OperationFailedException.class,
        () -> repositoryProvider.createFileCore( path, inputStream, options ) );
 
-     assertEquals( "Unable to create " + path + " to repository.", exception.getMessage() );
+      assertEquals( "Unable to create " + path + " in the repository.", exception.getMessage() );
    }
    // endregion
 }
