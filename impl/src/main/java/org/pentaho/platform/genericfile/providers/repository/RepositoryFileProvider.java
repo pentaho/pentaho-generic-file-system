@@ -263,7 +263,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       }
 
       if ( file == null ) {
-        throw new OperationFailedException( "Unable to create " + path + " to repository." );
+        throw new OperationFailedException( "Unable to create " + path + " in the repository." );
       }
     } catch ( OperationFailedException e ) {
       throw e;
