@@ -16,6 +16,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,6 +41,9 @@ public class GetTreeOptions {
   private boolean includeMetadata;
 
   private boolean bypassCache;
+
+  @NonNull
+  private List<String> providers = List.of( TreeProviderTypes.ALL );
 
   /**
    * Enum to represent the three filters that can be applied to trees.
@@ -102,6 +106,7 @@ public class GetTreeOptions {
     this.includeHidden = other.includeHidden;
     this.includeMetadata = other.includeMetadata;
     this.bypassCache = other.bypassCache;
+    this.providers = other.providers != null ? List.copyOf( other.providers ) : List.of( TreeProviderTypes.ALL );
     this.filter = other.filter;
   }
 
@@ -355,6 +360,45 @@ public class GetTreeOptions {
     this.bypassCache = bypassCache;
   }
 
+  @NonNull
+  public List<String> getProviders() {
+    return providers;
+  }
+
+  public void setProviders( @Nullable List<String> providers ) {
+    if ( providers == null || providers.isEmpty() ) {
+      this.providers = List.of( TreeProviderTypes.ALL );
+      return;
+    }
+
+    List<String> parsedProviders = providers.stream()
+      .filter( Objects::nonNull )
+      .flatMap( provider -> Arrays.stream( provider.split( "," ) ) )
+      .map( String::trim )
+      .filter( provider -> !provider.isEmpty() )
+      .map( TreeProviderTypes::normalizeProvider )
+      .distinct()
+      .toList();
+
+    if ( parsedProviders.isEmpty() ) {
+      throw new IllegalArgumentException( "Providers list cannot be empty." );
+    }
+
+    if ( parsedProviders.contains( TreeProviderTypes.ALL ) && parsedProviders.size() > 1 ) {
+      throw new IllegalArgumentException( "'ALL' cannot be combined with specific providers." );
+    }
+
+    this.providers = List.copyOf( parsedProviders );
+  }
+
+  public boolean includesProviderType( @Nullable String providerType ) {
+    return TreeProviderTypes.includesProviderType( providers, providerType );
+  }
+
+  public boolean includesAllProviders() {
+    return TreeProviderTypes.includesAllProviders( providers );
+  }
+
   @Override
   public boolean equals( Object other ) {
     if ( this == other ) {
@@ -374,12 +418,13 @@ public class GetTreeOptions {
       && Objects.equals( filter, that.filter )
       && Objects.equals( includeHidden, that.includeHidden )
       && Objects.equals( includeMetadata, that.includeMetadata )
-      && Objects.equals( bypassCache, that.bypassCache );
+      && Objects.equals( bypassCache, that.bypassCache )
+      && Objects.equals( providers, that.providers );
   }
 
   @Override
   public int hashCode() {
     return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, includeMetadata,
-      bypassCache );
+      bypassCache, providers );
   }
 }

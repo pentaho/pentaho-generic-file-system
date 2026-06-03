@@ -22,6 +22,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
 import org.pentaho.platform.api.genericfile.GetFileOptions;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.TreeProviderTypes;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
@@ -110,7 +111,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
-  public static final String TYPE = "repository";
+  public static final String TYPE = TreeProviderTypes.REPOSITORY;
 
   @NonNull
   private final IUnifiedRepository unifiedRepository;
@@ -215,6 +216,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   protected List<BaseGenericFileTree> getRootTreesCore( @NonNull GetTreeOptions options )
     throws OperationFailedException {
+    if ( !options.includesProviderType( TYPE ) ) {
+      return Collections.emptyList();
+    }
+
     // Ignore options.getBasePath()
     // Result already has a null parent path.
     return List.of( getTreeCore( ROOT_GENERIC_PATH, options ) );
@@ -233,6 +238,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       basePath = ROOT_GENERIC_PATH;
       assert basePath != null;
     } else if ( !owns( basePath ) ) {
+      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
+    }
+
+    if ( !options.includesProviderType( TYPE ) ) {
       throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
     }
 
