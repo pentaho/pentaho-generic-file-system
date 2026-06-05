@@ -225,12 +225,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
     }
 
-    boolean override = createFileOptions.isOverwrite();
+    org.pentaho.platform.api.repository2.unified.RepositoryFile file = null;
 
     try {
       SimpleRepositoryFileData fileData = createSimpleRepositoryFileData( content, path );
-
-      org.pentaho.platform.api.repository2.unified.RepositoryFile file = null;
 
       try {
         file = getNativeFile( path );
@@ -244,8 +242,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           throw new InvalidOperationException( "File is a folder." );
         }
 
-        if ( !override ) {
-          throw new ConflictException( String.format( "File already exists at '%s'.", path ) );
+        if ( !createFileOptions.isOverwrite() ) {
+          return false;
         }
 
         file = unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
@@ -259,7 +257,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
             .build();
 
         org.pentaho.platform.api.repository2.unified.RepositoryFile parentFile =
-          getNativeFile( Objects.requireNonNull( path.getParent() ) );
+          getOrCreateNativeFile( Objects.requireNonNull( path.getParent() ) );
 
         if ( !parentFile.isFolder() ) {
           throw new InvalidOperationException( "Parent path is not a folder." );
@@ -267,16 +265,14 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
         file = unifiedRepository.createFile( parentFile.getId(), newFile, fileData, FILE_CREATE_MSG );
       }
-
-      if ( file == null ) {
-        throw new OperationFailedException( "Unable to create " + path + " in the repository." );
-      }
-    } catch ( OperationFailedException e ) {
-      throw e;
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new ResourceAccessDeniedException( "User is not authorized to create this path.", path );
-    } catch ( Exception e ) {
+    } catch ( UnifiedRepositoryException | IOException e ) {
       throw new OperationFailedException( e );
+    }
+
+    if ( file == null ) {
+      throw new OperationFailedException( "Unable to create " + path + " in the repository." );
     }
 
     return true;
@@ -1016,6 +1012,25 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   protected String getFileId( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getNativeFile( path ).getId().toString();
+  }
+
+  protected org.pentaho.platform.api.repository2.unified.RepositoryFile getOrCreateNativeFile(
+    @NonNull GenericFilePath path )
+    throws OperationFailedException {
+    org.pentaho.platform.api.repository2.unified.RepositoryFile file = null;
+
+    try {
+      file = getNativeFile( path );
+    } catch ( NotFoundException e ) {
+      if ( createFolderCore( path ) ) {
+        file = getNativeFile( path );
+      }
+    } catch ( ResourceAccessDeniedException e ) {
+      throw new InvalidOperationException( e.getMessage() );
+    }
+
+
+    return file;
   }
 
   protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {

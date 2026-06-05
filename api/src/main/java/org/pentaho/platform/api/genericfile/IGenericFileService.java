@@ -258,25 +258,23 @@ public interface IGenericFileService {
   /**
    * Creates a file given its path and content, with default options.
    * <p>
-   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and
-   * allowed.
+   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and allowed.
    *
    * @param path              The path of the generic file to create.
    * @param content           The content to write to the file as an InputStream.
    * @param createFileOptions The options for creating the file, includes the overwrite flag.
-   * @return {@code true}, if the file was created or overwritten.
-   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
-   * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws InvalidPathException          If the file path is not valid.
-   * @throws NotFoundException             If the specified file parent does not exist.
-   * @throws InvalidOperationException     If the path, or one of its prefixes, does not exist and cannot be created
-   *                                       using this service (e.g. connections, buckets);
-   *                                       if the path exists but references a folder, or its longest existing prefix
-   *                                       does not reference a folder;
-   *                                       if the path does not exist and the current user is not allowed to create
-   *                                       files on the folder denoted by its longest existing prefix.
-   * @throws ConflictException             If the file already exists, and it's not set to override.
-   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
+   * overwrite is false.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
+   *                                   if the path exists but references a folder, or its longest existing prefix
+   *                                   does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   files on the folder denoted by its longest existing prefix;
+   *                                   if the file type is not accepted;
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
   boolean createFile( @NonNull GenericFilePath path,
                       @NonNull InputStream content,
@@ -286,8 +284,7 @@ public interface IGenericFileService {
   /**
    * Creates a file given its path and content, with default options.
    * <p>
-   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and
-   * allowed.
+   * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and allowed.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parseRequired(String)} and then calls
@@ -296,18 +293,17 @@ public interface IGenericFileService {
    * @param path              The string representation of the path of the generic file.
    * @param content           The content to write to the file as an InputStream.
    * @param createFileOptions The options for creating the file, includes the overwrite flag.
-   * @return {@code true}, if the file was created or overwritten.
-   * @throws ResourceAccessDeniedException If the current user cannot access the specified path.
-   * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws InvalidPathException          If the file path is not valid.
-   * @throws NotFoundException             If the specified file parent does not exist.
-   * @throws InvalidOperationException     If the path, or one of its prefixes, does not exist and cannot be created
-   *                                       using this service (e.g. connections, buckets);
-   *                                       if the path or its longest existing prefix does not reference a folder;
-   *                                       if the path does not exist and the current user is not allowed to create
-   *                                       files on the folder denoted by its longest existing prefix.
-   * @throws ConflictException             If the file already exists, and it's not set to override.
-   * @throws OperationFailedException      If the operation fails for some other (checked) reason.
+   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
+   * overwrite is false.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
+   *                                   using this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create
+   *                                   files on the folder denoted by its longest existing prefix;
+   *                                   if the file type is not accepted;
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see IGenericFileService#createFile(GenericFilePath, InputStream, CreateFileOptions)
    */
   default boolean createFile( @NonNull String path,

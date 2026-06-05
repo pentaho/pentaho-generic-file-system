@@ -3213,7 +3213,7 @@ class RepositoryFileProviderTest {
   }
 
   @Test
-  void testCreateFileCoreThrowsConflictExceptionWhenFileExistsAndNoOverwrite() throws Exception {
+  void testCreateFileCoreReturnsFalseWhenFileExistsAndNoOverwrite() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -3229,8 +3229,10 @@ class RepositoryFileProviderTest {
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    assertThrows( ConflictException.class,
-      () -> repositoryProvider.createFile( path, inputStream, options ) );
+    boolean result = repositoryProvider.createFile( path, inputStream, options );
+
+    assertFalse( result );
+    verify( repositoryMock, never() ).updateFile( any(), any(), anyString() );
   }
 
   @Test
@@ -3525,7 +3527,7 @@ class RepositoryFileProviderTest {
   }
 
   @Test
-  void testCreateFileCoreThrowsNotFoundExceptionWhenParentFolderDoesNotExist() throws Exception {
+  void testCreateFileCoreCreatesParentFolderWhenParentFolderDoesNotExist() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/nonExistentFolder/newFile.txt" );
     GenericFilePath parentPath = path.getParent();
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
@@ -3536,18 +3538,25 @@ class RepositoryFileProviderTest {
 
     // getNativeFile for file returns null → NotFoundException (file doesn't exist)
     doReturn( null ).when( repositoryMock ).getFile( path.toString() );
-    // getNativeFile for parent returns null → NotFoundException (parent doesn't exist)
-    doReturn( null ).when( repositoryMock ).getFile( parentPath.toString() );
+
+    // Parent folder after it's created
+    RepositoryFile parentFolder = createNativeFile( "parentId", parentPath, true );
+
+    RepositoryFile createdFile = createNativeFile( "newId", path, false );
+    doReturn( createdFile ).when( repositoryMock ).createFile( any(), any(), any(), anyString() );
 
     RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
     doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
+    // Mock getOrCreateNativeFile to simulate folder creation
+    doReturn( parentFolder ).when( repositoryProvider ).getOrCreateNativeFile( parentPath );
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    assertThrows( NotFoundException.class,
-      () -> repositoryProvider.createFile( path, inputStream, options ) );
+    boolean result = repositoryProvider.createFile( path, inputStream, options );
 
-    verify( repositoryMock, never() ).createFile( any(), any(), any(), anyString() );
+    assertTrue( result );
+    verify( repositoryProvider ).getOrCreateNativeFile( parentPath );
+    verify( repositoryMock ).createFile( eq( "parentId" ), any(), any(), anyString() );
   }
 
   @Test
@@ -3562,12 +3571,12 @@ class RepositoryFileProviderTest {
 
     // getNativeFile for file returns null → NotFoundException (file doesn't exist)
     doReturn( null ).when( repositoryMock ).getFile( path.toString() );
-    // getNativeFile for parent throws access denied
-    doThrow( new UnifiedRepositoryAccessDeniedException( "no access to parent" ) )
-      .when( repositoryMock ).getFile( parentPath.toString() );
 
     RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
     doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
+    // Mock getOrCreateNativeFile to throw ResourceAccessDeniedException when parent access is denied
+    doThrow( new ResourceAccessDeniedException( "User is not authorized to access this path.", parentPath ) )
+      .when( repositoryProvider ).getOrCreateNativeFile( parentPath );
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
@@ -4902,6 +4911,175 @@ class RepositoryFileProviderTest {
       // The encoding should be the system encoding (from LocaleHelper.getSystemEncoding())
       assertNotNull( fileData );
     }
+  }
+  // endregion
+
+  // region getOrCreateNativeFile
+  @Test
+  void testGetOrCreateNativeFileReturnsFileWhenItExists() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/existingFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // Existing folder
+    RepositoryFile existingFolder = createNativeFile( "folderId", path, true );
+    doReturn( existingFolder ).when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile result =
+      repositoryProvider.getOrCreateNativeFile( path );
+
+    assertNotNull( result );
+    assertEquals( "folderId", result.getId().toString() );
+    verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileCreatesAndReturnsFileWhenItDoesNotExist() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/newFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // First call returns null (not found), triggering creation
+    RepositoryFile newFolder = createNativeFile( "newFolderId", path, true );
+    doReturn( null ).doReturn( newFolder ).when( repositoryMock ).getFile( path.toString() );
+
+    // Mock createFolderCore to succeed
+    doReturn( true ).when( fileServiceMock ).doCreateDirSafe( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+    doReturn( true ).when( repositoryProvider ).createFolderCore( path );
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile result =
+      repositoryProvider.getOrCreateNativeFile( path );
+
+    assertNotNull( result );
+    assertEquals( "newFolderId", result.getId().toString() );
+    verify( repositoryProvider ).createFolderCore( path );
+    verify( repositoryMock, times( 2 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileReturnsNullWhenCreationFails() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/failFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // First call returns null (not found), triggering creation
+    doReturn( null ).when( repositoryMock ).getFile( path.toString() );
+
+    // Mock createFolderCore to fail (return false)
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+    doReturn( false ).when( repositoryProvider ).createFolderCore( path );
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile result =
+      repositoryProvider.getOrCreateNativeFile( path );
+
+    assertNull( result );
+    verify( repositoryProvider ).createFolderCore( path );
+    verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileThrowsInvalidOperationExceptionWhenAccessDenied() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/restrictedFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // getNativeFile throws UnifiedRepositoryAccessDeniedException which is converted to ResourceAccessDeniedException
+    // Then getOrCreateNativeFile catches ResourceAccessDeniedException and throws InvalidOperationException
+    doThrow( new UnifiedRepositoryAccessDeniedException( "Access denied" ) )
+      .when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    InvalidOperationException exception = assertThrows( InvalidOperationException.class,
+      () -> repositoryProvider.getOrCreateNativeFile( path ) );
+
+    assertNotNull( exception );
+    verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileThrowsOperationFailedExceptionWhenUnifiedRepositoryFails() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/errorFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // getNativeFile throws UnifiedRepositoryException
+    doThrow( new UnifiedRepositoryException( "Repository error" ) )
+      .when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    OperationFailedException exception = assertThrows( OperationFailedException.class,
+      () -> repositoryProvider.getOrCreateNativeFile( path ) );
+
+    assertNotNull( exception );
+    verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileThrowsOperationFailedExceptionWhenCreateFolderCoreFails() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/createFailFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // First call returns null (not found), triggering creation
+    doReturn( null ).when( repositoryMock ).getFile( path.toString() );
+
+    // Mock createFolderCore to throw an exception
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+    doThrow( new OperationFailedException( "Failed to create folder" ) )
+      .when( repositoryProvider ).createFolderCore( path );
+
+    assertThrows( OperationFailedException.class,
+      () -> repositoryProvider.getOrCreateNativeFile( path ) );
+
+    verify( repositoryProvider ).createFolderCore( path );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileThrowsInvalidPathExceptionDuringCreation() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/invalidNameFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // First call returns null (not found), triggering creation
+    doReturn( null ).when( repositoryMock ).getFile( path.toString() );
+
+    // Mock createFolderCore to throw InvalidPathException
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+    doThrow( new InvalidPathException( "Invalid path" ) )
+      .when( repositoryProvider ).createFolderCore( path );
+
+    InvalidPathException exception = assertThrows( InvalidPathException.class,
+      () -> repositoryProvider.getOrCreateNativeFile( path ) );
+
+    assertNotNull( exception );
+    verify( repositoryProvider ).createFolderCore( path );
+  }
+
+  @Test
+  void testGetOrCreateNativeFileThrowsAccessControlExceptionDuringCreation() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/noCreatePermissionFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    // First call returns null (not found), triggering creation
+    doReturn( null ).when( repositoryMock ).getFile( path.toString() );
+
+    // Mock createFolderCore to throw AccessControlException
+    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
+    doThrow( new AccessControlException( "No permission to create" ) )
+      .when( repositoryProvider ).createFolderCore( path );
+
+    AccessControlException exception = assertThrows( AccessControlException.class,
+      () -> repositoryProvider.getOrCreateNativeFile( path ) );
+
+    assertNotNull( exception );
+    verify( repositoryProvider ).createFolderCore( path );
   }
   // endregion
 
