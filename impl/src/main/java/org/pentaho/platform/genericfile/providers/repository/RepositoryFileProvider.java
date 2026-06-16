@@ -259,10 +259,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         org.pentaho.platform.api.repository2.unified.RepositoryFile parentFile =
           getOrCreateNativeFolder( Objects.requireNonNull( path.getParent() ) );
 
-        if ( !parentFile.isFolder() ) {
-          throw new InvalidOperationException( "Parent path is not a folder." );
-        }
-
         file = unifiedRepository.createFile( parentFile.getId(), newFile, fileData, FILE_CREATE_MSG );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
@@ -1016,15 +1012,23 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   protected org.pentaho.platform.api.repository2.unified.RepositoryFile getOrCreateNativeFolder(
     @NonNull GenericFilePath path ) throws OperationFailedException {
+    org.pentaho.platform.api.repository2.unified.RepositoryFile folder;
+
     try {
-      return getNativeFile( path );
+      folder = getNativeFile( path );
     } catch ( NotFoundException e ) {
       if ( createFolderCore( path ) ) {
-        return getNativeFile( path );
+        folder = getNativeFile( path );
       } else {
         throw new NotFoundException( String.format( "Unable to create folder '%s'.", path ), path );
       }
     }
+
+    if ( !folder.isFolder() ) {
+      throw new InvalidOperationException( "Path is not a folder." );
+    }
+
+    return folder;
   }
 
   protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {

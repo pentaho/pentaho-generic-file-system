@@ -95,6 +95,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param options The operation options. The {@link GetTreeOptions#getBasePath() base path option} is ignored.
    * @return A list of the real root trees provided by this provider.
+   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getRootTrees(GetTreeOptions)
@@ -380,6 +381,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @return The file Access Control List (ACL).
    * @throws InvalidOperationException If the Access Control List (ACL) cannot be converted to an
    *                                   {@link IGenericFileAcl} implementation.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -399,6 +401,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *             inheritance semantics.
    * @throws InvalidOperationException If the Access Control List (ACL) is not valid, for the target file (for
    *                                   example, if inheritance is disabled but no entries are provided).
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.

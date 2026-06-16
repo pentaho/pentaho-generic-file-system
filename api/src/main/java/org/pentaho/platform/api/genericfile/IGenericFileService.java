@@ -143,6 +143,7 @@ public interface IGenericFileService {
    *
    * @param options The operation options. The {@link GetTreeOptions#getBasePath() base path option} is ignored.
    * @return A list of the real root trees.
+   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -162,6 +163,7 @@ public interface IGenericFileService {
    * The results of this method are not cached, and so {@link GetTreeOptions#isBypassCache()} is ignored.
    *
    * @return A list of the real root trees.
+   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -946,6 +948,7 @@ public interface IGenericFileService {
    * @return The file Access Control List (ACL).
    * @throws InvalidOperationException If the Access Control List (ACL) cannot be converted to an
    *                                   {@link IGenericFileAcl} implementation.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -969,6 +972,7 @@ public interface IGenericFileService {
    *                                   {@link IGenericFileAcl} implementation.
    * @throws InvalidPathException      If the specified path's string representation is not valid, according to
    *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -990,6 +994,7 @@ public interface IGenericFileService {
    * @return The file Access Control List (ACL).
    * @throws InvalidOperationException If the Access Control List (ACL) cannot be converted to an
    *                                   {@link IGenericFileAcl} implementation.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -1014,6 +1019,7 @@ public interface IGenericFileService {
    *                                   {@link IGenericFileAcl} implementation.
    * @throws InvalidPathException      If the specified path's string representation is not valid, according to
    *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -1035,6 +1041,7 @@ public interface IGenericFileService {
    *             inheritance semantics.
    * @throws InvalidOperationException If the Access Control List (ACL) is not valid, for the target file (for
    *                                   example, if inheritance is disabled but no entries are provided).
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the trash
    *                                   (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
@@ -1059,6 +1066,7 @@ public interface IGenericFileService {
    *                                   example, if inheritance is disabled but no entries are provided).
    * @throws InvalidPathException      If the specified path's string representation is not valid, according to
    *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws NotFoundException         If the specified path does not exist, or does refer to an item in the
    *                                   trash (deleted), or the current user is not allowed to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.

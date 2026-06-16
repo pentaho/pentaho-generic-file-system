@@ -3641,7 +3641,7 @@ class RepositoryFileProviderTest {
     InvalidOperationException exception = assertThrows( InvalidOperationException.class,
       () -> repositoryProvider.createFile( path, inputStream, options ) );
 
-    assertEquals( "Parent path is not a folder.", exception.getMessage() );
+    assertEquals( "Path is not a folder.", exception.getMessage() );
   }
 
   @Test
@@ -4931,6 +4931,24 @@ class RepositoryFileProviderTest {
 
     assertNotNull( result );
     assertEquals( "folderId", result.getId().toString() );
+    verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
+  }
+
+  @Test
+  void testGetOrCreateNativeFolderThrowsInvalidOperationExceptionWhenPathIsNotAFolder() throws Exception {
+    GenericFilePath path = GenericFilePath.parse( "/public/notAFolder" );
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    FileService fileServiceMock = mock( FileService.class );
+
+    RepositoryFile existingFile = createNativeFile( "fileId", path, false );
+    doReturn( existingFile ).when( repositoryMock ).getFile( path.toString() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    InvalidOperationException exception =
+      assertThrows( InvalidOperationException.class, () -> repositoryProvider.getOrCreateNativeFolder( path ) );
+
+    assertEquals( "Path is not a folder.", exception.getMessage() );
     verify( repositoryMock, times( 1 ) ).getFile( path.toString() );
   }
 
