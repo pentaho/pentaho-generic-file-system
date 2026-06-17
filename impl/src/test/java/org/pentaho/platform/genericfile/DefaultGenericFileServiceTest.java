@@ -169,6 +169,7 @@ class DefaultGenericFileServiceTest {
       doReturn( tree2Mock ).when( provider2Mock ).getTree( any( GetTreeOptions.class ) );
 
       optionsMock = mock( GetTreeOptions.class );
+      doReturn( true ).when( optionsMock ).includesAllProviders();
     }
   }
 
@@ -176,16 +177,34 @@ class DefaultGenericFileServiceTest {
   void testGetTreeWithSingleProviderReturnsProviderTreeDirectly()
     throws InvalidGenericFileProviderException, OperationFailedException {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    doReturn( "VFS" ).when( providerMock ).getType();
 
     IGenericFileTree treeMock = mock( IGenericFileTree.class );
     when( providerMock.getTree( any( GetTreeOptions.class ) ) ).thenReturn( treeMock );
 
     DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
     GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+    doReturn( true ).when( optionsMock ).includesAllProviders();
+    doReturn( true ).when( optionsMock ).includesProviderType( any() );
 
     IGenericFileTree resultTree = service.getTree( optionsMock );
 
     assertEquals( treeMock, resultTree );
+  }
+
+  @Test
+  void testGetTreeWithSingleProviderAndExcludedProviderTypeThrowsNotFound()
+    throws InvalidGenericFileProviderException, OperationFailedException {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    doReturn( "REPOSITORY" ).when( providerMock ).getType();
+
+    DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/public" );
+    options.setProviders( List.of( "VFS" ) );
+
+    assertThrows( NotFoundException.class, () -> service.getTree( options ) );
+    verify( providerMock, never() ).getTree( any( GetTreeOptions.class ) );
   }
 
   @Test
@@ -227,6 +246,55 @@ class DefaultGenericFileServiceTest {
 
     assertNotNull( aggregateTree );
     assertEquals( Collections.singletonList( useCase.tree2Mock ), aggregateTree.getChildren() );
+  }
+
+  @Test
+  void testGetTreeWithMultipleProvidersAndNullBasePathDoesNotFilterProviderTrees()
+    throws OperationFailedException, InvalidGenericFileProviderException {
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
+
+    IGenericFile repositoryVfsRoot = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( repositoryVfsRoot ).getName();
+    doReturn( "pvfs://Repository" ).when( repositoryVfsRoot ).getPath();
+    doReturn( repositoryVfsRoot ).when( useCase.tree1Mock ).getFile();
+    doReturn( null ).when( useCase.tree1Mock ).getChildren();
+
+    IGenericFile nonDefaultRoot = mock( IGenericFile.class );
+    doReturn( "OtherConnection" ).when( nonDefaultRoot ).getName();
+    doReturn( "pvfs://OtherConnection" ).when( nonDefaultRoot ).getPath();
+    doReturn( nonDefaultRoot ).when( useCase.tree2Mock ).getFile();
+    doReturn( null ).when( useCase.tree2Mock ).getChildren();
+
+    IGenericFileTree aggregateTree = useCase.service.getTree( useCase.optionsMock );
+
+    assertEquals( Arrays.asList( useCase.tree1Mock, useCase.tree2Mock ), aggregateTree.getChildren() );
+  }
+
+  @Test
+  void testGetTreeWithMultipleProvidersAndNullBasePathPassesProvidersOptionWithoutFiltering()
+    throws OperationFailedException, InvalidGenericFileProviderException {
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
+    doReturn( "vfs" ).when( useCase.provider1Mock ).getType();
+    doReturn( "vfs" ).when( useCase.provider2Mock ).getType();
+
+    IGenericFile repositoryVfsRoot = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( repositoryVfsRoot ).getName();
+    doReturn( "pvfs://Repository" ).when( repositoryVfsRoot ).getPath();
+    doReturn( repositoryVfsRoot ).when( useCase.tree1Mock ).getFile();
+    doReturn( null ).when( useCase.tree1Mock ).getChildren();
+
+    IGenericFile nonDefaultRoot = mock( IGenericFile.class );
+    doReturn( "OtherConnection" ).when( nonDefaultRoot ).getName();
+    doReturn( "pvfs://OtherConnection" ).when( nonDefaultRoot ).getPath();
+    doReturn( nonDefaultRoot ).when( useCase.tree2Mock ).getFile();
+    doReturn( null ).when( useCase.tree2Mock ).getChildren();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setProviders( List.of( "VFS" ) );
+
+    IGenericFileTree aggregateTree = useCase.service.getTree( options );
+
+    assertEquals( Arrays.asList( useCase.tree1Mock, useCase.tree2Mock ), aggregateTree.getChildren() );
   }
 
   @Test
@@ -285,9 +353,12 @@ class DefaultGenericFileServiceTest {
   @Test
   void testGetTreeCallsDecorateTree() throws Exception {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    doReturn( "VFS" ).when( providerMock ).getType();
     IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
     IGenericFileTree treeMock = mock( IGenericFileTree.class );
     GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+    doReturn( true ).when( optionsMock ).includesAllProviders();
+    doReturn( true ).when( optionsMock ).includesProviderType( any() );
 
     when( providerMock.getTree( optionsMock ) ).thenReturn( treeMock );
 
@@ -319,6 +390,7 @@ class DefaultGenericFileServiceTest {
       doReturn( List.of( tree3Mock, tree4Mock ) ).when( provider2Mock ).getRootTrees( any( GetTreeOptions.class ) );
 
       optionsMock = mock( GetTreeOptions.class );
+      doReturn( true ).when( optionsMock ).includesAllProviders();
     }
   }
 
@@ -360,12 +432,74 @@ class DefaultGenericFileServiceTest {
   }
 
   @Test
+  void testGetRootTreesDoesNotFilterProviderTrees() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+
+    IGenericFileTree purRepositoryRootTree = mock( IGenericFileTree.class );
+    IGenericFile purRepositoryRootFile = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( purRepositoryRootFile ).getName();
+    doReturn( "/" ).when( purRepositoryRootFile ).getPath();
+    doReturn( purRepositoryRootFile ).when( purRepositoryRootTree ).getFile();
+
+    IGenericFileTree vfsRepositoryRootTree = mock( IGenericFileTree.class );
+    IGenericFile vfsRepositoryRootFile = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( vfsRepositoryRootFile ).getName();
+    doReturn( "pvfs://Repository" ).when( vfsRepositoryRootFile ).getPath();
+    doReturn( vfsRepositoryRootFile ).when( vfsRepositoryRootTree ).getFile();
+
+    GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+    doReturn( true ).when( optionsMock ).includesAllProviders();
+    doReturn( List.of( purRepositoryRootTree, vfsRepositoryRootTree ) )
+      .when( providerMock ).getRootTrees( optionsMock );
+
+    DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
+
+    List<IGenericFileTree> rootTrees = service.getRootTrees( optionsMock );
+
+    assertEquals( 2, rootTrees.size() );
+    assertSame( purRepositoryRootTree, rootTrees.get( 0 ) );
+    assertSame( vfsRepositoryRootTree, rootTrees.get( 1 ) );
+  }
+
+  @Test
+  void testGetRootTreesPassesProvidersOptionWithoutFiltering() throws Exception {
+    IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
+    doReturn( "vfs" ).when( providerMock ).getType();
+
+    IGenericFileTree purRepositoryRootTree = mock( IGenericFileTree.class );
+    IGenericFile purRepositoryRootFile = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( purRepositoryRootFile ).getName();
+    doReturn( "/" ).when( purRepositoryRootFile ).getPath();
+    doReturn( purRepositoryRootFile ).when( purRepositoryRootTree ).getFile();
+
+    IGenericFileTree vfsRepositoryRootTree = mock( IGenericFileTree.class );
+    IGenericFile vfsRepositoryRootFile = mock( IGenericFile.class );
+    doReturn( "Repository" ).when( vfsRepositoryRootFile ).getName();
+    doReturn( "pvfs://Repository" ).when( vfsRepositoryRootFile ).getPath();
+    doReturn( vfsRepositoryRootFile ).when( vfsRepositoryRootTree ).getFile();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setProviders( List.of( "VFS" ) );
+    doReturn( List.of( purRepositoryRootTree, vfsRepositoryRootTree ) )
+      .when( providerMock ).getRootTrees( options );
+
+    DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
+
+    List<IGenericFileTree> rootTrees = service.getRootTrees( options );
+
+    assertEquals( 2, rootTrees.size() );
+    assertSame( purRepositoryRootTree, rootTrees.get( 0 ) );
+    assertSame( vfsRepositoryRootTree, rootTrees.get( 1 ) );
+  }
+
+  @Test
   void testGetRootTreesCallsDecorateTreeForEachTree() throws Exception {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
     IGenericFileDecorator decoratorMock = mock( IGenericFileDecorator.class );
     IGenericFileTree tree1Mock = mock( IGenericFileTree.class );
     IGenericFileTree tree2Mock = mock( IGenericFileTree.class );
     GetTreeOptions optionsMock = mock( GetTreeOptions.class );
+    doReturn( true ).when( optionsMock ).includesAllProviders();
 
     when( providerMock.getRootTrees( optionsMock ) ).thenReturn( List.of( tree1Mock, tree2Mock ) );
 

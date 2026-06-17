@@ -777,6 +777,44 @@ class RepositoryFileProviderTest {
     verify( fileServiceMock, times( 2 ) ).doGetTree( eq( ENCODED_ROOT_PATH ), anyInt(), anyString(), anyBoolean(),
       anyBoolean(), anyBoolean() );
   }
+
+  @Test
+  void testGetRootTreesReturnsEmptyWhenRepositoryProviderNotRequested() throws OperationFailedException {
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setProviders( List.of( "VFS" ) );
+
+    List<IGenericFileTree> rootTrees = repositoryProvider.getRootTrees( options );
+
+    assertTrue( rootTrees.isEmpty() );
+  }
+
+  @Test
+  void testGetTreeThrowsNotFoundWhenRepositoryProviderNotRequestedAtRoot() throws OperationFailedException {
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setProviders( List.of( "VFS" ) );
+
+    assertThrows( NotFoundException.class, () -> repositoryProvider.getTree( options ) );
+  }
+
+  @Test
+  void testGetTreeThrowsNotFoundWhenRepositoryProviderNotRequestedAtSubPath() throws OperationFailedException {
+    FileService fileServiceMock = mock( FileService.class );
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/public" );
+    options.setProviders( List.of( "VFS" ) );
+
+    assertThrows( NotFoundException.class, () -> repositoryProvider.getTree( options ) );
+    verify( fileServiceMock, never() ).doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
+  }
   // endregion
 
   // region getFile

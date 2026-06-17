@@ -49,6 +49,7 @@ class GetTreeOptionsTest {
       options1.setBypassCache( true );
       options1.setIncludeHidden( true );
       options1.setIncludeMetadata( true );
+      options1.setProviders( List.of( "VFS" ) );
 
       // ---
 
@@ -62,6 +63,7 @@ class GetTreeOptionsTest {
       assertEquals( options1.isBypassCache(), options2.isBypassCache() );
       assertEquals( options1.isIncludeHidden(), options2.isIncludeHidden() );
       assertEquals( options1.isIncludeMetadata(), options2.isIncludeMetadata() );
+      assertEquals( options1.getProviders(), options2.getProviders() );
     }
 
     @Test
@@ -213,6 +215,69 @@ class GetTreeOptionsTest {
       options.setExpandedPaths( null );
 
       assertNull( options.getExpandedPaths() );
+    }
+  }
+
+  @Nested
+  class ProvidersTests {
+    @Test
+    void testDefaultsToAll() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      assertEquals( List.of( TreeProviderTypes.ALL ), options.getProviders() );
+    }
+
+    @Test
+    void testAcceptsSpecificProviders() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      options.setProviders( List.of( "VFS", "Repository" ) );
+
+      assertEquals( List.of( TreeProviderTypes.VFS, TreeProviderTypes.REPOSITORY ), options.getProviders() );
+    }
+
+    @Test
+    void testAcceptsCommaSeparatedValues() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      options.setProviders( List.of( "VFS,Repository" ) );
+
+      assertEquals( List.of( TreeProviderTypes.VFS, TreeProviderTypes.REPOSITORY ), options.getProviders() );
+    }
+
+    @Test
+    void testRejectsMixingAllAndSpecificProviders() {
+      GetTreeOptions options = new GetTreeOptions();
+      List<String> providers = List.of( "ALL", "VFS" );
+
+      assertThrows( IllegalArgumentException.class, () -> options.setProviders( providers ) );
+    }
+
+    @Test
+    void testRejectsUnknownProvider() {
+      GetTreeOptions options = new GetTreeOptions();
+      List<String> providers = List.of( "UNKNOWN" );
+
+      assertThrows( IllegalArgumentException.class, () -> options.setProviders( providers ) );
+    }
+
+    @Test
+    void testIncludesProviderTypeHandlesAll() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      assertTrue( options.includesProviderType( "vfs" ) );
+      assertTrue( options.includesProviderType( "repository" ) );
+      assertTrue( options.includesAllProviders() );
+    }
+
+    @Test
+    void testIncludesProviderTypeHandlesSpecificProviders() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setProviders( List.of( "VFS" ) );
+
+      assertTrue( options.includesProviderType( "vfs" ) );
+      assertFalse( options.includesProviderType( "repository" ) );
+      assertFalse( options.includesAllProviders() );
     }
   }
 

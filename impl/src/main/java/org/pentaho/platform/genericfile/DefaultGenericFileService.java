@@ -50,7 +50,6 @@ public class DefaultGenericFileService implements IGenericFileService {
   static final String MULTIPLE_PROVIDER_ROOT_PROVIDER = "combined";
   @VisibleForTesting
   static final String MULTIPLE_PROVIDER_ROOT_NAME = "root";
-
   private final List<IGenericFileProvider<?>> fileProviders;
   private final IGenericFileDecorator fileDecorator;
 
@@ -89,12 +88,13 @@ public class DefaultGenericFileService implements IGenericFileService {
   @NonNull
   @Override
   public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException {
+    List<IGenericFileProvider<?>> selectedProviders = getSelectedTreeProviders( options );
     List<IGenericFileTree> rootTrees = new ArrayList<>();
 
     boolean oneProviderSucceeded = false;
     OperationFailedException firstProviderException = null;
 
-    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+    for ( IGenericFileProvider<?> fileProvider : selectedProviders ) {
       try {
         rootTrees.addAll( fileProvider.getRootTrees( options ) );
         oneProviderSucceeded = true;
@@ -126,7 +126,19 @@ public class DefaultGenericFileService implements IGenericFileService {
     Objects.requireNonNull( options );
 
     if ( isSingleProviderMode() ) {
-      IGenericFileTree tree = fileProviders.get( 0 ).getTree( options );
+      IGenericFileProvider<?> fileProvider = fileProviders.get( 0 );
+
+      if ( !options.includesProviderType( fileProvider.getType() ) ) {
+        GenericFilePath basePath = options.getBasePath();
+
+        if ( basePath == null ) {
+          throw new NotFoundException( "Base path not found." );
+        }
+
+        throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
+      }
+
+      IGenericFileTree tree = fileProvider.getTree( options );
       fileDecorator.decorateTree( tree, this, options );
       return tree;
     }
@@ -142,11 +154,13 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options ) throws OperationFailedException {
+  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options )
+    throws OperationFailedException {
+    List<IGenericFileProvider<?>> selectedProviders = getSelectedTreeProviders( options );
     BaseGenericFileTree rootTree = createMultipleProviderTreeRoot();
     OperationFailedException firstProviderException = null;
 
-    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+    for ( IGenericFileProvider<?> fileProvider : selectedProviders ) {
       try {
         rootTree.addChild( fileProvider.getTree( options ) );
       } catch ( OperationFailedException e ) {
@@ -184,9 +198,30 @@ public class DefaultGenericFileService implements IGenericFileService {
   private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
-    IGenericFileTree tree = getOwnerFileProvider( basePath ).getTree( options );
+    IGenericFileTree tree = getOwnerTreeFileProvider( basePath, options ).getTree( options );
     fileDecorator.decorateTree( tree, this, options );
     return tree;
+  }
+
+  @NonNull
+  private List<IGenericFileProvider<?>> getSelectedTreeProviders( @NonNull GetTreeOptions options ) {
+    if ( options.includesAllProviders() ) {
+      return fileProviders;
+    }
+
+    return fileProviders.stream()
+      .filter( fileProvider -> options.includesProviderType( fileProvider.getType() ) )
+      .toList();
+  }
+
+  @NonNull
+  private IGenericFileProvider<?> getOwnerTreeFileProvider( @NonNull GenericFilePath path,
+                                                            @NonNull GetTreeOptions options )
+    throws NotFoundException {
+    return getSelectedTreeProviders( options ).stream()
+      .filter( fileProvider -> fileProvider.owns( path ) )
+      .findFirst()
+      .orElseThrow( () -> new NotFoundException( String.format( "Path not found '%s'.", path ) ) );
   }
 
   @Override
@@ -465,4 +500,5 @@ public class DefaultGenericFileService implements IGenericFileService {
     throws OperationFailedException {
     return getOwnerFileProvider( path ).validateFileAcl( acl );
   }
+
 }
