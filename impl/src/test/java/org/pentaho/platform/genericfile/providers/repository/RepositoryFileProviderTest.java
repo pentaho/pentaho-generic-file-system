@@ -2096,8 +2096,7 @@ class RepositoryFileProviderTest {
     GenericFilePath newPath = repositoryProvider.getNewPath( path.getParent(), newName + ".xanalyzer" );
     doReturn( false ).when( fileServiceMock ).doesExist( encodeRepositoryPath( newPath.toString() ) );
 
-    AccessControlException exception =
-      assertThrows( AccessControlException.class, () -> repositoryProvider.renameFile( path, newName ) );
+    assertThrows( AccessControlException.class, () -> repositoryProvider.renameFile( path, newName ) );
 
     verify( fileServiceMock ).doRename( encodeRepositoryPath( path.toString() ), newName );
   }
