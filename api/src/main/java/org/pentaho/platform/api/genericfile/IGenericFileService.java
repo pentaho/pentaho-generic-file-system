@@ -143,7 +143,6 @@ public interface IGenericFileService {
    *
    * @param options The operation options. The {@link GetTreeOptions#getBasePath() base path option} is ignored.
    * @return A list of the real root trees.
-   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -163,7 +162,6 @@ public interface IGenericFileService {
    * The results of this method are not cached, and so {@link GetTreeOptions#isBypassCache()} is ignored.
    *
    * @return A list of the real root trees.
-   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */

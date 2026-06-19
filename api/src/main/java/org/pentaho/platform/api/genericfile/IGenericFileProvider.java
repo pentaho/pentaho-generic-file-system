@@ -95,7 +95,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param options The operation options. The {@link GetTreeOptions#getBasePath() base path option} is ignored.
    * @return A list of the real root trees provided by this provider.
-   * @throws NotFoundException        If a root tree cannot be found.
    * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    * @see IGenericFileService#getRootTrees(GetTreeOptions)
