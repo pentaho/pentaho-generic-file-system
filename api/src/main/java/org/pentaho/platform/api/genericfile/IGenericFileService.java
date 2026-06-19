@@ -314,6 +314,43 @@ public interface IGenericFileService {
   }
 
   /**
+   * Sets the content of an existing file, given its path and the new content.
+   *
+   * @param path    The path of the file to update.
+   * @param content The new content to write to the file as an InputStream.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path does not exist or references a folder.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed
+   *                                   to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   */
+  void setFileContent( @NonNull GenericFilePath path, @NonNull InputStream content ) throws OperationFailedException;
+
+  /**
+   * Sets the content of an existing file, given its path's string representation and the new content.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls
+   * {@link #setFileContent(GenericFilePath, InputStream)} with the result.
+   *
+   * @param path    The string representation of the path of the file to update.
+   * @param content The new content to write to the file as an InputStream.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid, or if the specified path's string
+   *                                   representation is not valid, according to
+   *                                   {@link GenericFilePath#parseRequired(String)}.
+   * @throws InvalidOperationException If the path does not exist or references a folder.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed
+   *                                   to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#setFileContent(GenericFilePath, InputStream)
+   */
+  default void setFileContent( @NonNull String path, @NonNull InputStream content ) throws OperationFailedException {
+    setFileContent( GenericFilePath.parseRequired( path ), content );
+  }
+
+  /**
    * Checks whether a generic file exists and the current user has the specified permissions on it, given its path's
    * string representation.
    * <p>

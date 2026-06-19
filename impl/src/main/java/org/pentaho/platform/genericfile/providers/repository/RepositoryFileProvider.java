@@ -246,6 +246,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           return false;
         }
 
+        if ( !Boolean.parseBoolean( fileService.doGetCanEdit() ) ) {
+          throw new AccessControlException();
+        }
+
         file = unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
       } else {
         String newName = path.getLastSegment();
@@ -272,6 +276,40 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     return true;
+  }
+
+  @SuppressWarnings( "java:S1141" )
+  @Override
+  protected void setFileContentCore( @NonNull GenericFilePath path, @NonNull InputStream content )
+    throws OperationFailedException {
+    if ( !Boolean.parseBoolean( fileService.doGetCanEdit() ) ) {
+      throw new AccessControlException();
+    }
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
+    }
+
+    try {
+      org.pentaho.platform.api.repository2.unified.RepositoryFile file = getNativeFile( path );
+
+      if ( file.isFolder() ) {
+        throw new InvalidOperationException( "Path references a folder, not a file." );
+      }
+
+      SimpleRepositoryFileData fileData = createSimpleRepositoryFileData( content, path );
+
+      org.pentaho.platform.api.repository2.unified.RepositoryFile updatedFile =
+        unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
+
+      if ( updatedFile == null ) {
+        throw new OperationFailedException( "Unable to update content of " + path + " in the repository." );
+      }
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
+    } catch ( UnifiedRepositoryException | IOException e ) {
+      throw new OperationFailedException( e );
+    }
   }
 
   /**

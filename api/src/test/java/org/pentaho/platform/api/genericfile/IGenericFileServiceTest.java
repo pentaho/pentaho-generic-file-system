@@ -85,6 +85,12 @@ class IGenericFileServiceTest {
       throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void setFileContent( @NonNull GenericFilePath path, @NonNull InputStream content )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
+
     @NonNull
     @Override
     public IGenericFileContent getFileContent( @NonNull GenericFilePath path, boolean compressed )

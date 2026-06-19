@@ -79,6 +79,18 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
                                              @NonNull CreateFileOptions createFileOptions )
     throws OperationFailedException;
 
+  @Override
+  public void setFileContent( @NonNull GenericFilePath path, @NonNull InputStream content )
+    throws OperationFailedException {
+    Objects.requireNonNull( path );
+    Objects.requireNonNull( content );
+
+    setFileContentCore( path, content );
+  }
+
+  protected abstract void setFileContentCore( @NonNull GenericFilePath path, @NonNull InputStream content )
+    throws OperationFailedException;
+
   // region Get Root Trees
   @NonNull
   @Override

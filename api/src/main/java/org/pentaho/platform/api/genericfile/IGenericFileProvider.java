@@ -173,6 +173,21 @@ public interface IGenericFileProvider<T extends IGenericFile> {
     throws OperationFailedException;
 
   /**
+   * Sets the content of an existing file, given its path and the new content.
+   *
+   * @param path    The path of the file to update.
+   * @param content The new content to write to the file as an InputStream.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the file path is not valid.
+   * @throws InvalidOperationException If the path does not exist or references a folder.
+   * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed
+   *                                   to access it.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#setFileContent(GenericFilePath, InputStream)
+   */
+  void setFileContent( @NonNull GenericFilePath path, @NonNull InputStream content ) throws OperationFailedException;
+
+  /**
    * Determines if the provider owns a given path.
    * <p>
    * The {@link GenericFilePath#getFirstSegment() provider root segment} of a generic file path is exclusive of each
