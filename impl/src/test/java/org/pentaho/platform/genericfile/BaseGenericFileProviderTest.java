@@ -65,9 +65,9 @@ class BaseGenericFileProviderTest {
     }
 
     @Override
-    protected boolean createFileCore( @NonNull GenericFilePath path,
-                                      @NonNull InputStream content,
-                                      @NonNull CreateFileOptions createFileOptions ) {
+    protected void createFileCore( @NonNull GenericFilePath path,
+                                   @NonNull InputStream content,
+                                   @NonNull CreateFileOptions createFileOptions ) {
       throw new UnsupportedOperationException();
     }
 

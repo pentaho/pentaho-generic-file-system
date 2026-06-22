@@ -150,12 +150,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * Creates a file given its path and content, with default options.
    * <p>
    * This method ensures that each ancestor folder of the specified file exists, creating it if necessary, and allowed.
+   * <p>
+   * When the operation is successful, the folder session cache for the generic file provider owning the folder is
+   * automatically cleared.
    *
    * @param path              The path of the generic file to create.
    * @param content           The content to write to the file as an InputStream.
    * @param createFileOptions The options for creating the file, includes the overwrite flag.
-   * @return {@code true}, if the file was created or overwritten; {@code false}, if the file already existed and
-   * overwrite is false.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws InvalidPathException      If the file path is not valid.
    * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created
@@ -165,11 +166,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                                   if the path does not exist and the current user is not allowed to create
    *                                   files on the folder denoted by its longest existing prefix;
    *                                   if the file type is not accepted;
+   * @throws ConflictException         If the file with the new name already exists and the {@code overwrite} flag is
+   *                                   set to {@code false}.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    */
-  boolean createFile( @NonNull GenericFilePath path,
-                      @NonNull InputStream content,
-                      @NonNull CreateFileOptions createFileOptions )
+  void createFile( @NonNull GenericFilePath path,
+                   @NonNull InputStream content,
+                   @NonNull CreateFileOptions createFileOptions )
     throws OperationFailedException;
 
   /**

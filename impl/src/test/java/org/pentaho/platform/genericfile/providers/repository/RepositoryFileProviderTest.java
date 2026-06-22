@@ -3225,9 +3225,10 @@ class RepositoryFileProviderTest {
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    boolean result = repositoryProvider.createFile( path, inputStream, options );
+    ConflictException exception = assertThrows( ConflictException.class,
+      () -> repositoryProvider.createFile( path, inputStream, options ) );
 
-    assertFalse( result );
+    assertEquals( "File already exists at '" + path + "'.", exception.getMessage() );
     verify( repositoryMock, never() ).updateFile( any(), any(), anyString() );
   }
 
@@ -3293,9 +3294,7 @@ class RepositoryFileProviderTest {
     doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
     InputStream inputStream = mock( InputStream.class );
 
-    boolean result = repositoryProvider.createFile( path, inputStream, new CreateFileOptions( true ) );
-
-    assertTrue( result );
+    assertDoesNotThrow( () -> repositoryProvider.createFile( path, inputStream, new CreateFileOptions( true ) ) );
     verify( repositoryMock ).updateFile( eq( existingFile ), any(), eq( RepositoryFileProvider.FILE_UPDATE_MSG ) );
     verify( repositoryMock, never() ).createFile( any(), any(), any(), anyString() );
   }
@@ -3325,9 +3324,7 @@ class RepositoryFileProviderTest {
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    boolean result = repositoryProvider.createFile( path, inputStream, options );
-
-    assertTrue( result );
+    assertDoesNotThrow( () -> repositoryProvider.createFile( path, inputStream, options ) );
     verify( repositoryMock ).createFile( eq( "parentId" ), any( RepositoryFile.class ), any(),
       eq( RepositoryFileProvider.FILE_CREATE_MSG ) );
     verify( repositoryMock, never() ).updateFile( any(), any(), anyString() );
@@ -3563,9 +3560,7 @@ class RepositoryFileProviderTest {
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    boolean result = repositoryProvider.createFile( path, inputStream, options );
-
-    assertTrue( result );
+    assertDoesNotThrow( () -> repositoryProvider.createFile( path, inputStream, options ) );
     verify( repositoryProvider ).getOrCreateNativeFolder( parentPath );
     verify( repositoryMock ).createFile( eq( "parentId" ), any(), any(), anyString() );
   }
@@ -3621,9 +3616,7 @@ class RepositoryFileProviderTest {
     InputStream inputStream = mock( InputStream.class );
     CreateFileOptions options = new CreateFileOptions( false );
 
-    boolean result = repositoryProvider.createFile( path, inputStream, options );
-
-    assertTrue( result );
+    assertDoesNotThrow( () -> repositoryProvider.createFile( path, inputStream, options ) );
     // Verify the parent ID (Serializable) is passed, not the parent path string
     verify( repositoryMock ).createFile( eq( "admin-folder-id-123" ), any( RepositoryFile.class ), any(),
       eq( RepositoryFileProvider.FILE_CREATE_MSG ) );

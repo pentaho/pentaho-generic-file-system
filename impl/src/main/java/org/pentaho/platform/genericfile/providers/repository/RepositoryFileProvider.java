@@ -213,9 +213,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @SuppressWarnings( "java:S1141" )
   @Override
-  protected boolean createFileCore( @NonNull GenericFilePath path,
-                                    @NonNull InputStream content,
-                                    @NonNull CreateFileOptions createFileOptions )
+  protected void createFileCore( @NonNull GenericFilePath path,
+                                 @NonNull InputStream content,
+                                 @NonNull CreateFileOptions createFileOptions )
     throws OperationFailedException {
     if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
       throw new AccessControlException();
@@ -243,7 +243,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         }
 
         if ( !createFileOptions.isOverwrite() ) {
-          return false;
+          throw new ConflictException( String.format( "File already exists at '%s'.", path ) );
         }
 
         if ( !Boolean.parseBoolean( fileService.doGetCanEdit() ) ) {
@@ -274,8 +274,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     if ( file == null ) {
       throw new OperationFailedException( "Unable to create " + path + " in the repository." );
     }
-
-    return true;
   }
 
   @SuppressWarnings( "java:S1141" )

@@ -21,6 +21,7 @@ import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileDecorator;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.exception.BatchOperationFailedException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
@@ -1570,12 +1571,11 @@ class DefaultGenericFileServiceTest {
   void testCreateFileSuccessfullyByProvider1() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( true ).when( useCase.provider1Mock )
+    doNothing().when( useCase.provider1Mock )
       .createFile( useCase.path1, useCase.content, createFileOptions( true ) );
 
-    boolean result = useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( true ) );
+    useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( true ) );
 
-    assertTrue( result );
     verify( useCase.provider1Mock ).createFile( useCase.path1, useCase.content, createFileOptions( true ) );
     verify( useCase.provider2Mock, never() ).createFile( any(), any(), any() );
   }
@@ -1584,12 +1584,11 @@ class DefaultGenericFileServiceTest {
   void testCreateFileSuccessfullyByProvider1WithOverwriteFalse() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( true ).when( useCase.provider1Mock )
+    doNothing().when( useCase.provider1Mock )
       .createFile( useCase.path1, useCase.content, createFileOptions( false ) );
 
-    boolean result = useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( false ) );
+    useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( false ) );
 
-    assertTrue( result );
     verify( useCase.provider1Mock ).createFile( useCase.path1, useCase.content, createFileOptions( false ) );
     verify( useCase.provider2Mock, never() ).createFile( any(), any(), any() );
   }
@@ -1598,12 +1597,11 @@ class DefaultGenericFileServiceTest {
   void testCreateFileSuccessfullyByProvider2() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( true ).when( useCase.provider2Mock )
+    doNothing().when( useCase.provider2Mock )
       .createFile( useCase.path2, useCase.content, createFileOptions( true ) );
 
-    boolean result = useCase.service.createFile( useCase.path2, useCase.content, createFileOptions( true ) );
+    useCase.service.createFile( useCase.path2, useCase.content, createFileOptions( true ) );
 
-    assertTrue( result );
     verify( useCase.provider2Mock ).createFile( useCase.path2, useCase.content, createFileOptions( true ) );
     verify( useCase.provider1Mock, never() ).createFile( any(), any(), any() );
   }
@@ -1612,12 +1610,13 @@ class DefaultGenericFileServiceTest {
   void testCreateFileFileAlreadyExists() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( false ).when( useCase.provider1Mock )
+    doThrow( new ConflictException( "File already exists." ) ).when( useCase.provider1Mock )
       .createFile( useCase.path1, useCase.content, createFileOptions( true ) );
 
-    boolean result = useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( true ) );
+    ConflictException exception = assertThrows( ConflictException.class,
+      () -> useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( true ) ) );
 
-    assertFalse( result );
+    assertEquals( "File already exists.", exception.getMessage() );
     verify( useCase.provider1Mock ).createFile( useCase.path1, useCase.content, createFileOptions( true ) );
   }
 
@@ -1654,14 +1653,12 @@ class DefaultGenericFileServiceTest {
   void testCreateFileWithStringPath() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( true ).when( useCase.provider1Mock )
+    doNothing().when( useCase.provider1Mock )
       .createFile( useCase.path1, useCase.content, createFileOptions( true ) );
 
-    boolean result =
-      useCase.service.createFile( GenericFilePath.parseRequired( useCase.path1.toString() ), useCase.content,
-        createFileOptions( true ) );
+    useCase.service.createFile( GenericFilePath.parseRequired( useCase.path1.toString() ), useCase.content,
+      createFileOptions( true ) );
 
-    assertTrue( result );
     verify( useCase.provider1Mock ).createFile( useCase.path1, useCase.content, createFileOptions( true ) );
   }
 
@@ -1680,12 +1677,11 @@ class DefaultGenericFileServiceTest {
   void testCreateFileSuccessfullyByProvider2WithOverwriteFalse() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( true ).when( useCase.provider2Mock )
+    doNothing().when( useCase.provider2Mock )
       .createFile( useCase.path2, useCase.content, createFileOptions( false ) );
 
-    boolean result = useCase.service.createFile( useCase.path2, useCase.content, createFileOptions( false ) );
+    useCase.service.createFile( useCase.path2, useCase.content, createFileOptions( false ) );
 
-    assertTrue( result );
     verify( useCase.provider2Mock ).createFile( useCase.path2, useCase.content, createFileOptions( false ) );
     verify( useCase.provider1Mock, never() ).createFile( any(), any(), any() );
   }
@@ -1694,12 +1690,13 @@ class DefaultGenericFileServiceTest {
   void testCreateFileFileAlreadyExistsWithOverwriteFalse() throws Exception {
     CreateFileMultipleProviderUseCase useCase = new CreateFileMultipleProviderUseCase();
 
-    doReturn( false ).when( useCase.provider1Mock )
+    doThrow( new ConflictException( "File already exists." ) ).when( useCase.provider1Mock )
       .createFile( useCase.path1, useCase.content, createFileOptions( false ) );
 
-    boolean result = useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( false ) );
+    ConflictException exception = assertThrows( ConflictException.class,
+      () -> useCase.service.createFile( useCase.path1, useCase.content, createFileOptions( false ) ) );
 
-    assertFalse( result );
+    assertEquals( "File already exists.", exception.getMessage() );
     verify( useCase.provider1Mock ).createFile( useCase.path1, useCase.content, createFileOptions( false ) );
   }
 
