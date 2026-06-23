@@ -182,7 +182,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param content The new content to write to the file as an InputStream.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws InvalidPathException      If the file path is not valid.
-   * @throws InvalidOperationException If the path does not exist or references a folder.
+   * @throws InvalidOperationException If the path is a folder.
    * @throws NotFoundException         If the specified file does not exist, or the current user is not allowed
    *                                   to access it.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.

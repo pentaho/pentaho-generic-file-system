@@ -3256,34 +3256,12 @@ class RepositoryFileProviderTest {
   }
 
   @Test
-  void testCreateFileCoreThrowsAccessControlExceptionWhenOverwriteAndCannotEdit() throws Exception {
-    GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
-    doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
-    doReturn( "false" ).when( fileServiceMock ).doGetCanEdit();
-
-    RepositoryFile existingFile = createNativeFile( "fileId1", path, false );
-    doReturn( existingFile ).when( repositoryMock ).getFile( path.toString() );
-
-    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
-    doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
-    InputStream inputStream = mock( InputStream.class );
-
-    assertThrows( AccessControlException.class,
-      () -> repositoryProvider.createFile( path, inputStream, new CreateFileOptions( true ) ) );
-    verify( repositoryMock, never() ).updateFile( any(), any(), anyString() );
-  }
-
-  @Test
   void testCreateFileCoreUpdatesExistingFileWhenOverwriteEnabled() throws Exception {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
     doReturn( "true" ).when( fileServiceMock ).doGetCanCreate();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
 
     RepositoryFile existingFile = createNativeFile( "fileId1", path, false );
     RepositoryFile updatedFile = createNativeFile( "fileId1", path, false );
@@ -3673,20 +3651,6 @@ class RepositoryFileProviderTest {
 
   // region setFileContent
   @Test
-  void testSetFileContentCoreThrowsAccessControlExceptionWhenCannotCreate() throws Exception {
-    GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( "false" ).when( fileServiceMock ).doGetCanCreate();
-
-    RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
-    doReturn( null ).when( repositoryProvider ).getContentConverterHandler();
-    InputStream inputStream = mock( InputStream.class );
-
-    assertThrows( AccessControlException.class, () -> repositoryProvider.setFileContent( path, inputStream ) );
-  }
-
-  @Test
   void testSetFileContentCoreThrowsNullPointerExceptionForNullPath() {
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
@@ -3713,7 +3677,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( false ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFileProvider repositoryProvider = spy( new RepositoryFileProvider( repositoryMock, fileServiceMock ) );
@@ -3728,7 +3691,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFolder" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
     doReturn( createNativeFile( "folderId", path, true ) ).when( repositoryMock ).getFile( path.toString() );
 
@@ -3745,7 +3707,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFile existingFile = createNativeFile( "fileId", path, false );
@@ -3765,7 +3726,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFile existingFile = createNativeFile( "fileId", path, false );
@@ -3784,7 +3744,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFile existingFile = createNativeFile( "fileId", path, false );
@@ -3804,7 +3763,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFile existingFile = createNativeFile( "fileId", path, false );
@@ -3823,7 +3781,6 @@ class RepositoryFileProviderTest {
     GenericFilePath path = GenericFilePath.parse( "/public/existingFile.txt" );
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
     FileService fileServiceMock = mock( FileService.class );
-    doReturn( "true" ).when( fileServiceMock ).doGetCanEdit();
     doReturn( true ).when( fileServiceMock ).isPathValid( anyString() );
 
     RepositoryFile existingFile = createNativeFile( "fileId", path, false );

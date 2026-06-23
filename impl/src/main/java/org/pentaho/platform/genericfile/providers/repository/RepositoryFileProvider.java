@@ -246,10 +246,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           throw new ConflictException( String.format( "File already exists at '%s'.", path ) );
         }
 
-        if ( !Boolean.parseBoolean( fileService.doGetCanEdit() ) ) {
-          throw new AccessControlException();
-        }
-
         file = unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
       } else {
         String newName = path.getLastSegment();
@@ -280,10 +276,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   protected void setFileContentCore( @NonNull GenericFilePath path, @NonNull InputStream content )
     throws OperationFailedException {
-    if ( !Boolean.parseBoolean( fileService.doGetCanEdit() ) ) {
-      throw new AccessControlException();
-    }
-
     if ( !fileService.isPathValid( path.toString() ) ) {
       throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
     }
