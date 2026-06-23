@@ -268,7 +268,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     if ( file == null ) {
-      throw new OperationFailedException( "Unable to create " + path + " in the repository." );
+      throw new NotFoundException( "Unable to create " + path + " in the repository." );
     }
   }
 
@@ -293,7 +293,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
 
       if ( updatedFile == null ) {
-        throw new OperationFailedException( "Unable to update content of " + path + " in the repository." );
+        throw new NotFoundException( "Unable to update content of " + path + " in the repository." );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new AccessControlException( e );
