@@ -163,9 +163,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                                   using this service (e.g. connections, buckets);
    *                                   if the path exists but references a folder, or its longest existing prefix
    *                                   does not reference a folder;
-   *                                   if the path does not exist and the current user is not allowed to create
-   *                                   files on the folder denoted by its longest existing prefix;
-   *                                   if the file type is not accepted;
+   *                                   if the path does not exist and the file type is not accepted;
+   * @throws NotFoundException         if the path does not exist and the current user is not allowed to create
+   *                                   files on the folder denoted by its longest existing prefix, or the path exists
+   *                                   and the user is not allowed to edit it when the {@code overwrite} flag is
+   *                                   set to {@code true}.
    * @throws ConflictException         If the file with the new name already exists and the {@code overwrite} flag is
    *                                   set to {@code false}.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
