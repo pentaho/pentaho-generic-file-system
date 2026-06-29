@@ -17,6 +17,7 @@ import com.google.common.net.MediaType;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GenericFilePrincipalType;
@@ -38,11 +39,13 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileMetadata;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.api.importexport.ExportException;
+import org.pentaho.platform.api.repository2.unified.IRepositoryContentConverterHandler;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.repository2.unified.data.simple.SimpleRepositoryFileData;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclAceDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
@@ -66,11 +69,13 @@ import org.pentaho.platform.plugin.services.importexport.BaseExportProcessor;
 import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
+import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.util.StringUtil;
+import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 import org.pentaho.platform.web.http.api.resources.utils.SystemUtils;
 
@@ -78,6 +83,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,6 +106,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   public static final String ROOT_PATH = "/";
   public static final String FOLDER_NAME_TRASH = ".trash";
+  public static final String FILE_UPDATE_MSG = "Updating existing file";
+  public static final String FILE_CREATE_MSG = "Create file";
 
   private static GenericFilePath ROOT_GENERIC_PATH;
 
@@ -203,13 +211,158 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @SuppressWarnings( "java:S1141" )
   @Override
-  protected boolean createFileCore( @NonNull GenericFilePath path,
-                                    @NonNull InputStream content,
-                                    @NonNull CreateFileOptions createFileOptions )
+  protected void createFileCore( @NonNull GenericFilePath path,
+                                 @NonNull InputStream content,
+                                 @NonNull CreateFileOptions createFileOptions )
     throws OperationFailedException {
-    // Repository file provider does not support file creation
-    throw new UnsupportedOperationException( "File creation is not supported in the repository provider" );
+    if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
+      throw new AccessControlException();
+    }
+
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
+    }
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile file = null;
+
+    try {
+      SimpleRepositoryFileData fileData = createSimpleRepositoryFileData( content, path );
+
+      try {
+        file = getNativeFile( path );
+      } catch ( NotFoundException e ) {
+        // File does not exist yet, will be created below.
+      }
+
+      // Checking if the file exists for create or update
+      if ( file != null ) {
+        if ( file.isFolder() ) {
+          throw new InvalidOperationException( "File is a folder." );
+        }
+
+        if ( !createFileOptions.isOverwrite() ) {
+          throw new ConflictException( String.format( "File already exists at '%s'.", path ) );
+        }
+
+        file = unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
+      } else {
+        String newName = path.getLastSegment();
+        validateFileName( newName );
+
+        org.pentaho.platform.api.repository2.unified.RepositoryFile newFile =
+          new org.pentaho.platform.api.repository2.unified.RepositoryFile.Builder( newName )
+            .versioned( false )
+            .build();
+
+        org.pentaho.platform.api.repository2.unified.RepositoryFile parentFile =
+          getOrCreateNativeFolder( Objects.requireNonNull( path.getParent() ) );
+
+        file = unifiedRepository.createFile( parentFile.getId(), newFile, fileData, FILE_CREATE_MSG );
+      }
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
+    } catch ( UnifiedRepositoryException | IOException e ) {
+      throw new OperationFailedException( e );
+    }
+
+    if ( file == null ) {
+      throw new NotFoundException( "Unable to create " + path + " in the repository." );
+    }
+  }
+
+  @SuppressWarnings( "java:S1141" )
+  @Override
+  protected void setFileContentCore( @NonNull GenericFilePath path, @NonNull InputStream content )
+    throws OperationFailedException {
+    if ( !fileService.isPathValid( path.toString() ) ) {
+      throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
+    }
+
+    try {
+      org.pentaho.platform.api.repository2.unified.RepositoryFile file = getNativeFile( path );
+
+      if ( file.isFolder() ) {
+        throw new InvalidOperationException( "Path references a folder, not a file." );
+      }
+
+      SimpleRepositoryFileData fileData = createSimpleRepositoryFileData( content, path );
+
+      org.pentaho.platform.api.repository2.unified.RepositoryFile updatedFile =
+        unifiedRepository.updateFile( file, fileData, FILE_UPDATE_MSG );
+
+      if ( updatedFile == null ) {
+        throw new NotFoundException( "Unable to update content of " + path + " in the repository." );
+      }
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
+    } catch ( UnifiedRepositoryException | IOException e ) {
+      throw new OperationFailedException( e );
+    }
+  }
+
+  /**
+   * Creates a {@link SimpleRepositoryFileData} from the given input stream, attempting to detect the MIME type
+   * from the stream content. If detection fails, it falls back to guessing from the file path extension.
+   * If both detection methods fail, defaults to {@code "application/octet-stream"}.
+   *
+   * @param content the input stream with the file content. Must support mark/reset for MIME detection from content.
+   * @param path    the generic file path, used as a fallback for MIME type detection based on file extension.
+   * @return a {@link SimpleRepositoryFileData} instance with the detected or default MIME type.
+   * @throws IOException if an I/O error occurs while probing the content type.
+   */
+  @NonNull
+  protected SimpleRepositoryFileData createSimpleRepositoryFileData( @NonNull InputStream content,
+                                                                     @NonNull GenericFilePath path )
+    throws IOException {
+    return new SimpleRepositoryFileData( content, LocaleHelper.getSystemEncoding(), detectMimeType( content, path ) );
+  }
+
+  /**
+   * Detects the MIME type of the given input stream content. First attempts detection from the stream bytes
+   * (requires the stream to support mark/reset). If that fails, falls back to guessing from the file path extension
+   * using {@link URLConnection#guessContentTypeFromName(String)}.
+   * Defaults to {@code "application/octet-stream"} if both methods fail.
+   *
+   * @param content the input stream (should support mark/reset for content-based detection).
+   * @param path    the generic file path used for extension-based fallback detection.
+   * @return the detected MIME type, or {@code "application/octet-stream"} if detection fails.
+   * @throws IOException if an I/O error occurs while reading from the stream.
+   */
+  @NonNull
+  protected String detectMimeType( @NonNull InputStream content, @NonNull GenericFilePath path ) throws IOException {
+    String mimeType = null;
+
+    // Attempt to detect MIME type from stream content (requires mark/reset support).
+    if ( content.markSupported() ) {
+      mimeType = URLConnection.guessContentTypeFromStream( content );
+    }
+
+    // Fallback: guess from file name/extension.
+    if ( mimeType == null ) {
+      mimeType = URLConnection.guessContentTypeFromName( path.getLastSegment() );
+    }
+
+    // Default fallback.
+    return mimeType != null ? mimeType : "application/octet-stream";
+  }
+
+  protected void validateFileName( @NonNull String fileName ) throws InvalidOperationException {
+    if ( StringUtils.isEmpty( fileName ) ) {
+      throw new InvalidOperationException( "File name cannot be empty." );
+    }
+
+    String ext = RepositoryFilenameUtils.getExtension( fileName );
+    IRepositoryContentConverterHandler handler = getContentConverterHandler();
+
+    if ( handler != null && handler.getConverter( ext ) == null ) {
+      throw new InvalidOperationException( String.format( "The file extension '%s' is not valid.", fileName ) );
+    }
+
+    if ( !fileService.isValidFileName( fileName, true ) ) {
+      throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", fileName ) );
+    }
   }
 
   @NonNull
@@ -371,7 +524,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         repositoryFile = unifiedRepository.getFile( path.toString() );
       } catch ( UnifiedRepositoryAccessDeniedException e ) {
-        throw new ResourceAccessDeniedException( "User is not authorized to access this path.", path );
+        throw new AccessControlException( e );
       } catch ( UnifiedRepositoryException e ) {
         throw new OperationFailedException( e );
       }
@@ -576,6 +729,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return metadata;
   }
 
+  @SuppressWarnings( { "java:S2589", "ConstantValue" } )
   @NonNull
   protected List<StringKeyStringValueDto> convertToNativeFileMetadata( IGenericFileMetadata metadata ) {
     if ( metadata == null ) {
@@ -667,7 +821,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         fileService.doDeleteFiles( fileId );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to delete this path.", path );
+      throw new AccessControlException( e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -717,7 +871,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return fileService.doRename( pathString, newName );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to rename this path.", path );
+      throw new AccessControlException( e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -749,7 +903,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       fileService.doCopyFiles( destinationFolderString, FileService.MODE_RENAME, fileId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to copy to this path.", destinationFolder );
+      throw new AccessControlException( e );
     } catch ( IllegalArgumentException e ) {
       throw new OperationFailedException( e );
     }
@@ -777,7 +931,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to move to this path.", destinationFolder );
+      throw new AccessControlException( e );
     } catch ( InternalError e ) {
       throw new OperationFailedException( e );
     }
@@ -789,7 +943,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+      throw new AccessControlException( e );
     } catch ( UnifiedRepositoryException e ) {
       throw new OperationFailedException( e );
     } catch ( FileNotFoundException e ) {
@@ -821,7 +975,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString, forceInheriting ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+      throw new AccessControlException( e );
     } catch ( InvalidOperationException e ) {
       throw e;
     } catch ( Exception e ) {
@@ -844,7 +998,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } catch ( FileNotFoundException e ) {
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
-      throw new ResourceAccessDeniedException( "User is not authorized to get this path.", path );
+      throw new AccessControlException( e );
     } catch ( Exception e ) {
       throw new OperationFailedException( e );
     }
@@ -876,8 +1030,33 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return PentahoSystem.get( DefaultExportHandler.class );
   }
 
+  protected IRepositoryContentConverterHandler getContentConverterHandler() {
+    return PentahoSystem.get( IRepositoryContentConverterHandler.class );
+  }
+
   protected String getFileId( @NonNull GenericFilePath path ) throws OperationFailedException {
     return getNativeFile( path ).getId().toString();
+  }
+
+  protected org.pentaho.platform.api.repository2.unified.RepositoryFile getOrCreateNativeFolder(
+    @NonNull GenericFilePath path ) throws OperationFailedException {
+    org.pentaho.platform.api.repository2.unified.RepositoryFile folder;
+
+    try {
+      folder = getNativeFile( path );
+    } catch ( NotFoundException e ) {
+      if ( createFolderCore( path ) ) {
+        folder = getNativeFile( path );
+      } else {
+        throw new NotFoundException( String.format( "Unable to create folder '%s'.", path ), path );
+      }
+    }
+
+    if ( !folder.isFolder() ) {
+      throw new InvalidOperationException( "Path is not a folder." );
+    }
+
+    return folder;
   }
 
   protected String getTrashFileId( @NonNull GenericFilePath path ) throws InvalidPathException, NotFoundException {
@@ -1138,6 +1317,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return nativeAcl;
   }
 
+  @SuppressWarnings( "java:S6204" )
   @NonNull
   protected RepositoryFileAclAceDto convertToNativeFileAclEntry( @NonNull IGenericFileAce entry ) {
     RepositoryFileAclAceDto nativeEntry = new RepositoryFileAclAceDto();
