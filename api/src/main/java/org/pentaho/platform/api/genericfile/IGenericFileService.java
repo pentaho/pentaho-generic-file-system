@@ -844,6 +844,7 @@ public interface IGenericFileService {
    *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot write to the destination folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidOperationException     If the destination path is not a folder.
    * @throws InvalidPathException          If the destination path is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
    *                                       (deleted), or the current user is not allowed to access it.
@@ -866,7 +867,7 @@ public interface IGenericFileService {
    *                          refer to a folder in the trash (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot write to the destination folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
+   * @throws InvalidOperationException     If the {@code destinationFolder} is not valid or if it's not a folder.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}, or if the destination path
    *                                       is not valid.
@@ -902,6 +903,7 @@ public interface IGenericFileService {
    *                          (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot write to the given path or destination folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
+   * @throws InvalidOperationException     If the destination path is not a folder.
    * @throws InvalidPathException          If the destination path is not valid.
    * @throws NotFoundException             If either path does not exist or does refer to an item in the trash
    *                                       (deleted), or the current user is not allowed to access it.
@@ -924,7 +926,7 @@ public interface IGenericFileService {
    *                          refer to a folder in the trash (deleted).
    * @throws ResourceAccessDeniedException If the current user cannot write to the given path or destination folder.
    * @throws AccessControlException        If the current user cannot perform this operation.
-   * @throws InvalidOperationException     If the {@code destinationFolder} is not valid.
+   * @throws InvalidOperationException     If the {@code destinationFolder} is not valid or if it's not a folder.
    * @throws InvalidPathException          If either path's string representation is not valid, according to
    *                                       {@link GenericFilePath#parseRequired(String)}, or if the destination path
    *                                       is not valid.
