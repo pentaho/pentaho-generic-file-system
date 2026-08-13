@@ -114,7 +114,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       ROOT_GENERIC_PATH = GenericFilePath.parseRequired( ROOT_PATH );
     } catch ( InvalidPathException e ) {
-      // Never happens.
+      // ROOT_PATH is a valid constant; initialization cannot fail.
     }
   }
 
@@ -204,9 +204,21 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return fileService.doCreateDirSafe( pathToString( path ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE covers both operation-wide ABS denial and WRITE denial on an existing ancestor.
+      GenericFilePath deniedPath = findFirstNonWritablePath( path );
+
+      if ( deniedPath != null ) {
+        throw new ResourceAccessDeniedException(
+          String.format( "User is not authorized to create folder at '%s'.", deniedPath ), path, e );
+      }
+
       throw new AccessControlException( e );
     } catch ( FileService.InvalidNameException e ) {
+      // FileService rejected the folder name before repository creation.
       throw new InvalidPathException();
+    } catch ( UnifiedRepositoryException e ) {
+      // Non-access repository failure; permission probing must not reclassify it.
+      throw new OperationFailedException( e );
     }
   }
 
@@ -220,7 +232,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new AccessControlException();
     }
 
-    if ( !fileService.isPathValid( path.toString() ) ) {
+    String pathString = pathToString( path );
+
+    if ( !fileService.isPathValid( pathString ) ) {
       throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
     }
 
@@ -232,7 +246,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         file = getNativeFile( path );
       } catch ( NotFoundException e ) {
-        // File does not exist yet, will be created below.
+        // Missing target selects create rather than overwrite behavior.
       }
 
       // Checking if the file exists for create or update
@@ -261,8 +275,26 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         file = unifiedRepository.createFile( parentFile.getId(), newFile, fileData, FILE_CREATE_MSG );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on the target or parent.
+      if ( fileService.doesExist( pathString ) && !canWrite( path ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to write to '%s'.", path ),
+          path, e );
+      }
+
+      GenericFilePath parentPath = path.getParent();
+
+      if ( parentPath != null ) {
+        checkFileExists( parentPath );
+
+        if ( !canWrite( parentPath ) ) {
+          throw new ResourceAccessDeniedException(
+            String.format( "User is not authorized to write to '%s'.", parentPath ), parentPath, e );
+        }
+      }
+
       throw new AccessControlException( e );
     } catch ( UnifiedRepositoryException | IOException e ) {
+      // Repository or content-stream failure occurred without an access-denial signal.
       throw new OperationFailedException( e );
     }
 
@@ -275,7 +307,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   protected void setFileContentCore( @NonNull GenericFilePath path, @NonNull InputStream content )
     throws OperationFailedException {
-    if ( !fileService.isPathValid( path.toString() ) ) {
+    String pathString = pathToString( path );
+
+    if ( !fileService.isPathValid( pathString ) ) {
       throw new InvalidPathException( String.format( "Invalid path: '%s'.", path ) );
     }
 
@@ -295,8 +329,26 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         throw new NotFoundException( "Unable to update content of " + path + " in the repository." );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on the file or parent.
+      if ( fileService.doesExist( pathString ) && !canWrite( path ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to write to '%s'.", path ),
+          path, e );
+      }
+
+      GenericFilePath parentPath = path.getParent();
+
+      if ( parentPath != null ) {
+        checkFileExists( parentPath );
+
+        if ( !canWrite( parentPath ) ) {
+          throw new ResourceAccessDeniedException(
+            String.format( "User is not authorized to write to '%s'.", parentPath ), parentPath, e );
+        }
+      }
+
       throw new AccessControlException( e );
     } catch ( UnifiedRepositoryException | IOException e ) {
+      // Repository or content-stream failure occurred without an access-denial signal.
       throw new OperationFailedException( e );
     }
   }
@@ -400,8 +452,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       maxDepth = 1;
     }
 
+    String basePathString = pathToString( basePath );
+
     RepositoryFileTreeDto nativeTree = fileService.doGetTree(
-      pathToString( basePath ),
+      basePathString,
       maxDepth,
       repositoryFilterString,
       options.isIncludeHidden(),
@@ -409,7 +463,16 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       false );
 
     if ( nativeTree == null ) {
-      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
+      try {
+        if ( fileService.doesExist( basePathString ) ) {
+          throw new OperationFailedException( String.format( "Unable to get the tree for base path '%s'.", basePath ) );
+        }
+
+        throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
+      } catch ( UnifiedRepositoryAccessDeniedException e ) {
+        // The existence diagnostic itself was blocked by operation-wide repository access control.
+        throw new AccessControlException( e );
+      }
     }
 
     if ( isZeroDepth ) {
@@ -437,7 +500,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         node.setMetadata( getFileMetadata( GenericFilePath.parseRequired( node.getPath() ) ) );
       } catch ( InvalidPathException e ) {
-        // noop
+        // A malformed DTO path cannot be queried for metadata; leave this node without metadata.
       }
     }
 
@@ -486,8 +549,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
       return new DefaultGenericFileContent( inputStream, repositoryFile.getName(), inputStream.getMimeType() );
     } catch ( FileNotFoundException e ) {
+      // File vanished after lookup or its content stream is no longer readable.
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     } catch ( ExportException | IOException e ) {
+      // Archive generation or stream I/O failed after authorization completed.
       throw new OperationFailedException( e );
     }
   }
@@ -515,8 +580,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         repositoryFile = unifiedRepository.getFile( path.toString() );
       } catch ( UnifiedRepositoryAccessDeniedException e ) {
+        // Operation-wide repository.read denial prevented the lookup.
         throw new AccessControlException( e );
       } catch ( UnifiedRepositoryException e ) {
+        // Non-access repository failure prevented a file/not-found result.
         throw new OperationFailedException( e );
       }
     }
@@ -526,6 +593,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     return repositoryFile;
+  }
+
+  protected void checkFileExists( @NonNull GenericFilePath path ) throws OperationFailedException {
+    getNativeFile( path );
   }
 
   /**
@@ -544,6 +615,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return getNativeFile( path ).isFolder();
     } catch ( NotFoundException e ) {
+      // Contract intentionally collapses missing and unreadable folders to false.
       return false;
     }
   }
@@ -619,7 +691,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         return repositoryWsDateAdapter.unmarshal( date );
       }
     } catch ( Exception e ) {
-      // noop
+      // Invalid optional DTO dates are represented as absent rather than failing file conversion.
     }
 
     return null;
@@ -745,8 +817,58 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
-    return unifiedRepository.hasAccess( path.toString(), getRepositoryPermissions( permissions ) );
+  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+    throws OperationFailedException {
+    try {
+      return unifiedRepository.hasAccess( path.toString(), getRepositoryPermissions( permissions ) );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // Operation-wide denial; the resource permission query did not run.
+      throw new AccessControlException( e );
+    } catch ( UnifiedRepositoryException e ) {
+      // Repository failed before producing true or false.
+      throw new OperationFailedException( e );
+    }
+  }
+
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  private boolean canWrite( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return hasAccess( path, EnumSet.of( GenericFilePermission.WRITE ) );
+  }
+
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  private boolean canDelete( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return hasAccess( path, EnumSet.of( GenericFilePermission.DELETE ) );
+  }
+
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  private boolean canManageAcl( @NonNull GenericFilePath path ) throws OperationFailedException {
+    return hasAccess( path, EnumSet.of( GenericFilePermission.ACL_MANAGEMENT ) );
+  }
+
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  private boolean canWrite( @NonNull String path ) throws OperationFailedException {
+    return canWrite( GenericFilePath.parseRequired( path ) );
+  }
+
+  @SuppressWarnings( "BooleanMethodIsAlwaysInverted" )
+  private boolean canDelete( @NonNull String path ) throws OperationFailedException {
+    return canDelete( GenericFilePath.parseRequired( path ) );
+  }
+
+  @Nullable
+  private GenericFilePath findFirstNonWritablePath( @NonNull GenericFilePath path ) throws OperationFailedException {
+    GenericFilePath current = path;
+
+    // Walk upward from the target path until we find the closest existing ancestor.
+    while ( current != null ) {
+      if ( fileService.doesExist( pathToString( current ) ) ) {
+        return canWrite( current ) ? null : current;
+      }
+
+      current = current.getParent();
+    }
+
+    return null;
   }
 
   private EnumSet<RepositoryFilePermission> getRepositoryPermissions( EnumSet<GenericFilePermission> permissions ) {
@@ -796,7 +918,19 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     try {
       fileService.doDeleteFilesPermanent( fileId );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or DELETE denial on the trashed item.
+      org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFileById( fileId );
+
+      if ( file != null && !canDelete( file.getPath() ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to delete '%s'.", path ), path,
+          e );
+      }
+
+      throw new AccessControlException( e );
     } catch ( Exception e ) {
+      // Non-access failure: follow-up lookup distinguishes a vanished item, not permission scope.
+      checkNativeFileExistsById( fileId );
       throw new OperationFailedException( e );
     }
   }
@@ -812,8 +946,18 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
         fileService.doDeleteFiles( fileId );
       }
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or DELETE denial on the active item.
+      org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFileById( fileId );
+
+      if ( file != null && !canDelete( file.getPath() ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to delete '%s'.", path ), path,
+          e );
+      }
+
       throw new AccessControlException( e );
     } catch ( Exception e ) {
+      // Non-access failure: follow-up lookup distinguishes a vanished item, not permission scope.
+      checkNativeFileExistsById( fileId );
       throw new OperationFailedException( e );
     }
   }
@@ -825,24 +969,29 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       fileService.doRestoreFiles( fileId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on the restore target.
+      org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFileById( fileId );
+
+      if ( file != null && !canWrite( file.getPath() ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to restore '%s'.", path ), path,
+          e );
+      }
+
       throw new AccessControlException( e );
     } catch ( InternalError e ) {
+      // FileService collapses every non-URADE restore failure; only disappearance remains distinguishable.
+      checkNativeFileExistsById( fileId );
       throw new OperationFailedException( e );
     }
   }
 
   @Override
-  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName )
-    throws OperationFailedException {
+  public boolean renameFile( @NonNull GenericFilePath path, @NonNull String newName ) throws OperationFailedException {
     if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
       throw new AccessControlException();
     }
 
-    String pathString = pathToString( path );
-
-    if ( !fileService.doesExist( pathString ) ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
-    }
+    checkFileExists( path );
 
     if ( !fileService.isValidFileName( newName, true ) ) {
       throw new InvalidOperationException( String.format( "The new name '%s' is not valid.", newName ) );
@@ -860,10 +1009,17 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
 
     try {
-      return fileService.doRename( pathString, newName );
+      return fileService.doRename( pathToString( path ), newName );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on the source.
+      if ( !canWrite( path ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to rename '%s'.", path ), path,
+          e );
+      }
+
       throw new AccessControlException( e );
     } catch ( Exception e ) {
+      // Rename failed without an access-denial signal.
       throw new OperationFailedException( e );
     }
   }
@@ -875,27 +1031,33 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new AccessControlException();
     }
 
-    String destinationFolderString = pathToString( destinationFolder );
-
-    if ( !fileService.doesExist( destinationFolderString ) ) {
-      throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
-        destinationFolder );
+    if ( !getNativeFile( destinationFolder ).isFolder() ) {
+      throw new InvalidOperationException( "The destination path is not a folder." );
     }
 
     GenericFilePath newPath = getNewPath( destinationFolder, path.getLastSegment() );
 
     if ( fileService.doesExist( pathToString( newPath ) ) ) {
       throw new ConflictException(
-        String.format( "File to be copied already exists on the destination folder: '%s'.", path ) );
+        String.format( "File to be copied already exists on the destination folder: '%s'.", newPath ) );
     }
 
     String fileId = getFileId( path );
 
     try {
-      fileService.doCopyFiles( destinationFolderString, FileService.MODE_RENAME, fileId );
+      fileService.doCopyFiles( pathToString( destinationFolder ), FileService.MODE_RENAME, fileId );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can come from operation-wide checks or source/destination/ACL/metadata access.
+      checkFileExists( path );
+
+      if ( !canWrite( destinationFolder ) ) {
+        throw new ResourceAccessDeniedException(
+          String.format( "User is not authorized to write to '%s'.", destinationFolder ), destinationFolder, e );
+      }
+
       throw new AccessControlException( e );
-    } catch ( IllegalArgumentException e ) {
+    } catch ( UnifiedRepositoryException | IllegalArgumentException e ) {
+      // Non-access repository or copy-validation failure.
       throw new OperationFailedException( e );
     }
   }
@@ -905,6 +1067,10 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     throws OperationFailedException {
     if ( !Boolean.parseBoolean( fileService.doGetCanCreate() ) ) {
       throw new AccessControlException();
+    }
+
+    if ( !getNativeFile( destinationFolder ).isFolder() ) {
+      throw new InvalidOperationException( "The destination path is not a folder." );
     }
 
     GenericFilePath newPath = getNewPath( destinationFolder, path.getLastSegment() );
@@ -919,11 +1085,32 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       fileService.doMoveFiles( pathToString( destinationFolder ), fileId );
     } catch ( FileNotFoundException e ) {
+      // FileService explicitly reports a missing destination folder.
       throw new NotFoundException( String.format( "Destination folder not found '%s'.", destinationFolder ),
         destinationFolder, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on source or destination.
+      checkFileExists( path );
+
+      if ( !canDelete( path ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to move '%s'.", path ), path,
+          e );
+      }
+
+      GenericFilePath sourceParent = path.getParent();
+      if ( sourceParent != null && !canWrite( sourceParent ) ) {
+        throw new ResourceAccessDeniedException(
+          String.format( "User is not authorized to remove a child from '%s'.", sourceParent ), sourceParent, e );
+      }
+
+      if ( !canWrite( destinationFolder ) ) {
+        throw new ResourceAccessDeniedException(
+          String.format( "User is not authorized to write to '%s'.", destinationFolder ), destinationFolder, e );
+      }
+
       throw new AccessControlException( e );
-    } catch ( InternalError e ) {
+    } catch ( InternalError | IllegalArgumentException e ) {
+      // FileService collapsed a non-access repository failure, or rejected move arguments.
       throw new OperationFailedException( e );
     }
   }
@@ -934,10 +1121,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return convertFromNativeFileMetadata( fileService.doGetMetadata( pathToString( path ) ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // Repository access control prevented metadata retrieval before a result was produced.
       throw new AccessControlException( e );
     } catch ( UnifiedRepositoryException e ) {
+      // Non-access repository failure prevented metadata retrieval.
       throw new OperationFailedException( e );
     } catch ( FileNotFoundException e ) {
+      // FileService explicitly reports a missing or unreadable path.
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     }
   }
@@ -945,10 +1135,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public void setFileMetadata( @NonNull GenericFilePath path, @NonNull IGenericFileMetadata metadata )
     throws OperationFailedException {
+    checkFileExists( path );
+
     try {
       fileService.doSetMetadata( pathToString( path ), convertToNativeFileMetadata( metadata ) );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or WRITE denial on the target.
+      if ( !canWrite( path ) ) {
+        throw new ResourceAccessDeniedException( String.format( "User is not authorized to write to '%s'.", path ),
+          path, e );
+      }
+
+      throw new AccessControlException( e );
     } catch ( GeneralSecurityException e ) {
+      // FileService's metadata-specific authorization check rejected the operation.
       throw new AccessControlException( "User is not authorized to perform this operation." );
+    } catch ( UnifiedRepositoryException e ) {
+      // Non-access repository failure occurred while reading or writing metadata.
+      throw new OperationFailedException( e );
     }
   }
 
@@ -956,20 +1160,19 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public IGenericFileAcl getFileAcl( @NonNull GenericFilePath path, boolean forceInheriting )
     throws OperationFailedException {
-    String pathString = pathToString( path );
-
     // Check existence before trying to get ACL to ensure correct exception is thrown.
-    if ( !fileService.doesExist( pathString ) ) {
-      throw new NotFoundException( String.format( "Path not found '%s'.", path ), path );
-    }
+    checkFileExists( path );
 
     try {
-      return convertFromNativeFileAcl( fileService.doGetFileAcl( pathString, forceInheriting ) );
+      return convertFromNativeFileAcl( fileService.doGetFileAcl( pathToString( path ), forceInheriting ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // Repository access control prevented ACL retrieval; FileService exposes no narrower scope.
       throw new AccessControlException( e );
     } catch ( InvalidOperationException e ) {
+      // Preserve the GFS conversion error produced for an unsupported native ACL.
       throw e;
     } catch ( Exception e ) {
+      // Any other ACL retrieval or conversion failure is non-access and operation-wide.
       throw new OperationFailedException( e );
     }
   }
@@ -984,13 +1187,23 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           + "permissions." );
     }
 
+    String pathString = pathToString( path );
+
     try {
-      fileService.setFileAcls( pathToString( path ), convertToNativeFileAcl( acl ) );
+      fileService.setFileAcls( pathString, convertToNativeFileAcl( acl ) );
     } catch ( FileNotFoundException e ) {
+      // FileService explicitly reports a missing or unreadable target.
       throw new NotFoundException( String.format( "Path not found '%s'.", path ), path, e );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      // URADE can identify operation-wide denial or ACL_MANAGEMENT denial on the target.
+      if ( fileService.doesExist( pathString ) && !canManageAcl( path ) ) {
+        throw new ResourceAccessDeniedException(
+          String.format( "User is not authorized to manage the ACL of '%s'.", path ), path, e );
+      }
+
       throw new AccessControlException( e );
     } catch ( Exception e ) {
+      // ACL update failed without an access-denial signal.
       throw new OperationFailedException( e );
     }
   }
@@ -1029,6 +1242,14 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return getNativeFile( path ).getId().toString();
   }
 
+  protected void checkNativeFileExistsById( @NonNull String fileId ) throws NotFoundException {
+    final var file = unifiedRepository.getFileById( fileId );
+
+    if ( file == null ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", fileId ) );
+    }
+  }
+
   protected org.pentaho.platform.api.repository2.unified.RepositoryFile getOrCreateNativeFolder(
     @NonNull GenericFilePath path ) throws OperationFailedException {
     org.pentaho.platform.api.repository2.unified.RepositoryFile folder;
@@ -1036,6 +1257,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       folder = getNativeFile( path );
     } catch ( NotFoundException e ) {
+      // Missing ancestors are auto-created as required by the create-file contract.
       if ( createFolderCore( path ) ) {
         folder = getNativeFile( path );
       } else {
@@ -1078,7 +1300,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       return getParentPath( GenericFilePath.parseRequired( fileDto.getPath() ) );
     } catch ( InvalidPathException e ) {
-      // noop
+      // Malformed DTO paths have no representable GFS parent.
     }
 
     return null;
@@ -1097,7 +1319,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     try {
       locationPath = GenericFilePath.parseRequired( path );
     } catch ( InvalidPathException e ) {
-      // noop
+      // Malformed original locations cannot contribute hierarchy entries.
     }
 
     List<IGenericFile> location = new ArrayList<>();
@@ -1108,7 +1330,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       try {
         folder = getFile( locationPath, new GetFileOptions() );
       } catch ( OperationFailedException e ) {
-        // The Folder wasn't found, most likely because it was deleted.
+        // Deleted or otherwise unavailable ancestors are represented by synthetic location entries.
         String parentPath = getParentPath( locationPath );
         String name = locationPath.getLastSegment();
 
