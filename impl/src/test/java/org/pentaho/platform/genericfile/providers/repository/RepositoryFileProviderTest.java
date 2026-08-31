@@ -47,6 +47,7 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
+import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileAclAceDto;
@@ -57,6 +58,7 @@ import org.pentaho.platform.api.repository2.unified.webservices.StringKeyStringV
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.model.BaseGenericFileMetadata;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.repository2.unified.TreeNodeFilterSpec;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.util.RepositoryPathEncoder;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
@@ -105,7 +107,11 @@ import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPa
 @SuppressWarnings( { "DataFlowIssue" } )
 class RepositoryFileProviderTest {
   static final String ENCODED_ROOT_PATH = RepositoryPathEncoder.encodeRepositoryPath( ROOT_PATH );
-  static final String ALL_FILTER = "*";
+  static final String ALL_FILTER = RepositoryRequest.FILTER_WILDCARD;
+  static final String ALL_FOLDERS_FILTER =
+    ALL_FILTER + RepositoryRequest.FILTER_SEPARATOR + RepositoryRequest.FILES_TYPE_FILTER.FOLDERS;
+  static final String ALL_FILES_FILTER =
+    ALL_FILTER + RepositoryRequest.FILTER_SEPARATOR + RepositoryRequest.FILES_TYPE_FILTER.FILES;
 
   // region Helpers and Sample Structures
 
@@ -789,7 +795,7 @@ class RepositoryFileProviderTest {
 
     repositoryProvider.getTree( options );
 
-    verify( fileServiceMock, times( 1 ) ).doGetTree( ENCODED_ROOT_PATH, 1, "*|FOLDERS", false, false, false );
+    verify( fileServiceMock, times( 1 ) ).doGetTree( ENCODED_ROOT_PATH, 1, ALL_FOLDERS_FILTER, false, false, false );
   }
 
   @Test
@@ -811,7 +817,7 @@ class RepositoryFileProviderTest {
 
     repositoryProvider.getTree( options );
 
-    verify( fileServiceMock, times( 1 ) ).doGetTree( ENCODED_ROOT_PATH, 1, "*|FILES", false, false, false );
+    verify( fileServiceMock, times( 1 ) ).doGetTree( ENCODED_ROOT_PATH, 1, ALL_FILES_FILTER, false, false, false );
   }
   // endregion
 
@@ -5031,37 +5037,140 @@ class RepositoryFileProviderTest {
   // endregion
 
   // region getRepositoryFilter
+  private static final String FILE_FILTER_CLAUSE =
+    TreeNodeFilterSpec.FILE_FILTER_TOKEN + RepositoryRequest.FILTER_WILDCARD + ".txt"
+      + TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR + RepositoryRequest.FILTER_WILDCARD + ".jpg";
+  private static final String FOLDER_FILTER_CLAUSE =
+    TreeNodeFilterSpec.FOLDER_FILTER_TOKEN + "test" + RepositoryRequest.FILTER_WILDCARD;
+
+  private RepositoryFileProvider createProviderForFilterTests() {
+    return new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+  }
+
+  private static String withFilesType( String childNodeFilter, RepositoryRequest.FILES_TYPE_FILTER filesType ) {
+    return childNodeFilter + RepositoryRequest.FILTER_SEPARATOR + filesType;
+  }
+
   @Test
   void testGetRepositoryFilterFolders() {
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    FileService fileServiceMock = mock( FileService.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
 
-    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.FOLDERS );
-
-    assertEquals( "*|FOLDERS", result );
+    assertEquals( ALL_FOLDERS_FILTER, createProviderForFilterTests().getRepositoryFilter( options ) );
   }
 
   @Test
   void testGetRepositoryFilterFiles() {
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    FileService fileServiceMock = mock( FileService.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFilter( GetTreeOptions.TreeFilter.FILES );
 
-    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.FILES );
-
-    assertEquals( "*|FILES", result );
+    assertEquals( ALL_FILES_FILTER, createProviderForFilterTests().getRepositoryFilter( options ) );
   }
 
   @Test
   void testGetRepositoryFilterAll() {
-    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
-    FileService fileServiceMock = mock( FileService.class );
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
 
-    String result = repositoryProvider.getRepositoryFilter( GetTreeOptions.TreeFilter.ALL );
+    assertEquals( ALL_FILTER, createProviderForFilterTests().getRepositoryFilter( options ) );
+  }
 
-    assertEquals( "*", result );
+  @Test
+  void testGetRepositoryFilterUsesStructuredFilterForFileFilters() {
+    RepositoryFileProvider repositoryProvider = createProviderForFilterTests();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setMaxDepth( 1 );
+    options.setFileFilters(
+      List.of( RepositoryRequest.FILTER_WILDCARD + ".txt", RepositoryRequest.FILTER_WILDCARD + ".jpg" ) );
+
+    // The structured child node filter only filters files, leaving the folder structure untouched.
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
+    assertEquals( FILE_FILTER_CLAUSE, repositoryProvider.getRepositoryFilter( options ) );
+
+    options.setFilter( GetTreeOptions.TreeFilter.FILES );
+    assertEquals( withFilesType( FILE_FILTER_CLAUSE, RepositoryRequest.FILES_TYPE_FILTER.FILES ),
+      repositoryProvider.getRepositoryFilter( options ) );
+
+    // A folders-only tree contains no files, so file name filters are irrelevant to it.
+    options.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    assertEquals( ALL_FOLDERS_FILTER, repositoryProvider.getRepositoryFilter( options ) );
+  }
+
+  @Test
+  void testGetRepositoryFilterUsesStructuredFilterForFolderFilters() {
+    RepositoryFileProvider repositoryProvider = createProviderForFilterTests();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setMaxDepth( 1 );
+    options.setFolderFilters(
+      List.of( "test" + RepositoryRequest.FILTER_WILDCARD, "sales" + RepositoryRequest.FILTER_WILDCARD ) );
+
+    String folderFilterClause =
+      TreeNodeFilterSpec.FOLDER_FILTER_TOKEN + "test" + RepositoryRequest.FILTER_WILDCARD
+        + TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR + "sales" + RepositoryRequest.FILTER_WILDCARD;
+
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
+    assertEquals( folderFilterClause, repositoryProvider.getRepositoryFilter( options ) );
+
+    options.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    assertEquals( withFilesType( folderFilterClause, RepositoryRequest.FILES_TYPE_FILTER.FOLDERS ),
+      repositoryProvider.getRepositoryFilter( options ) );
+
+    // A files-only tree contains no folders, so folder name filters are irrelevant to it.
+    options.setFilter( GetTreeOptions.TreeFilter.FILES );
+    assertEquals( ALL_FILES_FILTER, repositoryProvider.getRepositoryFilter( options ) );
+  }
+
+  @Test
+  void testGetRepositoryFilterCombinesFileAndFolderFilters() {
+    RepositoryFileProvider repositoryProvider = createProviderForFilterTests();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFileFilters(
+      List.of( RepositoryRequest.FILTER_WILDCARD + ".txt", RepositoryRequest.FILTER_WILDCARD + ".jpg" ) );
+    options.setFolderFilters( List.of( "test" + RepositoryRequest.FILTER_WILDCARD ) );
+
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
+    assertEquals( FILE_FILTER_CLAUSE + TreeNodeFilterSpec.FILTER_TOKEN_SEPARATOR + FOLDER_FILTER_CLAUSE,
+      repositoryProvider.getRepositoryFilter( options ) );
+
+    // Only the clause matching the tree filter remains.
+    options.setFilter( GetTreeOptions.TreeFilter.FILES );
+    assertEquals( withFilesType( FILE_FILTER_CLAUSE, RepositoryRequest.FILES_TYPE_FILTER.FILES ),
+      repositoryProvider.getRepositoryFilter( options ) );
+
+    options.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    assertEquals( withFilesType( FOLDER_FILTER_CLAUSE, RepositoryRequest.FILES_TYPE_FILTER.FOLDERS ),
+      repositoryProvider.getRepositoryFilter( options ) );
+  }
+
+  @Test
+  void testGetRepositoryFilterUsesPlainFilterWhenThereAreNoNameFilters() {
+    RepositoryFileProvider repositoryProvider = createProviderForFilterTests();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
+    options.setFileFilters( List.of() );
+    options.setFolderFilters( null );
+
+    assertEquals( ALL_FILTER, repositoryProvider.getRepositoryFilter( options ) );
+  }
+
+  @Test
+  void testGetRepositoryFilterJoinsNameFiltersAsGiven() {
+    RepositoryFileProvider repositoryProvider = createProviderForFilterTests();
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setFilter( GetTreeOptions.TreeFilter.ALL );
+
+    // Each name filter is a single glob expression, and is used as-is.
+    options.setFileFilters( List.of( "*.txt", "*.jpg", "*.png" ) );
+
+    assertEquals(
+      TreeNodeFilterSpec.FILE_FILTER_TOKEN + "*.txt" + TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR + "*.jpg"
+        + TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR + "*.png",
+      repositoryProvider.getRepositoryFilter( options ) );
   }
   // endregion
 

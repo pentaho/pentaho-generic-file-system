@@ -46,6 +46,12 @@ public class GetTreeOptions {
   @NonNull
   private List<String> providers = List.of( TreeProviderTypes.ALL );
 
+  @NonNull
+  private List<String> fileFilters = List.of();
+
+  @NonNull
+  private List<String> folderFilters = List.of();
+
   /**
    * Enum to represent the three filters that can be applied to trees.
    * Technically, in our model, everything in the tree is a file; folders are just files that have children. We will
@@ -109,6 +115,8 @@ public class GetTreeOptions {
     this.bypassCache = other.bypassCache;
     this.providers = other.providers != null ? List.copyOf( other.providers ) : List.of( TreeProviderTypes.ALL );
     this.filter = other.filter;
+    this.fileFilters = other.fileFilters != null ? List.copyOf( other.fileFilters ) : List.of();
+    this.folderFilters = other.folderFilters != null ? List.copyOf( other.folderFilters ) : List.of();
   }
 
   /**
@@ -302,6 +310,114 @@ public class GetTreeOptions {
   }
 
   /**
+   * Gets the file name filters, as glob expressions, such as {@code *.txt} or {@code *.jpg}.
+   * <p>
+   * Defaults to an empty list, meaning that file names are not filtered.
+   *
+   * @return An immutable, possibly empty, list of glob expressions.
+   */
+  @NonNull
+  public List<String> getFileFilters() {
+    return fileFilters;
+  }
+
+  /**
+   * Sets the file name filters, as glob expressions, such as {@code *.txt} or {@code *.jpg}.
+   * <p>
+   * File name filters only apply to <i>files</i>, and are thus ignored when {@link #getFilter() the tree filter} is
+   * {@link TreeFilter#FOLDERS}. Otherwise, only files whose name is matched by, at least, one of the given glob
+   * expressions are included in the result. Folders are never excluded by these filters — use
+   * {@link #setFolderFilters(List)} for that purpose.
+   * <p>
+   * The given expressions are stored as-is. Their syntax, normalization and validation are the responsibility of
+   * each provider, and are only honored by providers whose native API supports filtering files and folders
+   * independently; other providers ignore them.
+   *
+   * @param fileFilters The file name filters; {@code null} or empty disables file name filtering.
+   */
+  public void setFileFilters( @Nullable List<String> fileFilters ) {
+    this.fileFilters = fileFilters != null ? List.copyOf( fileFilters ) : List.of();
+  }
+
+  /**
+   * Indicates whether file name filters are defined.
+   *
+   * @return {@code true} if, at least, one file name filter is defined; {@code false}, otherwise.
+   */
+  public boolean hasFileFilters() {
+    return !fileFilters.isEmpty();
+  }
+
+  /**
+   * Gets the file name filters which are effective, given the {@link #getFilter() tree filter}.
+   * <p>
+   * File name filters only apply to <i>files</i>, and are thus effective only when the tree filter is
+   * {@link TreeFilter#FILES} or {@link TreeFilter#ALL}. A {@link TreeFilter#FOLDERS} tree contains no files, so they
+   * are dropped.
+   *
+   * @return An immutable, possibly empty, list of glob expressions.
+   * @see #getEffectiveFolderFilters()
+   */
+  @NonNull
+  public List<String> getEffectiveFileFilters() {
+    return filter == TreeFilter.FOLDERS ? List.of() : fileFilters;
+  }
+
+  /**
+   * Gets the folder name filters, as glob expressions, such as {@code test*} or {@code 2026*}.
+   * <p>
+   * Defaults to an empty list, meaning that folder names are not filtered.
+   *
+   * @return An immutable, possibly empty, list of glob expressions.
+   */
+  @NonNull
+  public List<String> getFolderFilters() {
+    return folderFilters;
+  }
+
+  /**
+   * Sets the folder name filters, as glob expressions, such as {@code test*} or {@code 2026*}.
+   * <p>
+   * Folder name filters only apply to <i>folders</i>. Only folders whose name is matched by, at least, one of the
+   * given glob expressions are included in the result. Files are never excluded by these filters — use
+   * {@link #setFileFilters(List)} for that purpose.
+   * <p>
+   * The given expressions are stored as-is. Their syntax, normalization and validation are the responsibility of
+   * each provider, and are only honored by providers whose native API supports filtering files and folders
+   * independently; other providers ignore them.
+   *
+   * @param folderFilters The folder name filters; {@code null} or empty disables folder name filtering.
+   */
+  public void setFolderFilters( @Nullable List<String> folderFilters ) {
+    this.folderFilters = folderFilters != null ? List.copyOf( folderFilters ) : List.of();
+  }
+
+  /**
+   * Indicates whether folder name filters are defined.
+   *
+   * @return {@code true} if, at least, one folder name filter is defined; {@code false}, otherwise.
+   */
+  public boolean hasFolderFilters() {
+    return !folderFilters.isEmpty();
+  }
+
+  /**
+   * Gets the folder name filters which are effective, given the {@link #getFilter() tree filter}.
+   * <p>
+   * Folder name filters only apply to <i>folders</i>, and are thus effective only when the tree filter is
+   * {@link TreeFilter#FOLDERS} or {@link TreeFilter#ALL}. A {@link TreeFilter#FILES} tree contains no folders, so they
+   * are dropped.
+   *
+   * @return An immutable, possibly empty, list of glob expressions.
+   * @see #getEffectiveFileFilters()
+   */
+  @NonNull
+  public List<String> getEffectiveFolderFilters() {
+    return filter == TreeFilter.FILES ? List.of() : folderFilters;
+  }
+
+
+  /**
    * Gets a value that indicates whether hidden files are included in the result.
    * <p>
    * Defaults to {@code false}.
@@ -420,12 +536,14 @@ public class GetTreeOptions {
       && Objects.equals( includeHidden, that.includeHidden )
       && Objects.equals( includeMetadata, that.includeMetadata )
       && Objects.equals( bypassCache, that.bypassCache )
-      && Objects.equals( providers, that.providers );
+      && Objects.equals( providers, that.providers )
+      && Objects.equals( fileFilters, that.fileFilters )
+      && Objects.equals( folderFilters, that.folderFilters );
   }
 
   @Override
   public int hashCode() {
     return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, includeMetadata,
-      bypassCache, providers );
+      bypassCache, providers, fileFilters, folderFilters );
   }
 }

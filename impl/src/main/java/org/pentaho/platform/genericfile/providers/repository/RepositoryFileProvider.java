@@ -44,6 +44,7 @@ import org.pentaho.platform.api.repository2.unified.IRepositoryContentConverterH
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
+import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.data.simple.SimpleRepositoryFileData;
@@ -71,6 +72,7 @@ import org.pentaho.platform.plugin.services.importexport.DefaultExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ExportHandler;
 import org.pentaho.platform.plugin.services.importexport.ZipExportProcessor;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
+import org.pentaho.platform.repository2.unified.TreeNodeFilterSpec;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
 import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
@@ -444,7 +446,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ), basePath );
     }
 
-    String repositoryFilterString = getRepositoryFilter( options.getFilter() );
+    String repositoryFilterString = getRepositoryFilter( options );
 
     // TODO: FileService has a bug for depth=0, where an NPE is thrown due to tree.getChildren() being null.
     // So, until that's fixed, must send depth = 1 and then cut children on this side.
@@ -598,14 +600,70 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   /**
-   * Get the tree filter's corresponding repository filter
+   * Gets the native repository filter expression corresponding to the given options.
+   * <p>
+   * The {@link GetTreeOptions#getFilter() tree filter} is translated into the file type clause of the native filter
+   * expression, while the {@link GetTreeOptions#getEffectiveFileFilters() effective file name filters} and the
+   * {@link GetTreeOptions#getEffectiveFolderFilters() effective folder name filters} are translated into the
+   * <i>structured</i> child node filter, {@link TreeNodeFilterSpec#FILE_FILTER_TOKEN} and
+   * {@link TreeNodeFilterSpec#FOLDER_FILTER_TOKEN}, which filter files and folders independently. The legacy,
+   * unstructured, child node filter cannot be used for this purpose, because it applies a single expression to folders
+   * as well as to files, and so file name filters would wrongly exclude the folders whose name did not match them,
+   * and, with them, their matching descendants.
+   * <p>
+   * Both clauses are optional, and are combined with {@link TreeNodeFilterSpec#FILTER_TOKEN_SEPARATOR}, resulting in
+   * expressions such as {@code fileFilter=*.txt,*.jpg}, {@code folderFilter=test*} or
+   * {@code fileFilter=*.txt;folderFilter=test*}. A missing clause means "all", and, when no name filters are
+   * effective, the plain {@link RepositoryRequest#FILTER_WILDCARD} is used.
+   *
+   * @param options The 'get tree' options.
+   * @return The native repository filter expression.
    */
-  protected String getRepositoryFilter( GetTreeOptions.TreeFilter treeFilter ) {
-    return switch ( treeFilter ) {
-      case FOLDERS -> "*|FOLDERS";
-      case FILES -> "*|FILES";
-      default -> "*";
+  protected String getRepositoryFilter( @NonNull GetTreeOptions options ) {
+    String childNodeFilter = getRepositoryChildNodeFilter( options );
+
+    return switch ( options.getFilter() ) {
+      case FOLDERS ->
+        childNodeFilter + RepositoryRequest.FILTER_SEPARATOR + RepositoryRequest.FILES_TYPE_FILTER.FOLDERS;
+      case FILES -> childNodeFilter + RepositoryRequest.FILTER_SEPARATOR + RepositoryRequest.FILES_TYPE_FILTER.FILES;
+      default -> childNodeFilter;
     };
+  }
+
+  /**
+   * Builds the structured child node filter corresponding to the effective name filters of the given options.
+   * <p>
+   * Each name filter is a single glob expression, such as {@code *.txt}. The name filters of a clause are joined with
+   * {@link TreeNodeFilterSpec#INSIDE_FILTER_TOKEN_SEPARATOR}, and both clauses with
+   * {@link TreeNodeFilterSpec#FILTER_TOKEN_SEPARATOR}, resulting in expressions such as
+   * {@code fileFilter=*.txt,*.jpg}, {@code folderFilter=test*} or {@code fileFilter=*.txt;folderFilter=test*}.
+   *
+   * @param options The 'get tree' options.
+   * @return The structured child node filter, or {@link RepositoryRequest#FILTER_WILDCARD}, when there are no
+   * effective name filters.
+   */
+  @NonNull
+  private static String getRepositoryChildNodeFilter( @NonNull GetTreeOptions options ) {
+    List<String> fileFilters = options.getEffectiveFileFilters();
+    List<String> folderFilters = options.getEffectiveFolderFilters();
+
+    if ( fileFilters.isEmpty() && folderFilters.isEmpty() ) {
+      return RepositoryRequest.FILTER_WILDCARD;
+    }
+
+    List<String> clauses = new ArrayList<>( 2 );
+
+    if ( !fileFilters.isEmpty() ) {
+      clauses.add( TreeNodeFilterSpec.FILE_FILTER_TOKEN
+        + String.join( TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR, fileFilters ) );
+    }
+
+    if ( !folderFilters.isEmpty() ) {
+      clauses.add( TreeNodeFilterSpec.FOLDER_FILTER_TOKEN
+        + String.join( TreeNodeFilterSpec.INSIDE_FILTER_TOKEN_SEPARATOR, folderFilters ) );
+    }
+
+    return String.join( TreeNodeFilterSpec.FILTER_TOKEN_SEPARATOR, clauses );
   }
 
   @Override
