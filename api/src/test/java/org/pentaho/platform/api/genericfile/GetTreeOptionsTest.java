@@ -598,8 +598,7 @@ class GetTreeOptionsTest {
   }
 
   /**
-   * Tests the {@link GetTreeOptions#setFileFilters(List)} and {@link GetTreeOptions#setFolderFilters(List)} methods,
-   * and their string overloads.
+   * Tests the {@link GetTreeOptions#setFileFilters(List)} and {@link GetTreeOptions#setFolderFilters(List)} methods.
    */
   @Nested
   class NameFiltersTests {
