@@ -16,9 +16,11 @@ package org.pentaho.platform.api.genericfile;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -592,6 +594,129 @@ class GetTreeOptionsTest {
       Object other = new Object();
 
       assertNotEquals( options, other );
+    }
+  }
+
+  /**
+   * Tests the {@link GetTreeOptions#setFileFilters(List)} and {@link GetTreeOptions#setFolderFilters(List)} methods.
+   */
+  @Nested
+  class NameFiltersTests {
+    @Test
+    void testDefaultsToNoNameFilters() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      assertTrue( options.getFileFilters().isEmpty() );
+      assertFalse( options.hasFileFilters() );
+      assertTrue( options.getFolderFilters().isEmpty() );
+      assertFalse( options.hasFolderFilters() );
+    }
+
+    @Test
+    void testStoresNameFiltersAsGiven() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setFileFilters( List.of( " *.ktr ", "*.kjb,*.ktr" ) );
+      options.setFolderFilters( List.of( "test*", "sales*" ) );
+
+      // Parsing and normalization are the responsibility of each provider.
+      assertEquals( List.of( " *.ktr ", "*.kjb,*.ktr" ), options.getFileFilters() );
+      assertTrue( options.hasFileFilters() );
+
+      assertEquals( List.of( "test*", "sales*" ), options.getFolderFilters() );
+      assertTrue( options.hasFolderFilters() );
+    }
+
+    @Test
+    void testFileAndFolderFiltersAreIndependent() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setFileFilters( List.of( "*.ktr" ) );
+      options.setFolderFilters( List.of( "test*" ) );
+
+      assertEquals( List.of( "*.ktr" ), options.getFileFilters() );
+      assertEquals( List.of( "test*" ), options.getFolderFilters() );
+    }
+
+    @Test
+    void testNullOrEmptyDisablesNameFiltering() {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setFileFilters( List.of( "*.ktr" ) );
+      options.setFolderFilters( List.of( "test*" ) );
+
+      options.setFileFilters( null );
+      options.setFolderFilters( List.of() );
+
+      assertTrue( options.getFileFilters().isEmpty() );
+      assertFalse( options.hasFileFilters() );
+      assertTrue( options.getFolderFilters().isEmpty() );
+      assertFalse( options.hasFolderFilters() );
+    }
+
+    @Test
+    void testNameFiltersAreImmutable() {
+      GetTreeOptions options = new GetTreeOptions();
+      List<String> fileFilters = new ArrayList<>( List.of( "*.ktr" ) );
+      options.setFileFilters( fileFilters );
+
+      fileFilters.add( "*.kjb" );
+
+      assertEquals( List.of( "*.ktr" ), options.getFileFilters() );
+      assertThrows( UnsupportedOperationException.class, () -> options.getFileFilters().add( "*.kjb" ) );
+    }
+  }
+
+  /**
+   * Tests the {@link GetTreeOptions#getEffectiveFileFilters()} and {@link GetTreeOptions#getEffectiveFolderFilters()}
+   * methods.
+   */
+  @Nested
+  class EffectiveNameFiltersTests {
+    private GetTreeOptions createOptionsWithNameFilters( GetTreeOptions.TreeFilter treeFilter ) {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setFilter( treeFilter );
+      options.setFileFilters( List.of( "*.ktr" ) );
+      options.setFolderFilters( List.of( "test*" ) );
+
+      return options;
+    }
+
+    @Test
+    void testAllTreeFilterKeepsBothNameFilters() {
+      GetTreeOptions options = createOptionsWithNameFilters( GetTreeOptions.TreeFilter.ALL );
+
+      assertEquals( List.of( "*.ktr" ), options.getEffectiveFileFilters() );
+      assertEquals( List.of( "test*" ), options.getEffectiveFolderFilters() );
+    }
+
+    @Test
+    void testFilesTreeFilterDropsFolderFilters() {
+      GetTreeOptions options = createOptionsWithNameFilters( GetTreeOptions.TreeFilter.FILES );
+
+      assertEquals( List.of( "*.ktr" ), options.getEffectiveFileFilters() );
+      assertTrue( options.getEffectiveFolderFilters().isEmpty() );
+
+      // The configured filters are left untouched.
+      assertEquals( List.of( "test*" ), options.getFolderFilters() );
+    }
+
+    @Test
+    void testFoldersTreeFilterDropsFileFilters() {
+      GetTreeOptions options = createOptionsWithNameFilters( GetTreeOptions.TreeFilter.FOLDERS );
+
+      assertTrue( options.getEffectiveFileFilters().isEmpty() );
+      assertEquals( List.of( "test*" ), options.getEffectiveFolderFilters() );
+
+      // The configured filters are left untouched.
+      assertEquals( List.of( "*.ktr" ), options.getFileFilters() );
+    }
+
+    @ParameterizedTest
+    @EnumSource( GetTreeOptions.TreeFilter.class )
+    void testEmptyWhenNoNameFiltersAreDefined( GetTreeOptions.TreeFilter treeFilter ) {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setFilter( treeFilter );
+
+      assertTrue( options.getEffectiveFileFilters().isEmpty() );
+      assertTrue( options.getEffectiveFolderFilters().isEmpty() );
     }
   }
 }
